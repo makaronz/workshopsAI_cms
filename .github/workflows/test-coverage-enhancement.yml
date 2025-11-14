@@ -78,13 +78,13 @@ jobs:
           export DATABASE_URL=postgresql://workshopsai_test:test_password@localhost:5432/workshopsai_cms_test
           export REDIS_HOST=localhost
           export NODE_ENV=test
-          npm run test:e2e || true
+          npm run test:e2e
 
       - name: Analyze coverage report
         run: |
           node -e "
           const fs = require('fs');
-          const path = require('fs');
+          const path = require('path');
 
           // Read unit test coverage
           let unitCoverage = { total: { lines: { pct: 0 }, statements: { pct: 0 }, functions: { pct: 0 }, branches: { pct: 0 } } };
@@ -291,7 +291,9 @@ jobs:
             qualityAnalysis.suggestions.push('Consider adding more comprehensive test coverage');
           }
 
-          const avgAssertions = qualityAnalysis.testFiles.reduce((sum, test) => sum + test.assertionsPerTest, 0) / qualityAnalysis.testFiles.length;
+          const avgAssertions = qualityAnalysis.testFiles.length > 0 
+            ? qualityAnalysis.testFiles.reduce((sum, test) => sum + test.assertionsPerTest, 0) / qualityAnalysis.testFiles.length
+            : 0;
           if (avgAssertions < 3) {
             qualityAnalysis.suggestions.push('Tests should have multiple assertions for better validation');
           }
@@ -307,7 +309,7 @@ jobs:
             const fs = require('fs');
             const quality = JSON.parse(fs.readFileSync('test-quality-analysis.json', 'utf8'));
 
-            const avgAssertions = quality.testFiles.reduce((sum, test) => sum + test.assertionsPerTest, 0) / quality.testFiles.length;
+            const avgAssertions = quality.testFiles.length > 0 ? quality.testFiles.reduce((sum, test) => sum + test.assertionsPerTest, 0) / quality.testFiles.length : 0;
 
             const comment = `
             ## 🔍 Test Quality Analysis
