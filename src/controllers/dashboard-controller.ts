@@ -102,20 +102,20 @@ export class DashboardController {
       let periodStart: Date;
 
       switch (period) {
-        case '1h':
-          periodStart = new Date(now.getTime() - 60 * 60 * 1000);
-          break;
-        case '24h':
-          periodStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-          break;
-        case '7d':
-          periodStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          break;
-        case '30d':
-          periodStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          break;
-        default:
-          periodStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      case '1h':
+        periodStart = new Date(now.getTime() - 60 * 60 * 1000);
+        break;
+      case '24h':
+        periodStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case '7d':
+        periodStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        periodStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        periodStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       }
 
       const costAnalysis = {
@@ -293,7 +293,7 @@ export class DashboardController {
       // Determine overall health status
       const allChecksHealthy = Object.values(health.checks).every(
         check => typeof check === 'string' ? check === 'healthy' :
-        Object.values(check as any).every((c: any) => c === 'healthy')
+          Object.values(check as any).every((c: any) => c === 'healthy'),
       );
 
       health.status = allChecksHealthy ? 'healthy' : 'degraded';

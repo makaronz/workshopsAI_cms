@@ -591,7 +591,7 @@ export class SecurityMonitoringService {
     uniqueIPs: number;
     uniqueUsers: number;
     topThreats: Array<{ type: string; count: number }>;
-  } {
+    } {
     const totalEvents = this.events.length;
     const criticalEvents = this.events.filter(e => e.severity === SecuritySeverity.CRITICAL).length;
     const highEvents = this.events.filter(e => e.severity === SecuritySeverity.HIGH).length;
@@ -670,7 +670,7 @@ export const securityMonitoringMiddleware = (req: Request, res: Response, next: 
   const events = securityMonitor.analyzeRequest(
     req,
     req.user?.id,
-    req.session?.id
+    req.session?.id,
   );
 
   // Log any detected threats

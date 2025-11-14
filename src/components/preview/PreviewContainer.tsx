@@ -233,7 +233,7 @@ const PreviewContainer: React.FC<PreviewContainerProps> = ({
     // This would be implemented based on your specific needs
   }, []);
 
-  
+
   /**
    * Update preview settings
    */
@@ -250,7 +250,7 @@ const PreviewContainer: React.FC<PreviewContainerProps> = ({
     [sessionId, state.session],
   );
 
-  
+
   /**
    * Toggle device preview
    */

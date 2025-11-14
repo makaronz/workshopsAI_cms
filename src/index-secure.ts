@@ -18,14 +18,14 @@ import securityMiddleware, {
   securityLogging,
   gdprCompliance,
   cspNonce,
-  apiSecurityHeaders
+  apiSecurityHeaders,
 } from './middleware/security';
 
 // Import advanced authentication
 import authenticateJWT, {
   refreshToken,
   logout,
-  authRateLimit
+  authRateLimit,
 } from './middleware/advanced-auth';
 
 // Import GDPR middleware
@@ -35,14 +35,14 @@ import gdprMiddleware, {
   dataBreachDetection,
   dpiaValidation,
   dataMinimization,
-  purposeLimitation
+  purposeLimitation,
 } from './middleware/gdpr-middleware';
 
 // Import security monitoring
 import securityMonitor, {
   securityMonitoringMiddleware,
   getSecurityMetrics,
-  isIPBlocked
+  isIPBlocked,
 } from './services/security-monitoring';
 
 // Import routes
@@ -130,7 +130,7 @@ app.use(
       'Authorization',
       'X-Requested-With',
       'X-CSRF-Token',
-      'X-Processing-Purpose'
+      'X-Processing-Purpose',
     ],
     exposedHeaders: ['X-Total-Count', 'X-Rate-Limit-Remaining'],
     maxAge: 86400, // 24 hours
@@ -142,12 +142,12 @@ app.use(
 app.use(express.json({
   limit: '10mb',
   strict: true,
-  type: ['application/json', 'application/vnd.api+json']
+  type: ['application/json', 'application/vnd.api+json'],
 }));
 app.use(express.urlencoded({
   extended: true,
   limit: '10mb',
-  parameterLimit: 1000
+  parameterLimit: 1000,
 }));
 
 // 9. Request size validation for security
@@ -170,7 +170,7 @@ app.use(compression({
       return false;
     }
     return compression.filter(req, res);
-  }
+  },
 }));
 
 // 13. CSP nonce generation
@@ -188,7 +188,7 @@ if (NODE_ENV === 'development') {
     skip: (req, res) => {
       // Skip logging for health checks and static assets
       return req.path === '/health' || req.path.startsWith('/static');
-    }
+    },
   }));
 }
 
@@ -307,7 +307,7 @@ app.use('/api/v1/questionnaires', dpiaValidation('research_analysis'), questionn
 
 // Apply data minimization to enrollment routes
 app.use('/api/v1/enrollments', dataMinimization([
-  'workshopId', 'participantId', 'status', 'notes', 'specialRequirements'
+  'workshopId', 'participantId', 'status', 'notes', 'specialRequirements',
 ]), enrollmentRoutes);
 
 // Apply purpose limitation to workshop routes
@@ -458,12 +458,12 @@ const startServer = async () => {
       console.log(`🚀 Secure server running on port ${PORT} in ${NODE_ENV} mode`);
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
       console.log(`🔗 API base URL: http://localhost:${PORT}/api`);
-      console.log(`🔌 WebSocket service initialized`);
-      console.log(`👁️ Preview service initialized`);
-      console.log(`📱 Real-time preview functionality available`);
-      console.log(`🛡️ Enhanced security measures active`);
-      console.log(`📋 GDPR compliance implemented`);
-      console.log(`📊 Security monitoring enabled`);
+      console.log('🔌 WebSocket service initialized');
+      console.log('👁️ Preview service initialized');
+      console.log('📱 Real-time preview functionality available');
+      console.log('🛡️ Enhanced security measures active');
+      console.log('📋 GDPR compliance implemented');
+      console.log('📊 Security monitoring enabled');
     });
   } catch (error) {
     console.error('Failed to start server:', error);

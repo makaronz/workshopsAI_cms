@@ -12,7 +12,7 @@ const router = Router();
 // Validation schemas
 const createQuestionnaireSchema = z.object({
   titleI18n: z.record(z.string(), z.string().min(1)).refine((obj) => Object.keys(obj).length > 0, {
-    message: "At least one title translation is required",
+    message: 'At least one title translation is required',
   }),
   instructionsI18n: z.record(z.string(), z.string()).optional(),
   settings: z
@@ -41,7 +41,7 @@ const updateQuestionnaireSchema = createQuestionnaireSchema.partial().extend({
 // Question group validation schemas
 const createQuestionGroupSchema = z.object({
   titleI18n: z.record(z.string(), z.string().min(1)).refine((obj) => Object.keys(obj).length > 0, {
-    message: "At least one translation is required",
+    message: 'At least one translation is required',
   }),
   descriptionI18n: z.record(z.string(), z.string()).optional(),
   orderIndex: z.number().int().min(1).optional(),
@@ -60,7 +60,7 @@ const updateQuestionGroupSchema = createQuestionGroupSchema.partial();
 // Question validation schemas
 const createQuestionSchema = z.object({
   textI18n: z.record(z.string(), z.string().min(1)).refine((obj) => Object.keys(obj).length > 0, {
-    message: "At least one translation is required",
+    message: 'At least one translation is required',
   }),
   type: z.enum([
     'text',

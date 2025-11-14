@@ -266,7 +266,7 @@ router.get('/results', authenticateToken, async (req, res) => {
     }
 
     // Build query conditions
-    let conditions = [eq(llmAnalyses.questionnaireId, validatedQuery.questionnaireId)];
+    const conditions = [eq(llmAnalyses.questionnaireId, validatedQuery.questionnaireId)];
 
     if (validatedQuery.analysisTypes) {
       conditions.push(inArray(llmAnalyses.analysisType, validatedQuery.analysisTypes));
@@ -453,29 +453,29 @@ router.post('/results/:analysisId/export', authenticateToken, async (req, res) =
     let filename: string;
 
     switch (validatedData.format) {
-      case 'json':
-        formattedData = JSON.stringify(exportData, null, 2);
-        contentType = 'application/json';
-        filename = `analysis_${analysisId}.json`;
-        break;
+    case 'json':
+      formattedData = JSON.stringify(exportData, null, 2);
+      contentType = 'application/json';
+      filename = `analysis_${analysisId}.json`;
+      break;
 
-      case 'csv':
-        formattedData = convertToCSV(exportData);
-        contentType = 'text/csv';
-        filename = `analysis_${analysisId}.csv`;
-        break;
+    case 'csv':
+      formattedData = convertToCSV(exportData);
+      contentType = 'text/csv';
+      filename = `analysis_${analysisId}.csv`;
+      break;
 
-      case 'ods':
-        // For ODS, we'll return JSON and let the client handle conversion
-        formattedData = JSON.stringify(exportData, null, 2);
-        contentType = 'application/vnd.oasis.opendocument.spreadsheet';
-        filename = `analysis_${analysisId}.ods`;
-        break;
+    case 'ods':
+      // For ODS, we'll return JSON and let the client handle conversion
+      formattedData = JSON.stringify(exportData, null, 2);
+      contentType = 'application/vnd.oasis.opendocument.spreadsheet';
+      filename = `analysis_${analysisId}.ods`;
+      break;
 
-      default:
-        return res.status(400).json({
-          error: 'Unsupported export format',
-        });
+    default:
+      return res.status(400).json({
+        error: 'Unsupported export format',
+      });
     }
 
     // Set headers
@@ -529,7 +529,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
     }
 
     // Build query conditions
-    let conditions = [];
+    const conditions = [];
 
     if (questionnaireId) {
       conditions.push(eq(llmAnalyses.questionnaireId, questionnaireId as string));
@@ -537,7 +537,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
 
     // Get analysis statistics
     const allAnalyses = await db.query.llmAnalyses.findMany(
-      conditions.length > 0 ? { where: conditions[0] } : {}
+      conditions.length > 0 ? { where: conditions[0] } : {},
     );
 
     const stats = {
@@ -771,25 +771,25 @@ router.get('/export/:questionnaireId', authenticateToken, async (req, res) => {
     let filename: string;
 
     switch (format) {
-      case 'csv':
-        formattedData = convertAnalysesToCSV(exportPackage);
-        contentType = 'text/csv';
-        filename = `questionnaire_${questionnaireId}_analyses.csv`;
-        break;
+    case 'csv':
+      formattedData = convertAnalysesToCSV(exportPackage);
+      contentType = 'text/csv';
+      filename = `questionnaire_${questionnaireId}_analyses.csv`;
+      break;
 
-      case 'ods':
-        // For ODS, return JSON and let client handle conversion
-        formattedData = JSON.stringify(exportPackage, null, 2);
-        contentType = 'application/vnd.oasis.opendocument.spreadsheet';
-        filename = `questionnaire_${questionnaireId}_analyses.ods`;
-        break;
+    case 'ods':
+      // For ODS, return JSON and let client handle conversion
+      formattedData = JSON.stringify(exportPackage, null, 2);
+      contentType = 'application/vnd.oasis.opendocument.spreadsheet';
+      filename = `questionnaire_${questionnaireId}_analyses.ods`;
+      break;
 
-      case 'json':
-      default:
-        formattedData = JSON.stringify(exportPackage, null, 2);
-        contentType = 'application/json';
-        filename = `questionnaire_${questionnaireId}_analyses.json`;
-        break;
+    case 'json':
+    default:
+      formattedData = JSON.stringify(exportPackage, null, 2);
+      contentType = 'application/json';
+      filename = `questionnaire_${questionnaireId}_analyses.json`;
+      break;
     }
 
     // Set headers
@@ -827,7 +827,7 @@ function convertToCSV(data: any): string {
 
   // Data rows
   csvRows.push(
-    `${data.analysis.id},${data.analysis.analysisType},${data.analysis.status},${data.analysis.createdAt},${data.analysis.completedAt || ''},"${JSON.stringify(data.analysis.results).substring(0, 100)}..."`
+    `${data.analysis.id},${data.analysis.analysisType},${data.analysis.status},${data.analysis.createdAt},${data.analysis.completedAt || ''},"${JSON.stringify(data.analysis.results).substring(0, 100)}..."`,
   );
 
   return csvRows.join('\n');
@@ -881,13 +881,13 @@ function convertAnalysesToCSV(packageData: any): string {
 
 function calculateAverageProcessingTime(analyses: any[]): number {
   const completedAnalyses = analyses.filter(a =>
-    a.status === 'completed' && a.completedAt && a.metadata?.processingTimeMs
+    a.status === 'completed' && a.completedAt && a.metadata?.processingTimeMs,
   );
 
   if (completedAnalyses.length === 0) return 0;
 
   const totalTime = completedAnalyses.reduce((sum, a) =>
-    sum + a.metadata.processingTimeMs, 0
+    sum + a.metadata.processingTimeMs, 0,
   );
 
   return Math.round(totalTime / completedAnalyses.length / 1000); // Convert to seconds
@@ -895,7 +895,7 @@ function calculateAverageProcessingTime(analyses: any[]): number {
 
 function calculateTotalCost(analyses: any[]): number {
   return analyses.reduce((total, a) =>
-    total + (a.metadata?.costEstimate || 0), 0
+    total + (a.metadata?.costEstimate || 0), 0,
   );
 }
 
@@ -1100,7 +1100,7 @@ router.post('/export/:analysisId', authenticateToken, async (req, res) => {
     logger.error('Specific export failed:', {
       error,
       userId: (req as any).user.id,
-      analysisId: req.params.analysisId
+      analysisId: req.params.analysisId,
     });
 
     if (error instanceof z.ZodError) {

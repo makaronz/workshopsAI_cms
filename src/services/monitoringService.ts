@@ -341,7 +341,7 @@ class MonitoringService {
   // Collect system metrics
   private collectSystemMetrics(): void {
     const os = require('os');
-    
+
     this.metrics = {
       cpu: os.loadavg()[0],
       memory: process.memoryUsage(),
@@ -482,7 +482,7 @@ class MonitoringService {
     alerts: Alert[];
     metrics: SystemMetrics;
     performance: any;
-  } {
+    } {
     const healthChecks = this.getHealthChecks();
     const criticalAlerts = this.getAlerts({ severity: 'critical', resolved: false });
     const highAlerts = this.getAlerts({ severity: 'high', resolved: false });

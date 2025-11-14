@@ -736,7 +736,7 @@ export class AnonymizationService {
 
     // Check for direct identifiers
     const hasDirectIdentifiers = responses.some(r =>
-      this.hasDirectIdentifiers(typeof r.answer === 'string' ? r.answer : JSON.stringify(r.answer))
+      this.hasDirectIdentifiers(typeof r.answer === 'string' ? r.answer : JSON.stringify(r.answer)),
     );
 
     if (hasDirectIdentifiers) {
@@ -747,7 +747,7 @@ export class AnonymizationService {
 
     // Check for quasi-identifiers
     const hasQuasiIdentifiers = responses.some(r =>
-      this.hasQuasiIdentifiers(typeof r.answer === 'string' ? r.answer : JSON.stringify(r.answer))
+      this.hasQuasiIdentifiers(typeof r.answer === 'string' ? r.answer : JSON.stringify(r.answer)),
     );
 
     if (hasQuasiIdentifiers) {

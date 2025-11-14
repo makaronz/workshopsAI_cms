@@ -80,7 +80,7 @@ export const createTokens = async (user: any, ip: string, userAgent: string) => 
       issuer: JWT_CONFIG.issuer,
       audience: JWT_CONFIG.audience,
       algorithm: JWT_CONFIG.algorithm,
-    }
+    },
   );
 
   // Create refresh token with longer expiry
@@ -96,7 +96,7 @@ export const createTokens = async (user: any, ip: string, userAgent: string) => 
       issuer: JWT_CONFIG.issuer,
       audience: JWT_CONFIG.audience,
       algorithm: JWT_CONFIG.algorithm,
-    }
+    },
   );
 
   // Store refresh token with rotation support
@@ -292,7 +292,7 @@ export const refreshToken = async (req: Request, res: Response) => {
     const tokens = await createTokens(
       user[0],
       req.ip,
-      req.headers['user-agent'] || ''
+      req.headers['user-agent'] || '',
     );
 
     // Remove old refresh token
@@ -388,7 +388,7 @@ export const validatePassword = (password: string): { valid: boolean; errors: st
   // Check for common passwords
   const commonPasswords = [
     'password', '123456', '123456789', 'qwerty', 'abc123',
-    'password123', 'admin', 'letmein', 'welcome', 'monkey'
+    'password123', 'admin', 'letmein', 'welcome', 'monkey',
   ];
 
   if (commonPasswords.includes(password.toLowerCase())) {

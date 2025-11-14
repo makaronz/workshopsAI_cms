@@ -38,17 +38,17 @@ export class ExportService {
       let result: ExportResult;
 
       switch (options.format) {
-        case 'json':
-          result = await this.exportAsJSON(processedData, options);
-          break;
-        case 'csv':
-          result = await this.exportAsCSV(processedData, options);
-          break;
-        case 'ods':
-          result = await this.exportAsODS(processedData, options);
-          break;
-        default:
-          throw new Error(`Unsupported export format: ${options.format}`);
+      case 'json':
+        result = await this.exportAsJSON(processedData, options);
+        break;
+      case 'csv':
+        result = await this.exportAsCSV(processedData, options);
+        break;
+      case 'ods':
+        result = await this.exportAsODS(processedData, options);
+        break;
+      default:
+        throw new Error(`Unsupported export format: ${options.format}`);
       }
 
       logger.info('Export completed', {
@@ -68,15 +68,15 @@ export class ExportService {
    * Fetch analyses from database based on export criteria
    */
   private async fetchAnalyses(options: ExportOptions): Promise<any[]> {
-    let whereConditions: any[] = [];
+    const whereConditions: any[] = [];
 
     // Date range filter
     if (options.dateRange) {
       whereConditions.push(
         and(
           eq(llmAnalyses.createdAt, options.dateRange.start),
-          eq(llmAnalyses.createdAt, options.dateRange.end)
-        )
+          eq(llmAnalyses.createdAt, options.dateRange.end),
+        ),
       );
     }
 
@@ -355,7 +355,7 @@ export class ExportService {
     const headerRow = headers.map(header =>
       `          <table:table-cell office:value-type="string">
             <text:p>${this.escapeXML(header)}</text:p>
-          </table:table-cell>`
+          </table:table-cell>`,
     ).join('\n');
 
     // Create data rows

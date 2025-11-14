@@ -490,7 +490,7 @@ export class AnalysisWebSocketService {
   public getSubscriptionStats(): {
     totalJobSubscriptions: number;
     jobSubscriptionDetails: Array<{ jobId: string; subscriberCount: number }>;
-  } {
+    } {
     const jobSubscriptionDetails: Array<{ jobId: string; subscriberCount: number }> = [];
 
     for (const [jobId, subscriptions] of this.jobSubscriptions.entries()) {

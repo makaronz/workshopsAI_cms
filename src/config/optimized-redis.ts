@@ -128,7 +128,7 @@ export class OptimizedRedisService {
     try {
       const info = await this.client.info('memory');
       const keyCount = await this.client.dbsize();
-      
+
       const memoryUsage = this.parseMemoryInfo(info);
       this.stats.totalKeys = keyCount;
       this.stats.memoryUsage = memoryUsage;
@@ -137,7 +137,7 @@ export class OptimizedRedisService {
       // Calculate average response time
       if (this.responseTimes.length > 0) {
         this.stats.avgResponseTime = this.responseTimes.reduce((a, b) => a + b, 0) / this.responseTimes.length;
-        
+
         // Keep only recent samples
         if (this.responseTimes.length > this.maxResponseTimeSamples) {
           this.responseTimes = this.responseTimes.slice(-this.maxResponseTimeSamples);
@@ -172,23 +172,23 @@ export class OptimizedRedisService {
   // Get with performance monitoring and hit/miss tracking
   async get<T>(key: string, options: CacheOptions = {}): Promise<T | null> {
     const fullKey = this.buildKey(key, options.prefix);
-    
+
     return this.measureResponseTime(async () => {
       try {
         const value = await this.client.get(fullKey);
-        
+
         if (value === null) {
           this.stats.misses++;
           return null;
         }
 
         this.stats.hits++;
-        
+
         // Deserialize based on options
         if (options.json) {
           return JSON.parse(value) as T;
         }
-        
+
         return value as unknown as T;
       } catch (error) {
         logger.error(`Redis GET error for key ${key}:`, error);
@@ -200,11 +200,11 @@ export class OptimizedRedisService {
   // Set with intelligent TTL and tagging
   async set<T>(key: string, value: T, options: CacheOptions = {}): Promise<void> {
     const fullKey = this.buildKey(key, options.prefix);
-    
+
     return this.measureResponseTime(async () => {
       try {
         let serializedValue: string;
-        
+
         if (options.json) {
           serializedValue = JSON.stringify(value);
         } else if (typeof value === 'string') {
@@ -216,7 +216,7 @@ export class OptimizedRedisService {
         const result = await this.client.setex(
           fullKey,
           options.ttl || this.getDefaultTTL(key),
-          serializedValue
+          serializedValue,
         );
 
         // Store cache tags for invalidation
@@ -238,20 +238,20 @@ export class OptimizedRedisService {
   async getOrSet<T>(
     key: string,
     fetchFunction: () => Promise<T>,
-    options: CacheOptions = {}
+    options: CacheOptions = {},
   ): Promise<T> {
     // Try to get from cache first
     const cached = await this.get<T>(key, options);
     if (cached !== null) {
       return cached;
     }
-    
+
     // Cache miss, fetch the data
     const data = await fetchFunction();
-    
+
     // Store in cache
     await this.set(key, data, options);
-    
+
     return data;
   }
 
@@ -261,15 +261,15 @@ export class OptimizedRedisService {
       try {
         const tagKey = this.buildKey(`tag:${tag}`);
         const keys = await this.client.smembers(tagKey);
-        
+
         if (keys.length === 0) {
           return 0;
         }
-        
+
         const pipeline = this.client.pipeline();
         pipeline.del(...keys);
         pipeline.del(tagKey);
-        
+
         const results = await pipeline.exec();
         return results?.[0]?.[1] as number || 0;
       } catch (error) {
@@ -290,7 +290,7 @@ export class OptimizedRedisService {
       const start = Date.now();
       const pong = await this.client.ping();
       const responseTime = Date.now() - start;
-      
+
       return {
         healthy: pong === 'PONG',
         details: {
@@ -330,13 +330,13 @@ export class OptimizedRedisService {
 
   private async addTagsToKey(key: string, tags: string[]): Promise<void> {
     const pipeline = this.client.pipeline();
-    
+
     tags.forEach(tag => {
       const tagKey = this.buildKey(`tag:${tag}`);
       pipeline.sadd(tagKey, key);
       pipeline.expire(tagKey, 86400); // Tags expire after 24 hours
     });
-    
+
     await pipeline.exec();
   }
 

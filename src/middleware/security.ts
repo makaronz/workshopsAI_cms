@@ -12,33 +12,33 @@ import { createHash, randomBytes } from 'crypto';
 export const securityHeaders = helmet({
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      scriptSrc: ["'self'"],
-      connectSrc: ["'self'", "ws:", "wss:"],
-      frameSrc: ["'none'"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'"],
-      manifestSrc: ["'self'"],
-      workerSrc: ["'self'"],
-      baseUri: ["'self'"],
-      formAction: ["'self'"],
-      frameAncestors: ["'none'"],
+      defaultSrc: ['\'self\''],
+      styleSrc: ['\'self\'', '\'unsafe-inline\'', 'https://fonts.googleapis.com'],
+      fontSrc: ['\'self\'', 'https://fonts.gstatic.com', 'data:'],
+      imgSrc: ['\'self\'', 'data:', 'https:', 'blob:'],
+      scriptSrc: ['\'self\''],
+      connectSrc: ['\'self\'', 'ws:', 'wss:'],
+      frameSrc: ['\'none\''],
+      objectSrc: ['\'none\''],
+      mediaSrc: ['\'self\''],
+      manifestSrc: ['\'self\''],
+      workerSrc: ['\'self\''],
+      baseUri: ['\'self\''],
+      formAction: ['\'self\''],
+      frameAncestors: ['\'none\''],
       upgradeInsecureRequests: [],
     },
   },
   crossOriginEmbedderPolicy: true,
   crossOriginOpenerPolicy: true,
-  crossOriginResourcePolicy: { policy: "cross-origin" },
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
   dnsPrefetchControl: true,
   frameguard: { action: 'deny' },
   hidePoweredBy: true,
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
-    preload: true
+    preload: true,
   },
   ieNoOpen: true,
   noSniff: true,
@@ -56,14 +56,14 @@ export const rateLimiters = {
     max: process.env.NODE_ENV === 'production' ? 100 : 1000,
     message: {
       error: 'Too many requests from this IP',
-      retryAfter: '15 minutes'
+      retryAfter: '15 minutes',
     },
     standardHeaders: true,
     legacyHeaders: false,
     skip: (req) => {
       // Skip rate limiting for health checks
       return req.path === '/health';
-    }
+    },
   }),
 
   // Authentication rate limiting
@@ -72,7 +72,7 @@ export const rateLimiters = {
     max: 5, // 5 attempts per 15 minutes
     message: {
       error: 'Too many authentication attempts',
-      retryAfter: '15 minutes'
+      retryAfter: '15 minutes',
     },
     standardHeaders: true,
     legacyHeaders: false,
@@ -85,7 +85,7 @@ export const rateLimiters = {
     max: 3, // 3 attempts per hour
     message: {
       error: 'Too many password reset attempts',
-      retryAfter: '1 hour'
+      retryAfter: '1 hour',
     },
     standardHeaders: true,
     legacyHeaders: false,
@@ -97,7 +97,7 @@ export const rateLimiters = {
     max: 50, // 50 uploads per hour
     message: {
       error: 'Too many file uploads',
-      retryAfter: '1 hour'
+      retryAfter: '1 hour',
     },
     standardHeaders: true,
     legacyHeaders: false,
@@ -109,11 +109,11 @@ export const rateLimiters = {
     max: 60, // 60 requests per minute
     message: {
       error: 'API rate limit exceeded',
-      retryAfter: '1 minute'
+      retryAfter: '1 minute',
     },
     standardHeaders: true,
     legacyHeaders: false,
-  })
+  }),
 };
 
 // Enhanced input validation and sanitization
@@ -178,7 +178,7 @@ export const inputSanitization = (req: Request, res: Response, next: NextFunctio
     console.error('Input sanitization error:', error);
     res.status(400).json({
       error: 'Invalid request data',
-      message: 'Request contains invalid characters'
+      message: 'Request contains invalid characters',
     });
   }
 };
@@ -197,7 +197,7 @@ export const csrfProtection = (req: Request, res: Response, next: NextFunction) 
   if (!csrfToken || !sessionToken || csrfToken !== sessionToken) {
     return res.status(403).json({
       error: 'CSRF validation failed',
-      message: 'Invalid or missing CSRF token'
+      message: 'Invalid or missing CSRF token',
     });
   }
 
@@ -217,7 +217,7 @@ export const validateContentType = (allowedTypes: string[]) => {
     if (!contentType || !allowedTypes.some(type => contentType.includes(type))) {
       return res.status(415).json({
         error: 'Unsupported Media Type',
-        message: `Content-Type must be one of: ${allowedTypes.join(', ')}`
+        message: `Content-Type must be one of: ${allowedTypes.join(', ')}`,
       });
     }
 
@@ -233,7 +233,7 @@ export const validateRequestSize = (maxSize: number) => {
     if (contentLength > maxSize) {
       return res.status(413).json({
         error: 'Payload Too Large',
-        message: `Request size exceeds maximum allowed size of ${maxSize} bytes`
+        message: `Request size exceeds maximum allowed size of ${maxSize} bytes`,
       });
     }
 
@@ -249,7 +249,7 @@ export const ipBlocking = (blockedIPs: string[]) => {
     if (blockedIPs.includes(clientIP as string)) {
       return res.status(403).json({
         error: 'Access Denied',
-        message: 'Your IP address has been blocked'
+        message: 'Your IP address has been blocked',
       });
     }
 
@@ -276,7 +276,7 @@ export const securityLogging = (req: Request, res: Response, next: NextFunction)
   const requestString = JSON.stringify({
     query: req.query,
     params: req.params,
-    body: req.body
+    body: req.body,
   });
 
   for (const pattern of suspiciousPatterns) {
@@ -357,5 +357,5 @@ export {
   gdprCompliance,
   generateCSPNonce,
   cspNonce,
-  apiSecurityHeaders
+  apiSecurityHeaders,
 };

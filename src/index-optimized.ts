@@ -118,13 +118,13 @@ app.use(
 );
 
 // Body parsing middleware with optimized limits
-app.use(express.json({ 
+app.use(express.json({
   limit: '10mb',
   // Enable strict JSON parsing for security
   strict: true,
 }));
-app.use(express.urlencoded({ 
-  extended: true, 
+app.use(express.urlencoded({
+  extended: true,
   limit: '10mb',
   // Extended URL encoding with parameter limit
   parameterLimit: 1000,
@@ -204,8 +204,8 @@ if (NODE_ENV === 'development') {
       write: (message: string) => {
         // Log to console in development
         console.log(message.trim());
-      }
-    }
+      },
+    },
   }));
 } else {
   app.use(morgan('combined', {
@@ -213,7 +213,7 @@ if (NODE_ENV === 'development') {
     skip: (req, res) => {
       // Skip logging for health checks and metrics
       return req.url === '/health' || req.url === '/metrics';
-    }
+    },
   }));
 }
 
@@ -262,27 +262,27 @@ app.get('/metrics', async (_req, res) => {
   try {
     const systemStatus = monitoringService.getSystemStatus();
     const performanceMetrics = monitoringService.getPerformanceMetrics();
-    
+
     // Create Prometheus metrics format
     const metrics = [
-      `# HELP workshopsai_uptime_seconds Application uptime in seconds`,
-      `# TYPE workshopsai_uptime_seconds counter`,
+      '# HELP workshopsai_uptime_seconds Application uptime in seconds',
+      '# TYPE workshopsai_uptime_seconds counter',
       `workshopsai_uptime_seconds ${systemStatus.uptime}`,
       '',
-      `# HELP workshopsai_requests_total Total number of requests`,
-      `# TYPE workshopsai_requests_total counter`,
+      '# HELP workshopsai_requests_total Total number of requests',
+      '# TYPE workshopsai_requests_total counter',
       `workshopsai_requests_total ${performanceMetrics.requestCount}`,
       '',
-      `# HELP workshopsai_response_time_ms Average response time in milliseconds`,
-      `# TYPE workshopsai_response_time_ms gauge`,
+      '# HELP workshopsai_response_time_ms Average response time in milliseconds',
+      '# TYPE workshopsai_response_time_ms gauge',
       `workshopsai_response_time_ms ${performanceMetrics.averageResponseTime}`,
       '',
-      `# HELP workshopsai_error_rate Percentage of requests that resulted in errors`,
-      `# TYPE workshopsai_error_rate gauge`,
+      '# HELP workshopsai_error_rate Percentage of requests that resulted in errors',
+      '# TYPE workshopsai_error_rate gauge',
       `workshopsai_error_rate ${performanceMetrics.errorRate}`,
       '',
-      `# HELP workshopsai_memory_bytes Memory usage in bytes`,
-      `# TYPE workshopsai_memory_bytes gauge`,
+      '# HELP workshopsai_memory_bytes Memory usage in bytes',
+      '# TYPE workshopsai_memory_bytes gauge',
       `workshopsai_memory_bytes{type="heap_used"} ${systemStatus.metrics.memory.heapUsed}`,
       `workshopsai_memory_bytes{type="heap_total"} ${systemStatus.metrics.memory.heapTotal}`,
       `workshopsai_memory_bytes{type="rss"} ${systemStatus.metrics.memory.rss}`,
@@ -443,12 +443,12 @@ app.use(
 // Enhanced graceful shutdown with monitoring
 const gracefulShutdown = async (signal: string) => {
   logger.info(`${signal} received, shutting down gracefully`);
-  
+
   try {
     // Stop accepting new connections
     server.close(async () => {
       logger.info('HTTP server closed');
-      
+
       // Shutdown services in order
       await Promise.all([
         llmAnalysisWorker.shutdown(),

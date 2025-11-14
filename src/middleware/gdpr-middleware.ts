@@ -52,12 +52,12 @@ export const gdprConsent = (requiredConsents: string[]) => {
         .where(eq(consents.userId, req.user.id));
 
       const consentMap = new Map(
-        userConsents.map(consent => [consent.consentType, consent.granted])
+        userConsents.map(consent => [consent.consentType, consent.granted]),
       );
 
       // Verify all required consents are granted
       const missingConsents = requiredConsents.filter(
-        consentType => !consentMap.get(consentType)
+        consentType => !consentMap.get(consentType),
       );
 
       if (missingConsents.length > 0) {

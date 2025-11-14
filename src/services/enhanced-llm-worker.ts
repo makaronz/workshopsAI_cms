@@ -376,7 +376,7 @@ export class EnhancedLLMAnalysisWorker {
       const result: EnhancedLLMAnalysisJobResult = {
         jobId,
         status: errors.length > 0 && analyses.length === 0 ? 'failed' :
-                errors.length > 0 ? 'partial' : 'completed',
+          errors.length > 0 ? 'partial' : 'completed',
         analyses,
         errors,
         statistics: {
@@ -551,38 +551,38 @@ export class EnhancedLLMAnalysisWorker {
     let basePrompt: string;
 
     switch (analysisType) {
-      case 'thematic':
-        basePrompt = promptTemplateService.buildThematicAnalysisPrompt(
-          responses,
-          options,
-        );
-        break;
-      case 'clusters':
-        basePrompt = promptTemplateService.buildClusteringPrompt(
-          responses,
-          options,
-        );
-        break;
-      case 'contradictions':
-        basePrompt = promptTemplateService.buildContradictionsPrompt(
-          responses,
-          options,
-        );
-        break;
-      case 'insights':
-        basePrompt = promptTemplateService.buildInsightsPrompt(responses, options);
-        break;
-      case 'recommendations':
-        basePrompt = promptTemplateService.buildRecommendationsPrompt(
-          responses,
-          options,
-        );
-        break;
-      case 'sentiment':
-        basePrompt = this.buildSentimentAnalysisPrompt(responses, options);
-        break;
-      default:
-        throw new Error(`Unknown analysis type: ${analysisType}`);
+    case 'thematic':
+      basePrompt = promptTemplateService.buildThematicAnalysisPrompt(
+        responses,
+        options,
+      );
+      break;
+    case 'clusters':
+      basePrompt = promptTemplateService.buildClusteringPrompt(
+        responses,
+        options,
+      );
+      break;
+    case 'contradictions':
+      basePrompt = promptTemplateService.buildContradictionsPrompt(
+        responses,
+        options,
+      );
+      break;
+    case 'insights':
+      basePrompt = promptTemplateService.buildInsightsPrompt(responses, options);
+      break;
+    case 'recommendations':
+      basePrompt = promptTemplateService.buildRecommendationsPrompt(
+        responses,
+        options,
+      );
+      break;
+    case 'sentiment':
+      basePrompt = this.buildSentimentAnalysisPrompt(responses, options);
+      break;
+    default:
+      throw new Error(`Unknown analysis type: ${analysisType}`);
     }
 
     // Add cultural bias handling if enabled
@@ -698,14 +698,14 @@ export class EnhancedLLMAnalysisWorker {
 
     // Add confidence scores and metadata
     switch (analysisType) {
-      case 'thematic':
-        return this.enhanceThematicResults(result, responses);
-      case 'clusters':
-        return this.enhanceClusterResults(result, responses);
-      case 'sentiment':
-        return this.enhanceSentimentResults(result, responses);
-      default:
-        return result;
+    case 'thematic':
+      return this.enhanceThematicResults(result, responses);
+    case 'clusters':
+      return this.enhanceClusterResults(result, responses);
+    case 'sentiment':
+      return this.enhanceSentimentResults(result, responses);
+    default:
+      return result;
     }
   }
 
@@ -786,9 +786,9 @@ export class EnhancedLLMAnalysisWorker {
     const anonymizedBatches = await Promise.all(
       batches.map(batch =>
         Promise.all(
-          batch.map(response => anonymizationService.anonymizeResponse(response, level))
-        )
-      )
+          batch.map(response => anonymizationService.anonymizeResponse(response, level)),
+        ),
+      ),
     );
 
     return anonymizedBatches.flat();
@@ -866,7 +866,7 @@ export class EnhancedLLMAnalysisWorker {
             data: true,
             timestamp: Date.now(),
           });
-        })
+        }),
       );
     }
   }

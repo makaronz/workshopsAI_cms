@@ -311,7 +311,7 @@ const PreviewManager: React.FC<PreviewManagerProps> = ({
   /**
    * Handle participant join/leave events
    */
-  
+
   // Context value
   const contextValue: PreviewManagerContextType = {
     createSession,
