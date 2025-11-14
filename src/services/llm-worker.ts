@@ -5,6 +5,7 @@ import { db } from '../config/database';
 import { eq, and, desc } from 'drizzle-orm';
 import {
   AnalysisJob,
+  analysisJobs,
   llmAnalyses,
   responses,
   questions,

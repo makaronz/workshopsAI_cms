@@ -1,0 +1,507 @@
+name: Testing Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run comprehensive tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  NODE_VERSION: '18'
+  POSTGRES_VERSION: '15'
+  PLAYWRIGHT_BROWSERS: 'chromium,firefox,webkit'
+
+jobs:
+  # Lint and Type Check
+  lint:
+    name: Lint and Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript type checking
+        run: npm run typecheck
+
+  # Unit Tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests with coverage
+        run: npm run test:unit -- --coverage --coverageReporters=text-lcov | coveralls
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: unit-tests
+
+  # Integration Tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:${{ env.POSTGRES_VERSION }}
+        env:
+          POSTGRES_PASSWORD: testpassword
+          POSTGRES_USER: testuser
+          POSTGRES_DB: workshopsai_cms_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Wait for database
+        run: |
+          timeout 60 bash -c 'until nc -z localhost 5432; do sleep 1; done'
+
+      - name: Run database migrations
+        run: npm run db:migrate
+        env:
+          DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/workshopsai_cms_test
+
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/workshopsai_cms_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret-for-testing
+
+  # E2E Tests
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start application
+        run: npm start &
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/workshopsai_cms_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret-for-testing
+
+      - name: Wait for application
+        run: timeout 60 bash -c 'until curl -f http://localhost:3000/health; do sleep 2; done'
+
+      - name: Run E2E tests
+        run: npx playwright test --project=${{ matrix.browser }}
+        env:
+          BASE_URL: http://localhost:3000
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: test-results/
+          retention-days: 7
+
+  # Accessibility Tests
+  accessibility-tests:
+    name: Accessibility Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start application
+        run: npm start &
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/workshopsai_cms_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret-for-testing
+
+      - name: Wait for application
+        run: timeout 60 bash -c 'until curl -f http://localhost:3000/health; do sleep 2; done'
+
+      - name: Run accessibility tests
+        run: npm run test:accessibility
+        env:
+          BASE_URL: http://localhost:3000
+
+      - name: Generate accessibility report
+        run: |
+          npx playwright merge-reports test-results/playwright
+          npx playwright show-report
+
+      - name: Upload accessibility report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: accessibility-report
+          path: test-results/
+          retention-days: 30
+
+  # Performance Tests
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install K6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start application
+        run: npm start &
+        env:
+          NODE_ENV: production
+          DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/workshopsai_cms_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret-for-testing
+
+      - name: Wait for application
+        run: timeout 60 bash -c 'until curl -f http://localhost:3000/health; do sleep 2; done'
+
+      - name: Run basic load test
+        run: npm run test:load
+        env:
+          BASE_URL: http://localhost:3000
+
+      - name: Run stress test
+        run: npm run test:stress
+        env:
+          BASE_URL: http://localhost:3000
+
+      - name: Upload performance reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: performance-reports
+          path: tests/load/reports/
+          retention-days: 30
+
+  # Security Tests
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security audit
+        run: npm audit --audit-level=high
+
+      - name: Run SAST scan
+        uses: github/super-linter@v4
+        env:
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_JAVASCRIPT_ES: true
+          VALIDATE_TYPESCRIPT_ES: true
+
+      - name: Install ZAP
+        run: |
+          wget -q https://github.com/zaproxy/zaproxy/releases/download/v2.14.0/ZAP_2.14.0_Linux.tar.gz
+          tar -xzf ZAP_2.14.0_Linux.tar.gz
+          chmod +x ZAP_2.14.0/zap.sh
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start application
+        run: npm start &
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/workshopsai_cms_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret-for-testing
+
+      - name: Wait for application
+        run: timeout 60 bash -c 'until curl -f http://localhost:3000/health; do sleep 2; done'
+
+      - name: Run OWASP ZAP security scan
+        run: |
+          ./ZAP_2.14.0/zap.sh -cmd -quickurl http://localhost:3000 -quickprogress -quickouthtml
+        env:
+          ZAP_API_KEY: ${{ secrets.ZAP_API_KEY }}
+
+      - name: Run Playwright security tests
+        run: npm run test:security
+        env:
+          BASE_URL: http://localhost:3000
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            test-results/
+            zap_report.html
+          retention-days: 30
+
+  # Load Tests with Multiple Browsers
+  cross-browser-tests:
+    name: Cross Browser Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [chromium, firefox]
+        device: ['Desktop Chrome', 'Desktop Firefox', 'iPhone 12', 'Pixel 5']
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start application
+        run: npm start &
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/workshopsai_cms_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret-for-testing
+
+      - name: Wait for application
+        run: timeout 60 bash -c 'until curl -f http://localhost:3000/health; do sleep 2; done'
+
+      - name: Run cross-browser tests
+        run: npx playwright test --project=${{ matrix.browser }} --grep="${{ matrix.device }}"
+        env:
+          BASE_URL: http://localhost:3000
+
+  # Visual Regression Tests
+  visual-regression-tests:
+    name: Visual Regression Tests
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start application
+        run: npm start &
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://testuser:testpassword@localhost:5432/workshopsai_cms_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret-for-testing
+
+      - name: Wait for application
+        run: timeout 60 bash -c 'until curl -f http://localhost:3000/health; do sleep 2; done'
+
+      - name: Run visual regression tests
+        run: npx playwright test --grep="visual"
+        env:
+          BASE_URL: http://localhost:3000
+
+      - name: Upload visual reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: visual-regression-reports
+          path: test-results/visual/
+          retention-days: 30
+
+  # Generate Test Reports
+  generate-reports:
+    name: Generate Test Reports
+    needs: [unit-tests, integration-tests, e2e-tests, accessibility-tests, security-tests]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Generate comprehensive test report
+        run: |
+          echo "# Test Pipeline Results" > test-report.md
+          echo "" >> test-report.md
+          echo "## Summary" >> test-report.md
+          echo "- Unit Tests: ${{ needs.unit-tests.result }}" >> test-report.md
+          echo "- Integration Tests: ${{ needs.integration-tests.result }}" >> test-report.md
+          echo "- E2E Tests: ${{ needs.e2e-tests.result }}" >> test-report.md
+          echo "- Accessibility Tests: ${{ needs.accessibility-tests.result }}" >> test-report.md
+          echo "- Security Tests: ${{ needs.security-tests.result }}" >> test-report.md
+          echo "" >> test-report.md
+          echo "## Coverage" >> test-report.md
+          echo "See codecov reports for detailed coverage information." >> test-report.md
+          echo "" >> test-report.md
+          echo "## Performance Metrics" >> test-report.md
+          echo "Load test results available in performance reports." >> test-report.md
+
+      - name: Upload final report
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-pipeline-report
+          path: test-report.md
+          retention-days: 90
+
+  # Notify on Slack (if configured)
+  notify:
+    name: Notify Results
+    needs: [generate-reports]
+    runs-on: ubuntu-latest
+    if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    steps:
+      - name: Notify Slack on Success
+        if: needs.generate-reports.result == 'success'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          channel: '#ci-cd'
+          text: '✅ Testing pipeline completed successfully!'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on Failure
+        if: needs.generate-reports.result == 'failure'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#ci-cd'
+          text: '❌ Testing pipeline failed! Please check the logs.'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

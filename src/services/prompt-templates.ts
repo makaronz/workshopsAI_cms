@@ -22,6 +22,8 @@ export interface PromptTemplate {
     input: any;
     output: any;
   }>;
+  culturalBiasMitigation?: boolean;
+  multilingualSupport?: string[];
 }
 
 export interface PromptVariables {
@@ -102,16 +104,32 @@ Odpowiedz TYLKO w formacie JSON:
     version: '1.0',
     description: 'Analyze sentiment and emotional tone of responses',
     category: 'analysis',
-    template: `Jesteś ekspertem od analizy sentymentu w tekstach socjologicznych.
+    culturalBiasMitigation: true,
+    multilingualSupport: ['pl', 'en'],
+    template: `Jesteś ekspertem od analizy sentymentu w tekstach socjologicznych z uwzględnieniem kontekstu kulturowego.
 
 # ZADANIE
-Analizuj emocjonalny ton i sentyment odpowiedzi na kwestionariusz.
+Analizuj emocjonalny ton i sentyment odpowiedzi na kwestionariusz: {{questionText}}
+
+# KONTEKST
+Liczba odpowiedzi: {{responseCount}}
+Język: {{language}}
+Kontekst kulturowy: {{culturalContext}}
 
 # INSTRUKCJE
-1. Oceń ogólny sentyment (-1 do +1)
+1. Oceń ogólny sentyment (-1 do +1) z uwzględnieniem specyfiki kulturowej
 2. Zidentyfikuj główne emocje (radość, nadzieja, obawa, złość, etc.)
-3. Znajdź kontrastujące opinie
-4. Podaj wskazówki dla moderatora
+3. Znajdź kontrastujące opinie i ich kontekst
+4. Podaj wskazówki dla moderatora uwzględniające kontekst kulturowy
+5. Uwzględnij normy kulturowe w wyrażaniu emocji
+
+{{#if enableCulturalBias}}
+## WSKAZÓWKI KULTUROWE
+- W języku polskim emocje mogą być wyrażane bardziej powściągliwie
+- Negatywne opinie mogą być formułowane bardziej pośrednio
+- Nie interpretuj braku entuzjazmu jako braku zaangażowania
+- Uwzględnij kontekst historyczny i społeczny
+{{/if}}
 
 # ODPOWIEDZI
 {{responses}}
@@ -124,15 +142,42 @@ Analizuj emocjonalny ton i sentyment odpowiedzi na kwestionariusz.
     "neutral": 0.3,
     "negative": 0.3
   },
-  "dominantEmotions": ["nadzieja", "obawa"],
-  "contrastingViews": ["pozytywna opinia", "negatywna opinia"],
-  "moderatorNotes": ["wskazówka 1", "wskazówka 2"]
+  "dominantEmotions": [
+    {
+      "emotion": "nadzieja",
+      "intensity": 0.7,
+      "frequency": 12,
+      "examples": ["przykład 1", "przykład 2"]
+    }
+  ],
+  "contrastingViews": [
+    {
+      "positive": ["pozytywna opinia 1", "pozytywna opinia 2"],
+      "negative": ["negatywna opinia 1", "negatywna opinia 2"],
+      "neutral": ["neutralna opinia 1", "neutralna opinia 2"]
+    }
+  ],
+  "culturalContextNotes": [
+    "Notatka dotycząca kontekstu kulturowego",
+    "Obserwacje specyficzne dla kultury"
+  ],
+  "moderatorNotes": [
+    "wskazówka 1",
+    "wskazówka 2"
+  ],
+  "sentimentByTheme": [
+    {
+      "theme": "temat 1",
+      "sentiment": 0.5,
+      "confidence": 0.8
+    }
+  ]
 }`,
-    requiredVars: ['responses'],
-    optionalVars: [],
+    requiredVars: ['responses', 'questionText', 'responseCount', 'language', 'culturalContext'],
+    optionalVars: ['enableCulturalBias'],
     constraints: {
       temperature: 0.2,
-      maxTokens: 800,
+      maxTokens: 1200,
     },
   },
 ];
@@ -602,6 +647,34 @@ export class PromptTemplateService {
   }
 
   /**
+   * Build sentiment analysis prompt
+   */
+  buildSentimentAnalysisPrompt(responses: any[], options: any = {}): string {
+    const template = this.getTemplate('sentiment-analysis-v1');
+    if (!template) {
+      throw new Error('Sentiment analysis template not found');
+    }
+
+    const variables: PromptVariables = {
+      responses: JSON.stringify(responses),
+      questionText: options.questionText || 'Pytanie',
+      responseCount: responses.length,
+      language: options.language || 'pl',
+      culturalContext: options.culturalContext || 'europejska',
+      enableCulturalBias: options.enableCulturalBias || false,
+    };
+
+    let prompt = this.processTemplate(template.template, variables);
+
+    // Add cultural bias mitigation if enabled
+    if (options.enableCulturalBias) {
+      prompt = this.addCulturalBiasInstructions(prompt, options.culturalContext, options.language);
+    }
+
+    return prompt;
+  }
+
+  /**
    * Build recommendations prompt
    */
   buildRecommendationsPrompt(responses: any[], options: any = {}): string {
@@ -624,6 +697,42 @@ export class PromptTemplateService {
     };
 
     return this.processTemplate(template.template, variables);
+  }
+
+  /**
+   * Add cultural bias instructions to prompt
+   */
+  private addCulturalBiasInstructions(
+    prompt: string,
+    culturalContext: string = 'europejska',
+    language: string = 'pl',
+  ): string {
+    const culturalInstructions = `
+# INSTRUKCJE DOTYCZĄCE WSPÓŁCZESNOŚCI KULTUROWEJ
+
+## KONTEKST KULTUROWY
+Analiza jest prowadzona w kontekście kulturowym: ${culturalContext}
+Język odpowiedzi: ${language}
+
+## WSKAZÓWKI ANTYBIASOWE
+1. Unikaj zakładania, że normy kulturowe zachodnie są uniwersalne
+2. Bądź świadomy/a różnic kulturowych w wyrażaniu emocji i opinii
+3. Nie interpretuj ciszy lub ograniczonych odpowiedzi jako braku zaangażowania
+4. Uwzględnij kontekst historyczny i społeczny respondentów
+5. Rozróżniaj między brakiem zgody a brakiem wiedzy
+6. Uważaj na stereotypy kulturowe w interpretacji odpowiedzi
+
+## JĘZYK I WYRAŻANIE
+- W języku polskim emocje mogą być wyrażane bardziej powściągliwie
+- Negatywne opinie mogą być formułowane bardziej pośrednio
+- Entuzjazm może być manifestowany przez szczegółowe odpowiedzi zamiast wykrzykników
+- Krytyka może być poprzedzona pozytywnymi uwagami
+
+## ANALIZA
+Biorąc pod uwagę powyższe wskazówki, przeprowadź analizę sentymentu z uwzględnieniem specyfiki kulturowej.
+`;
+
+    return `${prompt}\n\n${culturalInstructions}`;
   }
 
   /**

@@ -550,6 +550,346 @@ export class AnonymizationService {
       recommendations,
     };
   }
+
+  /**
+   * Advanced k-anonymity with semantic analysis
+   */
+  public advancedKAnonymity(
+    responses: string[],
+    k: number = 5,
+    semanticThreshold: number = 0.8,
+  ): {
+    compliant: boolean;
+    anonymizedResponses: string[];
+    groups: Array<{ responses: string[]; count: number; semanticSimilarity: number }>;
+    issues: string[];
+  } {
+    // First apply standard anonymization
+    let anonymizedResponses = responses.map(r => this.anonymizeText(r));
+
+    // Group responses by exact match
+    const exactGroups = new Map<string, string[]>();
+    for (const response of anonymizedResponses) {
+      if (!exactGroups.has(response)) {
+        exactGroups.set(response, []);
+      }
+      exactGroups.get(response)!.push(response);
+    }
+
+    const groups: Array<{ responses: string[]; count: number; semanticSimilarity: number }> = [];
+    const issues: string[] = [];
+
+    // Process exact groups
+    for (const [response, group] of exactGroups) {
+      if (group.length >= k) {
+        groups.push({
+          responses: group,
+          count: group.length,
+          semanticSimilarity: 1.0,
+        });
+      } else {
+        // Try to merge with similar groups
+        const merged = this.mergeWithSimilarGroups(group, Array.from(exactGroups.keys()), k, semanticThreshold);
+        if (merged) {
+          groups.push({
+            responses: merged.responses,
+            count: merged.count,
+            semanticSimilarity: merged.semanticSimilarity,
+          });
+        } else {
+          issues.push(`Group with ${group.length} responses cannot reach k=${k} anonymity`);
+        }
+      }
+    }
+
+    // Apply additional generalization if needed
+    if (issues.length > 0) {
+      anonymizedResponses = this.applyAdditionalGeneralization(anonymizedResponses, k);
+    }
+
+    // Recalculate groups after additional generalization
+    const finalGroups = this.recalculateGroups(anonymizedResponses);
+
+    return {
+      compliant: issues.length === 0,
+      anonymizedResponses,
+      groups: finalGroups,
+      issues,
+    };
+  }
+
+  /**
+   * Merge small groups with semantically similar groups
+   */
+  private mergeWithSimilarGroups(
+    smallGroup: string[],
+    allGroups: string[],
+    k: number,
+    threshold: number,
+  ): { responses: string[]; count: number; semanticSimilarity: number } | null {
+    // Find the most similar group that would create a merged group of size >= k
+    let bestMatch: { responses: string[]; count: number; semanticSimilarity: number } | null = null;
+
+    for (const groupResponse of allGroups) {
+      if (groupResponse === smallGroup[0]) continue; // Skip self
+
+      const similarity = this.calculateSemanticSimilarity(smallGroup[0], groupResponse);
+      if (similarity >= threshold) {
+        // Calculate combined group size
+        const groupSize = allGroups.filter(r => r === groupResponse).length + smallGroup.length;
+        if (groupSize >= k && similarity > (bestMatch?.semanticSimilarity || 0)) {
+          bestMatch = {
+            responses: [...smallGroup, ...Array(allGroups.filter(r => r === groupResponse).length).fill(groupResponse)],
+            count: groupSize,
+            semanticSimilarity: similarity,
+          };
+        }
+      }
+    }
+
+    return bestMatch;
+  }
+
+  /**
+   * Calculate semantic similarity between two texts
+   */
+  private calculateSemanticSimilarity(text1: string, text2: string): number {
+    // Simple similarity based on word overlap
+    const words1 = new Set(text1.toLowerCase().split(/\s+/).filter(w => w.length > 2));
+    const words2 = new Set(text2.toLowerCase().split(/\s+/).filter(w => w.length > 2));
+
+    const intersection = new Set([...words1].filter(w => words2.has(w)));
+    const union = new Set([...words1, ...words2]);
+
+    if (union.size === 0) return 0;
+    return intersection.size / union.size;
+  }
+
+  /**
+   * Apply additional generalization techniques
+   */
+  private applyAdditionalGeneralization(responses: string[], k: number): string[] {
+    return responses.map(response => {
+      let generalized = response;
+
+      // Generalize specific adjectives
+      generalized = generalized.replace(/\b(bardzo|szczególnie|naprawdę|całkiem)\b/gi, '[STOPŃ]');
+      generalized = generalized.replace(/\b(mał|trochę|nieco)\b/gi, '[STOPŃ_NIEDUŻY]');
+
+      // Generalize numbers to ranges
+      generalized = generalized.replace(/\b\d{1,2}\b/g, (match) => {
+        const num = parseInt(match);
+        if (num < 5) return '[KILKA]';
+        if (num < 10) return '[KILKA-KIENAŚCIE]';
+        if (num < 20) return '[KIENAŚCIE]';
+        return '[WIELE]';
+      });
+
+      // Generalize time references
+      generalized = generalized.replace(/\b(dziś|jutro|wczoraj)\b/gi, '[CZAS_OSTATNI]');
+      generalized = generalized.replace(/\b(tydzień|miesiąc|rok)\b/gi, '[OKRES]');
+
+      // Remove distinctive phrases
+      generalized = generalized.replace(/\b(zdecydowanie|niewątpliwie|koniecznie)\b/gi, '[ZAPEWNIENIE]');
+      generalized = generalized.replace(/\b(może|prawdopodobnie|pewnie)\b/gi, '[NIEPEWNOŚĆ]');
+
+      return generalized;
+    });
+  }
+
+  /**
+   * Recalculate groups after generalization
+   */
+  private recalculateGroups(responses: string[]): Array<{ responses: string[]; count: number; semanticSimilarity: number }> {
+    const groups = new Map<string, string[]>();
+
+    for (const response of responses) {
+      if (!groups.has(response)) {
+        groups.set(response, []);
+      }
+      groups.get(response)!.push(response);
+    }
+
+    return Array.from(groups.entries()).map(([response, group]) => ({
+      responses: group,
+      count: group.length,
+      semanticSimilarity: 1.0,
+    }));
+  }
+
+  /**
+   * Check GDPR compliance for specific dataset
+   */
+  public checkGDPRCompliance(
+    responses: any[],
+    userIds: string[],
+    consentType: string = 'research_analysis',
+  ): {
+    compliant: boolean;
+    issues: string[];
+    recommendations: string[];
+    riskLevel: 'low' | 'medium' | 'high';
+  } {
+    const issues: string[] = [];
+    const recommendations: string[] = [];
+    let riskLevel: 'low' | 'medium' | 'high' = 'low';
+
+    // Check for direct identifiers
+    const hasDirectIdentifiers = responses.some(r =>
+      this.hasDirectIdentifiers(typeof r.answer === 'string' ? r.answer : JSON.stringify(r.answer))
+    );
+
+    if (hasDirectIdentifiers) {
+      issues.push('Direct identifiers found in responses');
+      recommendations.push('Apply stronger anonymization');
+      riskLevel = 'high';
+    }
+
+    // Check for quasi-identifiers
+    const hasQuasiIdentifiers = responses.some(r =>
+      this.hasQuasiIdentifiers(typeof r.answer === 'string' ? r.answer : JSON.stringify(r.answer))
+    );
+
+    if (hasQuasiIdentifiers) {
+      issues.push('Quasi-identifiers detected that could enable re-identification');
+      recommendations.push('Apply k-anonymity with k≥5');
+      if (riskLevel === 'low') riskLevel = 'medium';
+    }
+
+    // Check user consent
+    if (userIds.length > 0) {
+      issues.push('User IDs associated with responses - ensure proper consent');
+      recommendations.push('Verify consent for: ' + consentType);
+    }
+
+    // Check data minimization
+    const avgResponseLength = responses.reduce((sum, r) => {
+      const text = typeof r.answer === 'string' ? r.answer : JSON.stringify(r.answer);
+      return sum + text.length;
+    }, 0) / responses.length;
+
+    if (avgResponseLength > 1000) {
+      issues.push('Responses may contain excessive personal information');
+      recommendations.push('Consider data minimization principles');
+      if (riskLevel === 'low') riskLevel = 'medium';
+    }
+
+    return {
+      compliant: issues.length === 0,
+      issues,
+      recommendations,
+      riskLevel,
+    };
+  }
+
+  /**
+   * Check for direct identifiers in text
+   */
+  private hasDirectIdentifiers(text: string): boolean {
+    const directIdentifierPatterns = [
+      /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, // Email
+      /\b(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})\b/g, // Phone
+      /\b\d{11}\b/g, // PESEL
+      /\b\d{10}-\d{3}\b|\b\d{13}\b/g, // NIP
+    ];
+
+    return directIdentifierPatterns.some(pattern => pattern.test(text));
+  }
+
+  /**
+   * Check for quasi-identifiers in text
+   */
+  private hasQuasiIdentifiers(text: string): boolean {
+    const quasiIdentifierPatterns = [
+      /\bmieszkam w\b.+\b[Pp]olska\b/gi, // Location + Poland
+      /\bpracuję w\b.+\b[Pp]olska\b/gi, // Work location
+      /\b studiuję\b.+\bna\b.+\b[Pp]olska\b/gi, // University in Poland
+      /\burodzony\b.+\b\d{4}\b/gi, // Job + year
+      /\bmam\b.+\blat\b/gi, // Age
+      /\b[pP]h\.? ?[Dd]\b/gi, // PhD
+    ];
+
+    return quasiIdentifierPatterns.some(pattern => pattern.test(text));
+  }
+
+  /**
+   * Generate anonymization report
+   */
+  public generateAnonymizationReport(
+    originalResponses: any[],
+    anonymizedResponses: any[],
+  ): {
+    summary: {
+      totalResponses: number;
+      piiDetections: number;
+      anonymizationLevel: string;
+      kAnonymityCompliant: boolean;
+      gdprCompliant: boolean;
+    };
+    details: {
+      piiTypes: Array<{ type: string; count: number; examples: string[] }>;
+      riskAssessment: string;
+      recommendations: string[];
+    };
+  } {
+    let totalPiiDetections = 0;
+    const piiTypes: Array<{ type: string; count: number; examples: string[] }> = [];
+
+    // Analyze PII patterns
+    const piiPatterns = [
+      { name: 'Email', pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g },
+      { name: 'Phone', pattern: /(?:\+?(\d{1,3}))?[-. (]*(\d{3})[-. )]*(\d{3})[-. ]*(\d{4})/g },
+      { name: 'PESEL', pattern: /\b\d{11}\b/g },
+      { name: 'NIP', pattern: /\b\d{10}-\d{3}\b|\b\d{13}\b/g },
+    ];
+
+    for (const { name, pattern } of piiPatterns) {
+      let count = 0;
+      const examples: string[] = [];
+
+      originalResponses.forEach(r => {
+        const text = typeof r.answer === 'string' ? r.answer : JSON.stringify(r.answer);
+        const matches = text.match(pattern);
+        if (matches) {
+          count += matches.length;
+          if (examples.length < 3) {
+            examples.push(...matches.slice(0, 3 - examples.length));
+          }
+        }
+      });
+
+      if (count > 0) {
+        piiTypes.push({ type: name, count, examples });
+        totalPiiDetections += count;
+      }
+    }
+
+    const kAnonymityCompliant = this.verifyKAnonymity(
+      anonymizedResponses.map(r => JSON.stringify(r.answer)),
+      5,
+    );
+
+    const gdprCheck = this.checkGDPRCompliance(anonymizedResponses, []);
+
+    let riskAssessment = 'Low risk';
+    if (totalPiiDetections > 10) riskAssessment = 'High risk';
+    else if (totalPiiDetections > 0) riskAssessment = 'Medium risk';
+
+    return {
+      summary: {
+        totalResponses: originalResponses.length,
+        piiDetections: totalPiiDetections,
+        anonymizationLevel: 'full',
+        kAnonymityCompliant,
+        gdprCompliant: gdprCheck.compliant,
+      },
+      details: {
+        piiTypes,
+        riskAssessment,
+        recommendations: gdprCheck.recommendations,
+      },
+    };
+  }
 }
 
 // Export singleton instance

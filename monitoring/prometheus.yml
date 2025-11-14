@@ -1,156 +1,35 @@
-# Prometheus configuration for workshopsAI CMS monitoring
-
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
-  external_labels:
-    cluster: 'workshopsai-cms'
-    replica: 'prometheus-1'
 
-# Alertmanager configuration
+rule_files:
+  - "alert_rules.yml"
+
+scrape_configs:
+  - job_name: 'workshopsai-cms'
+    static_configs:
+      - targets: ['localhost:3001']
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+    scrape_timeout: 5s
+
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres:5432']
+    scrape_interval: 10s
+
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis:6379']
+    scrape_interval: 10s
+
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['localhost:9100']
+    scrape_interval: 10s
+
 alerting:
   alertmanagers:
     - static_configs:
         - targets:
           - alertmanager:9093
-
-# Rule files for alerting
-rule_files:
-  - "alert_rules.yml"
-  - "recording_rules.yml"
-
-# Scrape configurations
-scrape_configs:
-  # Prometheus self-monitoring
-  - job_name: 'prometheus'
-    static_configs:
-      - targets: ['localhost:9090']
-    scrape_interval: 30s
-    metrics_path: /metrics
-
-  # Application metrics
-  - job_name: 'workshopsai-cms-app'
-    static_configs:
-      - targets: ['app:3001']
-    scrape_interval: 15s
-    metrics_path: /metrics
-    basic_auth:
-      username: ${PROMETHEUS_USERNAME}
-      password: ${PROMETHEUS_PASSWORD}
-
-  # Node Exporter for system metrics
-  - job_name: 'node-exporter'
-    static_configs:
-      - targets: ['node-exporter:9100']
-    scrape_interval: 30s
-
-  # cAdvisor for container metrics
-  - job_name: 'cadvisor'
-    static_configs:
-      - targets: ['cadvisor:8080']
-    scrape_interval: 30s
-    metrics_path: /metrics
-
-  # PostgreSQL Exporter
-  - job_name: 'postgres-exporter'
-    static_configs:
-      - targets: ['postgres-exporter:9187']
-    scrape_interval: 30s
-    basic_auth:
-      username: ${POSTGRES_EXPORTER_USERNAME}
-      password: ${POSTGRES_EXPORTER_PASSWORD}
-
-  # Redis Exporter
-  - job_name: 'redis-exporter'
-    static_configs:
-      - targets: ['redis-exporter:9121']
-    scrape_interval: 30s
-    basic_auth:
-      username: ${REDIS_EXPORTER_USERNAME}
-      password: ${REDIS_EXPORTER_PASSWORD}
-
-  # Nginx Exporter
-  - job_name: 'nginx-exporter'
-    static_configs:
-      - targets: ['nginx-exporter:9113']
-    scrape_interval: 30s
-
-  # Docker stats
-  - job_name: 'docker-exporter'
-    static_configs:
-      - targets: ['docker-exporter:9323']
-    scrape_interval: 30s
-
-  # Blackbox monitoring for endpoints
-  - job_name: 'blackbox'
-    metrics_path: /probe
-    params:
-      module: [http_2xx]
-    static_configs:
-      - targets:
-        - http://app:3001/health
-        - http://app:3001/api/health
-        - http://nginx/health
-    relabel_configs:
-      - source_labels: [__address__]
-        target_label: __param_target
-      - source_labels: [__param_target]
-        target_label: instance
-      - target_label: __address__
-        replacement: blackbox-exporter:9115
-
-  # ECS metrics (CloudWatch Exporter)
-  - job_name: 'cloudwatch-exporter'
-    static_configs:
-      - targets: ['cloudwatch-exporter:9106']
-    scrape_interval: 60s
-    scrape_timeout: 55s
-
-  # AWS RDS metrics (CloudWatch Exporter)
-  - job_name: 'rds-cloudwatch'
-    static_configs:
-      - targets: ['cloudwatch-exporter:9106']
-    scrape_interval: 60s
-    metrics_path: /rds
-
-  # AWS ElastiCache metrics (CloudWatch Exporter)
-  - job_name: 'elasticache-cloudwatch'
-    static_configs:
-      - targets: ['cloudwatch-exporter:9106']
-    scrape_interval: 60s
-    metrics_path: /elasticache
-
-  # AWS ELB metrics (CloudWatch Exporter)
-  - job_name: 'elb-cloudwatch'
-    static_configs:
-      - targets: ['cloudwatch-exporter:9106']
-    scrape_interval: 60s
-    metrics_path: /elb
-
-# Remote write configuration (for long-term storage)
-remote_write:
-  - url: "https://prometheus-remote-workshopscms.example.com/api/v1/write"
-    basic_auth:
-      username: ${REMOTE_WRITE_USERNAME}
-      password: ${REMOTE_WRITE_PASSWORD}
-    queue_config:
-      max_samples_per_send: 1000
-      max_shards: 200
-      capacity: 2500
-
-# Storage configuration
-storage:
-  tsdb:
-    retention.time: 15d
-    retention.size: 50GB
-
-# Web configuration
-web:
-  enable_admin_api: true
-  page_title: "workshopsAI CMS Prometheus"
-  external_url: "https://prometheus.workshopsai.com"
-
-# Feature flags
-feature:
-  enable: true
-  remote_write_receiver: true
