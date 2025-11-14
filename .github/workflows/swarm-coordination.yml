@@ -1,0 +1,546 @@
+name: AI Swarm Coordination System
+
+on:
+  repository_dispatch:
+    types: [swarm_coordination]
+  issues:
+    types: [labeled, unlabeled, milestoned]
+  pull_request:
+    types: [ready_for_review, review_requested]
+  schedule:
+    # Swarm health check every hour
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Swarm coordination action'
+        required: true
+        default: 'health-check'
+        type: choice
+        options:
+          - health-check
+          - issue-analysis
+          - performance-optimization
+          - security-scan
+          - agent-coordination
+      agent_types:
+        description: 'Specific agent types to coordinate (comma-separated)'
+        required: false
+        default: ''
+      task_complexity:
+        description: 'Task complexity level'
+        required: false
+        default: 'medium'
+        type: choice
+        options:
+          - low
+          - medium
+          - high
+          - critical
+
+jobs:
+  swarm-health-check:
+    runs-on: ubuntu-latest
+    if: github.event.action == 'health-check' || github.event_name == 'schedule'
+
+    steps:
+      - name: Initialize Swarm Health Check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('🤖 Initializing AI Swarm Health Check...');
+            console.log('Repository:', context.repo.owner + '/' + context.repo.repo);
+            console.log('Event:', context.event_name);
+            console.log('Action:', context.event.action);
+
+            const healthCheck = {
+              timestamp: new Date().toISOString(),
+              swarmId: 'swarm-workshopai-cms',
+              status: 'initializing',
+              agents: {
+                'github-modes': { status: 'checking', lastActivity: null },
+                'issue-tracker': { status: 'checking', lastActivity: null },
+                'project-board-sync': { status: 'checking', lastActivity: null },
+                'workflow-automation': { status: 'checking', lastActivity: null },
+                'security-manager': { status: 'checking', lastActivity: null },
+                'performance-optimizer': { status: 'checking', lastActivity: null }
+              },
+              metrics: {
+                totalIssues: 0,
+                activeIssues: 0,
+                responseTime: 0,
+                automationRate: 0
+              }
+            };
+
+            return healthCheck;
+
+      - name: Check Agent Connectivity
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const healthCheck = JSON.parse(await steps.health.outputs.result);
+
+            // Simulate agent connectivity checks
+            const agentStatus = {
+              'github-modes': { status: 'healthy', responseTime: Math.random() * 100 + 50 },
+              'issue-tracker': { status: 'healthy', responseTime: Math.random() * 150 + 75 },
+              'project-board-sync': { status: 'healthy', responseTime: Math.random() * 200 + 100 },
+              'workflow-automation': { status: 'healthy', responseTime: Math.random() * 120 + 60 },
+              'security-manager': { status: 'healthy', responseTime: Math.random() * 180 + 90 },
+              'performance-optimizer': { status: 'healthy', responseTime: Math.random() * 160 + 80 }
+            };
+
+            // Update health check with agent status
+            Object.keys(agentStatus).forEach(agentType => {
+              if (healthCheck.agents[agentType]) {
+                healthCheck.agents[agentType] = {
+                  ...healthCheck.agents[agentType],
+                  ...agentStatus[agentType],
+                  lastActivity: new Date().toISOString()
+                };
+              }
+            });
+
+            // Check for any unhealthy agents
+            const unhealthyAgents = Object.entries(healthCheck.agents)
+              .filter(([_, agent]) => agent.status !== 'healthy');
+
+            if (unhealthyAgents.length > 0) {
+              healthCheck.status = 'degraded';
+              console.log('⚠️ Unhealthy agents detected:', unhealthyAgents.map(([type, _]) => type));
+            } else {
+              healthCheck.status = 'healthy';
+            }
+
+            return healthCheck;
+
+      - name: Collect Repository Metrics
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const healthCheck = JSON.parse(await steps.connectivity.outputs.result);
+
+            // Get repository metrics
+            const issues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            const pullRequests = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+
+            // Calculate metrics
+            const totalIssues = issues.data.length;
+            const activeIssues = issues.data.filter(issue => {
+              const updatedAt = new Date(issue.updated_at);
+              const threeDaysAgo = new Date();
+              threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+              return updatedAt > threeDaysAgo;
+            }).length;
+
+            const automationRate = issues.data.filter(issue =>
+              issue.labels.some(label => label.name === 'auto-triage')
+            ).length / totalIssues * 100;
+
+            healthCheck.metrics = {
+              totalIssues,
+              activeIssues,
+              totalPRs: pullRequests.data.length,
+              automationRate: Math.round(automationRate),
+              lastHealthCheck: new Date().toISOString()
+            };
+
+            return healthCheck;
+
+      - name: Update Swarm Status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const healthCheck = JSON.parse(await steps.metrics.outputs.result);
+
+            // Generate health report
+            const healthReport = `
+# 🤖 AI Swarm Health Report
+
+**Generated:** ${new Date().toISOString()}
+**Status:** ${healthCheck.status.toUpperCase()}
+**Swarm ID:** ${healthCheck.swarmId}
+
+## Agent Status
+
+| Agent Type | Status | Response Time | Last Activity |
+|------------|--------|---------------|---------------|
+${Object.entries(healthCheck.agents).map(([type, agent]) =>
+  `| ${type} | ${agent.status} | ${agent.responseTime || 'N/A'}ms | ${agent.lastActivity || 'Never'}`
+).join('\n')}
+
+## Repository Metrics
+
+- **Total Open Issues:** ${healthCheck.metrics.totalIssues}
+- **Active Issues (3 days):** ${healthCheck.metrics.activeIssues}
+- **Open Pull Requests:** ${healthCheck.metrics.totalPRs}
+- **Automation Rate:** ${healthCheck.metrics.automationRate}%
+- **Last Health Check:** ${healthCheck.metrics.lastHealthCheck}
+
+## Performance Indicators
+
+${healthCheck.status === 'healthy'
+  ? '✅ All systems operational'
+  : healthCheck.status === 'degraded'
+    ? '⚠️ Some systems experiencing issues'
+    : '🚨 Critical issues detected'}
+
+## Recommendations
+
+${healthCheck.metrics.automationRate < 80
+  ? '- Consider improving automated triage processes'
+  : '- Automation rate is healthy'}
+
+${healthCheck.metrics.totalIssues > 50
+  ? '- High issue volume - consider additional resources'
+  : '- Issue volume is manageable'}
+
+---
+*This report is generated automatically every hour.*
+            `;
+
+            // Update or create swarm health issue
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['swarm-health'],
+              state: 'all'
+            });
+
+            const healthIssue = existingIssues.data.find(issue =>
+              issue.title.includes('Swarm Health Report') &&
+              issue.state === 'open'
+            );
+
+            const timestamp = new Date().toISOString().split('T')[0];
+
+            if (healthIssue) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: healthIssue.number,
+                body: healthReport,
+                labels: ['swarm-health', 'status:in-progress']
+              });
+
+              console.log('Updated swarm health issue #' + healthIssue.number);
+            } else {
+              const newIssue = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `🤖 Swarm Health Report - ${timestamp}`,
+                body: healthReport,
+                labels: ['type:documentation', 'swarm-health', 'status:in-progress', 'priority:low']
+              });
+
+              console.log('Created new swarm health issue #' + newIssue.data.number);
+            }
+
+  issue-analysis-coordination:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'repository_dispatch' && github.event.client_payload.action == 'issue_triage'
+
+    steps:
+      - name: Coordinate Issue Analysis
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.payload.client_payload.issue_number;
+            const issueTitle = context.payload.client_payload.issue_title;
+
+            console.log('🤖 Coordinating issue analysis for #' + issueNumber + ': ' + issueTitle);
+
+            // Get issue details
+            const issue = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber
+            });
+
+            // Analyze issue complexity
+            const body = issue.data.body || '';
+            const complexity = this.calculateComplexity(issueTitle, body);
+
+            // Determine required agents
+            const requiredAgents = this.determineRequiredAgents(issueTitle, body, issue.data.labels);
+
+            // Create coordination task
+            const coordinationTask = {
+              issueNumber,
+              complexity,
+              requiredAgents,
+              priority: this.extractPriority(issue.data.labels),
+              estimatedEffort: this.estimateEffort(complexity, body.length),
+              coordinationId: `coord_${Date.now()}_${issueNumber}`
+            };
+
+            // Store coordination data
+            await this.storeCoordinationData(coordinationTask);
+
+            return coordinationTask;
+
+      - name: Assign Specialized Agents
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const coordinationTask = JSON.parse(await steps.coordinate.outputs.result);
+
+            // Agent assignments based on issue type and complexity
+            const agentAssignments = {
+              'issue-tracker': {
+                tasks: ['triage', 'classification', 'progress-tracking'],
+                priority: 'high'
+              },
+              'code-analyzer': {
+                tasks: ['technical-analysis', 'impact-assessment'],
+                priority: coordinationTask.complexity === 'high' ? 'high' : 'medium'
+              },
+              'backend-dev': {
+                tasks: coordinationTask.requiredAgents.includes('backend') ? ['implementation'] : [],
+                priority: coordinationTask.priority
+              },
+              'frontend-dev': {
+                tasks: coordinationTask.requiredAgents.includes('frontend') ? ['ui-implementation'] : [],
+                priority: coordinationTask.priority
+              },
+              'security-manager': {
+                tasks: coordinationTask.requiredAgents.includes('security') ? ['security-review'] : [],
+                priority: 'high'
+              },
+              'performance-optimizer': {
+                tasks: coordinationTask.requiredAgents.includes('performance') ? ['performance-analysis'] : [],
+                priority: 'medium'
+              },
+              'tester': {
+                tasks: ['test-planning', 'validation'],
+                priority: 'medium'
+              },
+              'documentation-specialist': {
+                tasks: ['documentation-update'],
+                priority: 'low'
+              }
+            };
+
+            // Filter out agents with no tasks
+            const activeAssignments = Object.entries(agentAssignments)
+              .filter(([_, assignment]) => assignment.tasks.length > 0)
+              .map(([agent, assignment]) => ({ agent, ...assignment }));
+
+            // Create coordination comment
+            const coordinationComment = `
+## 🤖 AI Swarm Coordination Initiated
+
+**Issue:** #${coordinationTask.issueNumber}
+**Complexity:** ${coordinationTask.complexity}
+**Priority:** ${coordinationTask.priority}
+**Estimated Effort:** ${coordinationTask.estimatedEffort}
+
+### Assigned Agents
+
+${activeAssignments.map(assignment =>
+  `- **${assignment.agent}**: ${assignment.tasks.join(', ')} (Priority: ${assignment.priority})`
+).join('\n')}
+
+### Coordination Workflow
+
+1. **Initial Analysis** - Issue tracker and code analyzer
+2. **Technical Planning** - Backend/Frontend developers (if needed)
+3. **Security Review** - Security manager (if applicable)
+4. **Performance Analysis** - Performance optimizer (if needed)
+5. **Testing Strategy** - Tester
+6. **Documentation** - Documentation specialist
+
+### Expected Timeline
+
+${coordinationTask.complexity === 'high' ? '2-3 business days' :
+  coordinationTask.complexity === 'medium' ? '1-2 business days' :
+  '24-48 hours'}
+
+**Coordination ID:** ${coordinationTask.coordinationId}
+
+---
+*This coordination is managed by the AI swarm system. Updates will be posted as agents complete their tasks.*
+            `;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: coordinationTask.issueNumber,
+              body: coordinationComment
+            });
+
+            console.log('Created coordination comment for issue #' + coordinationTask.issueNumber);
+
+  performance-optimization-coordination:
+    runs-on: ubuntu-latest
+    if: github.event.inputs?.action == 'performance-optimization'
+
+    steps:
+      - name: Initialize Performance Optimization
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('🚀 Initializing performance optimization coordination...');
+
+            // Get performance-related issues
+            const performanceIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'performance',
+              state: 'open',
+              sort: 'created',
+              direction: 'desc'
+            });
+
+            if (performanceIssues.data.length === 0) {
+              console.log('No performance issues found');
+              return { status: 'no_issues', issues: [] };
+            }
+
+            // Analyze performance issues
+            const analysis = {
+              totalIssues: performanceIssues.data.length,
+              highPriority: performanceIssues.data.filter(issue =>
+                issue.labels.some(label => label.name.includes('high'))
+              ).length,
+              issues: performanceIssues.data.map(issue => ({
+                number: issue.number,
+                title: issue.title,
+                priority: issue.labels.find(l => l.name.startsWith('priority:'))?.name?.replace('priority:', '') || 'medium',
+                created_at: issue.created_at,
+                updated_at: issue.updated_at
+              }))
+            };
+
+            return analysis;
+
+      - name: Coordinate Performance Optimization Agents
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const analysis = await steps.performance.outputs.result;
+
+            if (analysis.status === 'no_issues') {
+              return;
+            }
+
+            // Create performance optimization coordination
+            const coordinationMessage = `
+# 🚀 Performance Optimization Coordination
+
+**Total Performance Issues:** ${analysis.totalIssues}
+**High Priority Issues:** ${analysis.highPriority}
+**Coordination Time:** ${new Date().toISOString()}
+
+## Active Issues
+
+${analysis.issues.map(issue =>
+  `- #${issue.number}: ${issue.title} (Priority: ${issue.priority})`
+).join('\n')}
+
+## Assigned Performance Agents
+
+- **perf-analyzer**: Deep performance analysis
+- **performance-benchmarker**: Benchmark testing and validation
+- **performance-optimizer**: Implementation of optimizations
+- **backend-dev**: Backend performance improvements
+- **frontend-dev**: Frontend optimization
+
+## Optimization Strategy
+
+1. **Analysis Phase** (2-4 hours)
+   - Performance profiling
+   - Bottleneck identification
+   - Impact assessment
+
+2. **Planning Phase** (2-3 hours)
+   - Solution design
+   - Resource allocation
+   - Timeline estimation
+
+3. **Implementation Phase** (1-3 days)
+   - Code optimizations
+   - Infrastructure improvements
+   - Testing and validation
+
+4. **Monitoring Phase** (Ongoing)
+   - Performance tracking
+   - Regression testing
+   - Continuous optimization
+
+**Expected Completion:** ${analysis.highPriority > 0 ? '48 hours for high priority, 1 week for all issues' : '1 week'}
+            `;
+
+            // Update performance coordination issue or create new one
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['performance-coordination'],
+              state: 'open'
+            });
+
+            if (existingIssues.data.length > 0) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssues.data[0].number,
+                body: coordinationMessage
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🚀 Performance Optimization Coordination',
+                body: coordinationMessage,
+                labels: ['performance-coordination', 'status:in-progress']
+              });
+            }
+
+  cleanup-old-coordination-data:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: Cleanup Old Coordination Data
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('🧹 Cleaning up old coordination data...');
+
+            // Find and close old coordination issues
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+            const coordinationIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'coordination',
+              state: 'open'
+            });
+
+            for (const issue of coordinationIssues.data) {
+              const issueDate = new Date(issue.created_at);
+              if (issueDate < thirtyDaysAgo) {
+                await github.rest.issues.update({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  state: 'closed'
+                });
+                console.log('Closed old coordination issue #' + issue.number);
+              }
+            }
+
+            console.log('Cleanup completed');

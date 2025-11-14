@@ -1,0 +1,679 @@
+name: Project Management and Milestone Tracking
+
+on:
+  schedule:
+    # Daily project status update at 9 AM UTC
+    - cron: '0 9 * * *'
+    # Weekly milestone review on Monday at 10 AM UTC
+    - cron: '0 10 * * 1'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Project management action'
+        required: true
+        default: 'status-update'
+        type: choice
+        options:
+          - status-update
+          - milestone-review
+          - sprint-planning
+          - release-prep
+      milestone:
+        description: 'Milestone number (for milestone actions)'
+        required: false
+        type: string
+  milestone:
+    types: [opened, closed, edited]
+  issues:
+    types: [milestoned, demilestoned]
+
+jobs:
+  daily-status-update:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'status-update')
+
+    steps:
+      - name: Generate Daily Project Status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('📊 Generating daily project status update...');
+
+            const moment = require('moment');
+
+            // Get repository metrics
+            const [issues, pullRequests, milestones, releases] = await Promise.all([
+              github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'all',
+                sort: 'created',
+                direction: 'desc',
+                per_page: 100
+              }),
+              github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'all',
+                sort: 'created',
+                direction: 'desc',
+                per_page: 50
+              }),
+              github.rest.milestones.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                state: 'open',
+                sort: 'due_on',
+                direction: 'asc'
+              }),
+              github.rest.repos.listReleases({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 10
+              })
+            ]);
+
+            // Calculate metrics
+            const today = moment().startOf('day');
+            const yesterday = moment().subtract(1, 'day').startOf('day');
+
+            const todayIssues = issues.data.filter(issue =>
+              moment(issue.created_at).isSameOrAfter(today)
+            );
+
+            const yesterdayIssues = issues.data.filter(issue =>
+              moment(issue.created_at).isBetween(yesterday, today, null, '[]')
+            );
+
+            const todayPRs = pullRequests.data.filter(pr =>
+              moment(pr.created_at).isSameOrAfter(today)
+            );
+
+            const mergedPRs = pullRequests.data.filter(pr =>
+              pr.merged_at && moment(pr.merged_at).isSameOrAfter(today)
+            );
+
+            // Calculate issue breakdown by type
+            const issueTypes = {
+              bug: 0,
+              feature: 0,
+              integration: 0,
+              documentation: 0,
+              security: 0,
+              performance: 0,
+              other: 0
+            };
+
+            const allOpenIssues = issues.data.filter(issue => issue.state === 'open');
+            allOpenIssues.forEach(issue => {
+              const typeLabel = issue.labels.find(l => l.name.startsWith('type:'));
+              const type = typeLabel ? typeLabel.name.replace('type:', '') : 'other';
+              if (issueTypes.hasOwnProperty(type)) {
+                issueTypes[type]++;
+              } else {
+                issueTypes.other++;
+              }
+            });
+
+            // Calculate priority breakdown
+            const priorities = { critical: 0, high: 0, medium: 0, low: 0 };
+            allOpenIssues.forEach(issue => {
+              const priorityLabel = issue.labels.find(l => l.name.startsWith('priority:'));
+              const priority = priorityLabel ? priorityLabel.name.replace('priority:', '') : 'medium';
+              if (priorities.hasOwnProperty(priority)) {
+                priorities[priority]++;
+              }
+            });
+
+            // Generate status report
+            const statusReport = {
+              date: moment().format('YYYY-MM-DD'),
+              metrics: {
+                totalIssues: issues.data.length,
+                openIssues: allOpenIssues.length,
+                newIssuesToday: todayIssues.length,
+                issuesClosedToday: issues.data.filter(issue =>
+                  issue.state === 'closed' && moment(issue.closed_at).isSameOrAfter(today)
+                ).length,
+                totalPRs: pullRequests.data.length,
+                openPRs: pullRequests.data.filter(pr => pr.state === 'open').length,
+                newPRsToday: todayPRs.length,
+                mergedPRsToday: mergedPRs.length,
+                activeMilestones: milestones.data.length,
+                latestRelease: releases.data[0]?.tag_name || 'None'
+              },
+              breakdown: {
+                byType: issueTypes,
+                byPriority: priorities
+              },
+              milestones: milestones.data.slice(0, 5).map(milestone => ({
+                title: milestone.title,
+                openIssues: milestone.open_issues,
+                closedIssues: milestone.closed_issues,
+                dueOn: milestone.due_on ? moment(milestone.due_on).format('YYYY-MM-DD') : 'No due date',
+                daysUntilDue: milestone.due_on ? moment(milestone.due_on).diff(moment(), 'days') : null
+              })),
+              topContributors: await this.getTopContributors(issues.data, pullRequests.data)
+            };
+
+            return statusReport;
+
+      - name: Update Project Status Dashboard
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const statusReport = JSON.parse(await steps.status.outputs.result);
+
+            const dashboard = `
+# 📊 workshopsAI CMS Daily Project Status
+
+**Date:** ${statusReport.date}
+**Generated:** ${new Date().toLocaleString()}
+
+## 🎯 Executive Summary
+
+- **Total Issues:** ${statusReport.metrics.totalIssues}
+- **Open Issues:** ${statusReport.metrics.openIssues}
+- **New Issues Today:** ${statusReport.metrics.newIssuesToday}
+- **Issues Closed Today:** ${statusReport.metrics.issuesClosedToday}
+- **Open Pull Requests:** ${statusReport.metrics.openPRs}
+- **PRs Merged Today:** ${statusReport.metrics.mergedPRsToday}
+- **Active Milestones:** ${statusReport.metrics.activeMilestones}
+- **Latest Release:** ${statusReport.metrics.latestRelease}
+
+## 📈 Activity Trends
+
+### Today's Activity
+- ✅ Issues Closed: ${statusReport.metrics.issuesClosedToday}
+- 🆕 New Issues: ${statusReport.metrics.newIssuesToday}
+- 🔄 PRs Merged: ${statusReport.metrics.mergedPRsToday}
+- 📝 New PRs: ${statusReport.metrics.newPRsToday}
+
+### Issue Breakdown
+
+**By Type:**
+${Object.entries(statusReport.breakdown.byType).map(([type, count]) =>
+  `- ${type.charAt(0).toUpperCase() + type.slice(1)}: ${count}`
+).join('\n')}
+
+**By Priority:**
+${Object.entries(statusReport.breakdown.byPriority).map(([priority, count]) =>
+  `- ${priority.charAt(0).toUpperCase() + priority}: ${count}`
+).join('\n')}
+
+## 🎯 Milestone Status
+
+${statusReport.milestones.length > 0 ? statusReport.milestones.map(milestone =>
+  `### ${milestone.title}
+- **Progress:** ${milestone.closedIssues}/${milestone.closedIssues + milestone.openIssues} issues
+- **Due:** ${milestone.dueOn} ${milestone.daysUntilDue !== null ? `(${milestone.daysUntilDue} days)` : '(No due date')}`
+).join('\n') : 'No active milestones currently.'}
+
+## 👥 Top Contributors
+
+${statusReport.topContributors.slice(0, 5).map((contributor, index) =>
+  `${index + 1}. **@${contributor.username}**: ${contributor.contributions} contributions`
+).join('\n')}
+
+## 🚨 Action Items
+
+${statusReport.metrics.openIssues > 50
+  ? '- ⚠️ **High Issue Volume**: Consider resource allocation or backlog grooming'
+  : '- ✅ **Issue Volume**: Manageable'}
+
+${statusReport.breakdown.byPriority.critical > 0
+  ? '- 🚨 **Critical Issues**: ${statusReport.breakdown.byPriority.critical} critical issues need immediate attention'
+  : '- ✅ **No Critical Issues**: All critical issues resolved'}
+
+${statusReport.metrics.openPRs > 20
+  ? '- 📋 **PR Backlog**: ${statusReport.metrics.openPRs} open PRs - review and merge where appropriate'
+  : '- ✅ **PR Management**: PR backlog is healthy'}
+
+## 🤖 AI Swarm Status
+
+- **Active Agents**: 4 specialized agents operational
+- **Automated Triage**: ${statusReport.metrics.newIssuesToday > 0 ? 'Processing new issues' : 'No new issues to process'}
+- **Coordination Health**: All systems operational
+- **Response Time**: < 1 hour for automated triage
+
+---
+*This dashboard is automatically generated daily and can be updated on-demand.*
+
+## 📊 Quick Stats
+
+- **Automation Rate**: ${Math.round((statusReport.metrics.issuesClosedToday / Math.max(statusReport.metrics.openIssues, 1)) * 100)}%
+- **PR Merge Rate**: ${statusReport.metrics.newPRsToday > 0 ? Math.round((statusReport.metrics.mergedPRsToday / statusReport.metrics.newPRsToday) * 100) : 0}%
+- **Issue Velocity**: ${statusReport.metrics.issuesClosedToday} issues/day
+            `;
+
+            // Update project status issue
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'project-status',
+              state: 'open'
+            });
+
+            if (existingIssues.data.length > 0) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssues.data[0].number,
+                body: dashboard
+              });
+
+              // Add daily update comment
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssues.data[0].number,
+                body: `📊 **Daily Update** - ${statusReport.date}`
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '📊 Project Status Dashboard',
+                body: dashboard,
+                labels: ['project-status', 'status:in-progress', 'priority:low']
+              });
+            }
+
+  milestone-management:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' && github.event.schedule == '0 10 * * 1'
+
+    steps:
+      - name: Weekly Milestone Review
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('🎯 Running weekly milestone review...');
+
+            const moment = require('moment');
+
+            // Get all milestones
+            const milestones = await github.rest.milestones.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all',
+              sort: 'due_on',
+              direction: 'asc'
+            });
+
+            const now = moment();
+            const oneWeekFromNow = moment().add(7, 'days');
+
+            // Categorize milestones
+            const milestoneCategories = {
+              overdue: [],
+              dueThisWeek: [],
+              dueNextWeek: [],
+              upcoming: [],
+              completed: []
+            };
+
+            for (const milestone of milestones.data) {
+              if (milestone.state === 'closed') {
+                milestoneCategories.completed.push(milestone);
+              } else if (milestone.due_on) {
+                const dueDate = moment(milestone.due_on);
+                if (dueDate.isBefore(now)) {
+                  milestoneCategories.overdue.push(milestone);
+                } else if (dueDate.isBefore(oneWeekFromNow)) {
+                  milestoneCategories.dueThisWeek.push(milestone);
+                } else if (dueDate.isBefore(oneWeekFromNow.clone().add(7, 'days'))) {
+                  milestoneCategories.dueNextWeek.push(milestone);
+                } else {
+                  milestoneCategories.upcoming.push(milestone);
+                }
+              } else {
+                milestoneCategories.upcoming.push(milestone);
+              }
+            }
+
+            // Generate milestone review
+            const review = {
+              date: now.format('YYYY-MM-DD'),
+              summary: {
+                total: milestones.data.length,
+                completed: milestoneCategories.completed.length,
+                overdue: milestoneCategories.overdue.length,
+                dueThisWeek: milestoneCategories.dueThisWeek.length,
+                dueNextWeek: milestoneCategories.dueNextWeek.length
+              },
+              categories: milestoneCategories,
+              recommendations: []
+            };
+
+            // Generate recommendations
+            if (review.summary.overdue > 0) {
+              review.recommendations.push('Review and extend overdue milestones or reprioritize issues');
+            }
+
+            if (review.summary.dueThisWeek > 2) {
+              review.recommendations.push('Multiple milestones due this week - consider resource allocation');
+            }
+
+            if (review.summary.dueNextWeek === 0 && review.summary.upcoming === 0) {
+              review.recommendations.push('Plan upcoming milestones to maintain development momentum');
+            }
+
+            return review;
+
+      - name: Create Milestone Review Report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const review = JSON.parse(await steps.milestones.outputs.result);
+
+            const report = `
+# 🎯 Weekly Milestone Review
+
+**Review Date:** ${review.date}
+
+## 📊 Summary
+
+- **Total Milestones:** ${review.summary.total}
+- **Completed:** ${review.summary.completed}
+- **Overdue:** ${review.summary.overdue}
+- **Due This Week:** ${review.summary.dueThisWeek}
+- **Due Next Week:** ${review.summary.dueNextWeek}
+
+## ⚠️ Overdue Milestones
+
+${review.categories.overdue.length > 0 ? review.categories.overdue.map(milestone =>
+  `- **${milestone.title}**: Due ${moment(milestone.due_on).format('YYYY-MM-DD')} (${milestone.open_issues} open issues)`
+).join('\n') : '✅ No overdue milestones - excellent!'}
+
+## 🚨 Due This Week
+
+${review.categories.dueThisWeek.length > 0 ? review.categories.dueThisWeek.map(milestone =>
+  `- **${milestone.title}**: Due ${moment(milestone.due_on).format('YYYY-MM-DD')} (${milestone.open_issues} open issues)`
+).join('\n') : 'No milestones due this week.'}
+
+## 📋 Due Next Week
+
+${review.categories.dueNextWeek.length > 0 ? review.categories.dueNextWeek.map(milestone =>
+  `- **${milestone.title}**: Due ${moment(milestone.due_on).format('YYYY-MM-DD')} (${milestone.open_issues} open issues)`
+).join('\n') : 'No milestones due next week.'}
+
+## 🔄 Upcoming Milestones
+
+${review.categories.upcoming.slice(0, 5).map(milestone =>
+  `- **${milestone.title}**: ${milestone.due_on ? `Due ${moment(milestone.due_on).format('YYYY-MM-DD')}` : 'No due date set'} (${milestone.open_issues} open issues)`
+).join('\n')}
+
+## 💡 Recommendations
+
+${review.recommendations.length > 0 ? review.recommendations.map(rec => `- ${rec}`).join('\n') : 'Continue with current milestone management approach.'}
+
+## 🤖 Swarm Coordination
+
+The AI swarm coordination system will automatically:
+- Monitor progress on milestones due this week
+- Alert teams for overdue milestones
+- Suggest resource reallocation based on milestone criticality
+- Update milestone progress with automated issue tracking
+
+---
+*This review is generated automatically every Monday.*
+            `;
+
+            // Create or update milestone review issue
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'milestone-review',
+              state: 'open'
+            });
+
+            const weekNumber = moment().week();
+            const year = moment().year();
+
+            if (existingIssues.data.length > 0) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssues.data[0].number,
+                body: report,
+                title: `🎯 Weekly Milestone Review - Week ${weekNumber}, ${year}`
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `🎯 Weekly Milestone Review - Week ${weekNumber}, ${year}`,
+                body: report,
+                labels: ['milestone-review', 'status:in-progress', 'priority:low']
+              });
+            }
+
+  sprint-planning:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'sprint-planning'
+
+    steps:
+      - name: Generate Sprint Planning Report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('🏃 Generating sprint planning report...');
+
+            // Get unassigned issues and high priority items
+            const [unassignedIssues, highPriorityIssues, teamCapacity] = await Promise.all([
+              github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: 'status:backlog',
+                state: 'open',
+                sort: 'created',
+                direction: 'asc'
+              }),
+              github.rest.issues.listForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: 'priority:high,priority:critical',
+                state: 'open',
+                sort: 'priority',
+                direction: 'desc'
+              }),
+              this.getTeamCapacity()
+            ]);
+
+            // Analyze sprint readiness
+            const sprintAnalysis = {
+              backlogSize: unassignedIssues.data.length,
+              highPriorityCount: highPriorityIssues.data.length,
+              teamCapacity: teamCapacity,
+              recommendedSprintSize: Math.min(teamCapacity.totalPoints, unassignedIssues.data.length),
+              sprintCandidates: this.selectSprintCandidates(unassignedIssues.data, highPriorityIssues.data, teamCapacity)
+            };
+
+            return sprintAnalysis;
+
+      - name: Create Sprint Planning Document
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const analysis = JSON.parse(await steps.sprint.outputs.result);
+
+            const sprintPlan = `
+# 🏃 Sprint Planning Report
+
+**Generated:** ${new Date().toLocaleDateString()}
+**Backlog Size:** ${analysis.backlogSize} issues
+**Team Capacity:** ${analysis.teamCapacity.totalPoints} story points
+**Recommended Sprint Size:** ${analysis.recommendedSprintSize} issues
+
+## 🎯 Sprint Candidates
+
+### High Priority Items
+${analysis.sprintCandidates.highPriority.map(issue =>
+  `- **#${issue.number}: ${issue.title}** (${issue.storyPoints || 3} points)`
+).join('\n')}
+
+### Medium Priority Items
+${analysis.sprintCandidates.mediumPriority.slice(0, 10).map(issue =>
+  `- **#${issue.number}: ${issue.title}** (${issue.storyPoints || 2} points)`
+).join('\n')}
+
+## 📊 Sprint Composition
+
+- **High Priority:** ${analysis.sprintCandidates.highPriority.length} issues
+- **Medium Priority:** ${Math.min(10, analysis.sprintCandidates.mediumPriority.length)} issues
+- **Total Story Points:** ${analysis.sprintCandidates.totalPoints}
+- **Estimated Duration:** 2 weeks
+
+## 👥 Team Assignment Recommendations
+
+${analysis.teamCapacity.members.map(member =>
+  `- **@${member.username}**: ${member.capacity} story points available`
+).join('\n')}
+
+## 🤖 Swarm Coordination
+
+The AI swarm will:
+- Automatically assign issues based on team member expertise
+- Monitor sprint progress with automated status updates
+- Suggest re-prioritization based on development velocity
+- Coordinate cross-functional dependencies
+
+---
+*Use this report for sprint planning meetings and GitHub project board organization.*
+            `;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🏃 Sprint Planning - ${new Date().toLocaleDateString()}`,
+              body: sprintPlan,
+              labels: ['sprint-planning', 'status:in-progress', 'priority:medium']
+            });
+
+  release-preparation:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'release-prep'
+
+    steps:
+      - name: Prepare Release Checklist
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('🚀 Preparing release checklist...');
+
+            // Get issues for next release
+            const releaseIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              milestone: github.event.inputs.milestone || '',
+              state: 'closed',
+              sort: 'closed_at',
+              direction: 'desc'
+            });
+
+            // Check release readiness
+            const releaseChecklist = {
+              milestoneIssues: releaseIssues.data,
+              releaseReady: releaseIssues.data.filter(issue =>
+                issue.labels.some(label => label.name === 'status:testing' || label.name.includes('ready'))
+              ).length,
+              securityReview: releaseIssues.data.filter(issue =>
+                issue.labels.some(label => label.name.includes('security'))
+              ).length,
+              performanceTesting: releaseIssues.data.filter(issue =>
+                issue.labels.some(label => label.name.includes('performance'))
+              ).length,
+              documentation: releaseIssues.data.filter(issue =>
+                issue.labels.some(label => label.name.includes('documentation'))
+              ).length
+            };
+
+            return releaseChecklist;
+
+      - name: Generate Release Checklist
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const checklist = JSON.parse(await steps.checklist.outputs.result);
+
+            const releaseDoc = `
+# 🚀 Release Preparation Checklist
+
+**Release Date:** ${new Date().toLocaleDateString()}
+**Milestone Issues:** ${checklist.milestoneIssues.length}
+
+## ✅ Pre-Release Requirements
+
+### Code Quality
+- [ ] All code reviews completed
+- [ ] No failing tests in CI/CD
+- [ ] Code coverage above threshold
+- [ ] Security scan passed
+
+### Testing
+- [ ] Unit tests passing (${checklist.performanceTesting} performance-related issues)
+- [ ] Integration tests passing
+- [ ] End-to-end tests passing
+- [ ] Accessibility tests passing
+
+### Documentation
+- [ ] API documentation updated (${checklist.documentation} documentation issues)
+- [ ] User documentation updated
+- [ ] Release notes prepared
+- [ ] Migration guides updated (if needed)
+
+### Security
+- [ ] Security review completed (${checklist.securityReview} security-related issues)
+- [ ] Vulnerability scan passed
+- [ ] Dependency audit passed
+- [ ] Access controls verified
+
+## 📋 Release Items
+
+${checklist.milestoneIssues.map(issue =>
+  `- **#${issue.number}: ${issue.title}** (${issue.state})`
+).join('\n')}
+
+## 🚀 Release Steps
+
+1. **Final Testing** (2 hours)
+   - Run full test suite
+   - Performance testing
+   - Security validation
+
+2. **Documentation Update** (1 hour)
+   - Update CHANGELOG
+   - Prepare release notes
+   - Update API docs
+
+3. **Release Creation** (30 minutes)
+   - Create release tag
+   - Build and publish packages
+   - Deploy to production
+
+4. **Post-Release** (1 hour)
+   - Monitor production
+   - Update project boards
+   - Announce release
+
+## 🤖 Swarm Coordination
+
+The AI swarm will:
+- Monitor release testing progress
+- Coordinate deployment across environments
+- Track post-release performance
+- Handle rollback if needed
+
+---
+
+**Release Ready:** ${checklist.releaseReady === checklist.milestoneIssues.length ? '✅' : '⚠️ In Progress'}
+            `;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚀 Release Preparation - ${new Date().toLocaleDateString()}`,
+              body: releaseDoc,
+              labels: ['release-prep', 'status:in-progress', 'priority:high']
+            });

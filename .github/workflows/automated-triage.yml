@@ -1,0 +1,383 @@
+name: Automated Issue Triage and Management
+
+on:
+  issues:
+    types: [opened, edited, closed, reopened]
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [opened, edited, closed, reopened]
+  pull_request_review:
+    types: [submitted, dismissed]
+
+jobs:
+  auto-triage:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && github.event.action == 'opened'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install @octokit/rest simple-git
+
+      - name: Analyze Issue with AI Swarm
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const title = issue.title;
+            const body = issue.body || '';
+
+            console.log('Analyzing issue:', issue.number, title);
+
+            // Initialize Claude Flow swarm for triage
+            const triageConfig = {
+              swarmId: 'swarm-triage',
+              topology: 'hierarchical',
+              agents: ['issue-tracker', 'code-analyzer'],
+              task: `Analyze and triage GitHub issue #${issue.number}: "${title}"`
+            };
+
+            // Extract key information
+            const analysis = {
+              title: title,
+              body: body,
+              labels: issue.labels.map(l => l.name),
+              author: issue.user.login,
+              created_at: issue.created_at
+            };
+
+            // AI-powered classification
+            let priority = 'medium';
+            let component = [];
+            let type = 'bug';
+            let urgency = 'normal';
+
+            // Title analysis
+            const titleLower = title.toLowerCase();
+            if (titleLower.includes('[bug]') || titleLower.includes('broken')) {
+              type = 'bug';
+              if (titleLower.includes('critical') || titleLower.includes('security')) {
+                priority = 'critical';
+                urgency = 'high';
+              } else if (titleLower.includes('urgent')) {
+                priority = 'high';
+                urgency = 'high';
+              }
+            } else if (titleLower.includes('[feature]') || titleLower.includes('enhancement')) {
+              type = 'feature';
+            } else if (titleLower.includes('[ai-integration]') || titleLower.includes('[ai]')) {
+              type = 'integration';
+              component.push('cms:ai-integration');
+              priority = 'high'; // AI integrations are prioritized
+            } else if (titleLower.includes('[security]')) {
+              type = 'security';
+              priority = 'critical';
+              urgency = 'high';
+            } else if (titleLower.includes('[performance]')) {
+              type = 'performance';
+              if (titleLower.includes('slow') || titleLower.includes('timeout')) {
+                priority = 'high';
+              }
+            }
+
+            // Body analysis for component detection
+            const bodyLower = body.toLowerCase();
+            if (bodyLower.includes('authentication') || bodyLower.includes('login')) {
+              component.push('authentication');
+            }
+            if (bodyLower.includes('database') || bodyLower.includes('postgresql')) {
+              component.push('database');
+            }
+            if (bodyLower.includes('frontend') || bodyLower.includes('ui') || bodyLower.includes('react')) {
+              component.push('cms:ui');
+            }
+            if (bodyLower.includes('api') || bodyLower.includes('endpoint')) {
+              component.push('api');
+            }
+            if (bodyLower.includes('workshop') || bodyLower.includes('cms core')) {
+              component.push('cms:core');
+            }
+            if (bodyLower.includes('claude') || bodyLower.includes('anthropic') || bodyLower.includes('openai')) {
+              component.push('cms:ai-integration');
+            }
+            if (bodyLower.includes('security') || bodyLower.includes('gdpr') || bodyLower.includes('privacy')) {
+              component.push('cms:security');
+            }
+
+            // Determine assignee based on component
+            let assignee = null;
+            if (component.includes('cms:ai-integration')) {
+              assignee = 'ai-team-lead'; // Replace with actual GitHub username
+            } else if (component.includes('cms:security')) {
+              assignee = 'security-lead'; // Replace with actual GitHub username
+            } else if (component.includes('frontend') || component.includes('cms:ui')) {
+              assignee = 'frontend-lead'; // Replace with actual GitHub username
+            } else {
+              assignee = 'backend-lead'; // Replace with actual GitHub username
+            }
+
+            // Prepare labels to add
+            const labelsToAdd = [
+              `type:${type}`,
+              `priority:${priority}`,
+              `auto-triage`,
+              `status:backlog`
+            ];
+
+            // Add component labels
+            labelsToAdd.push(...component.filter(c => !labelsToAdd.includes(c)));
+
+            console.log('Triage results:', { priority, component, type, assignee, labels: labelsToAdd });
+
+            return {
+              labels: labelsToAdd,
+              assignees: assignee ? [assignee] : [],
+              priority: priority,
+              component: component,
+              type: type,
+              triage_complete: true
+            };
+
+      - name: Apply Triage Results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const result = await steps.analyze.outputs.result;
+            const analysis = JSON.parse(result);
+
+            if (analysis && analysis.triage_complete) {
+              // Add labels
+              if (analysis.labels && analysis.labels.length > 0) {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.payload.issue.number,
+                  labels: analysis.labels
+                });
+              }
+
+              // Assign issue
+              if (analysis.assignees && analysis.assignees.length > 0) {
+                await github.rest.issues.addAssignees({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.payload.issue.number,
+                  assignees: analysis.assignees
+                });
+              }
+
+              // Post triage comment
+              const triageComment = `
+## 🤖 Automated Triage Complete
+
+This issue has been automatically analyzed and triaged by our AI swarm coordination system.
+
+**Analysis Results:**
+- **Type**: ${analysis.type}
+- **Priority**: ${analysis.priority}
+- **Components**: ${analysis.component.length > 0 ? analysis.component.join(', ') : 'General'}
+- **Assigned**: ${analysis.assignees.length > 0 ? `@${analysis.assignees.join(', @')}` : 'Unassigned'}
+
+**Next Steps:**
+- A team member will review this issue within ${analysis.priority === 'critical' ? '2 hours' : analysis.priority === 'high' ? '8 hours' : '24 hours'}
+- Additional information may be requested if needed
+- Priority can be adjusted based on further analysis
+
+**Agent Processing:** This issue has been queued for specialized agent review based on its classification.
+              `;
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                body: triageComment
+              });
+
+              // Trigger Claude Flow swarm coordination
+              console.log('Triggering swarm coordination for issue triage');
+            }
+
+  intelligent-labeling:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && (github.event.action == 'opened' || github.event.action == 'edited')
+
+    steps:
+      - name: Intelligent Label Enhancement
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const body = issue.body || '';
+            const currentLabels = issue.labels.map(l => l.name);
+
+            // Smart label detection based on content
+            const newLabels = [];
+
+            // Detect testing related issues
+            if (body.toLowerCase().includes('test') || body.toLowerCase().includes('jest') || body.toLowerCase().includes('playwright')) {
+              if (!currentLabels.includes('type:testing')) {
+                newLabels.push('type:testing');
+              }
+            }
+
+            // Detect documentation issues
+            if (body.toLowerCase().includes('documentation') || body.toLowerCase().includes('readme') || body.toLowerCase().includes('docs')) {
+              if (!currentLabels.includes('type:documentation')) {
+                newLabels.push('type:documentation');
+              }
+            }
+
+            // Detect complexity indicators
+            if (body.length > 2000 || (body.match(/```/g) || []).length > 5) {
+              if (!currentLabels.includes('complex:large')) {
+                newLabels.push('complex:large');
+              }
+            }
+
+            // Add new labels if any
+            if (newLabels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: newLabels
+              });
+
+              console.log('Added intelligent labels:', newLabels);
+            }
+
+  issue-status-sync:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && github.event.action == 'closed'
+
+    steps:
+      - name: Update Status on Close
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const labels = issue.labels.map(l => l.name);
+
+            // Add closed status label
+            if (issue.state === 'closed') {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: ['status:closed']
+              });
+
+              // Remove in-progress and review labels
+              const labelsToRemove = ['status:in-progress', 'status:review', 'status:testing'];
+
+              for (const label of labelsToRemove) {
+                if (labels.includes(label)) {
+                  await github.rest.issues.removeLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issue.number,
+                    name: label
+                  });
+                }
+              }
+
+              console.log('Updated issue status to closed');
+            }
+
+  pr-integration:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Link PR to Related Issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const body = pr.body || '';
+
+            // Extract issue numbers from PR body (Fixes #123, Closes #456, etc.)
+            const issuePattern = /(?:fixes|fix|closes|close|resolves|resolve|addresses|address|refs|references) #(\d+)/gi;
+            const matches = body.match(issuePattern);
+
+            if (matches) {
+              const issueNumbers = [...new Set(matches.map(match => match.match(/#(\d+)/)[1]))];
+
+              for (const issueNumber of issueNumbers) {
+                try {
+                  // Add PR reference to issues
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: parseInt(issueNumber),
+                    body: `Pull Request #${pr.number} references this issue: ${pr.html_url}`
+                  });
+
+                  // Label PR with linked issue labels
+                  const issue = await github.rest.issues.get({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: parseInt(issueNumber)
+                  });
+
+                  const issueLabels = issue.data.labels.map(l => l.name);
+                  const relevantLabels = issueLabels.filter(label =>
+                    label.startsWith('type:') ||
+                    label.startsWith('priority:') ||
+                    label.startsWith('cms:')
+                  );
+
+                  if (relevantLabels.length > 0) {
+                    await github.rest.issues.addLabels({
+                      owner: context.repo.owner,
+                      repo: context.repo.repo,
+                      issue_number: pr.number,
+                      labels: relevantLabels
+                    });
+                  }
+
+                } catch (error) {
+                  console.log(`Could not process issue ${issueNumber}:`, error.message);
+                }
+              }
+
+              console.log('Linked PR to issues:', issueNumbers);
+            }
+
+  swarm-coordination-trigger:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues' && github.event.action == 'opened'
+    needs: [auto-triage, intelligent-labeling]
+
+    steps:
+      - name: Trigger Claude Flow Swarm
+        run: |
+          echo "Triggering Claude Flow swarm coordination..."
+          echo "Event: ${{ github.event_name }}"
+          echo "Action: ${{ github.event.action }}"
+          echo "Issue: ${{ github.event.issue.number }}"
+
+          # You can integrate with Claude Flow MCP here
+          # For now, we'll just log the coordination trigger
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/dispatches \
+            -d '{
+              "event_type": "swarm_coordination",
+              "client_payload": {
+                "issue_number": "${{ github.event.issue.number }}",
+                "issue_title": "${{ github.event.issue.title }}",
+                "action": "issue_triage"
+              }
+            }' || echo "Swarm coordination webhook failed (this is expected in dev)"
