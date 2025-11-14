@@ -1,0 +1,450 @@
+{
+  "template_id": "nasza_nieutopia_v1",
+  "title": {
+    "pl": "NASZA (NIE)UTOPIA",
+    "en": "OUR (DIS)UTOPIA"
+  },
+  "instructions": {
+    "pl": "Wypełnij kwestionariusz opisujący Waszą wizję wspólnoty. Pamiętaj, że nie ma złych odpowiedzi - chodzi o Wasze autentyczne przemyślenia i marzenia. Wszystkie pytania w tej sekcji będą widoczne jednocześnie i możecie między nimi skakać. Każdą odpowiedź zawsze można zmienić. Styl: 1. osoba mnoga (co MY będziemy robić?)",
+    "en": "Fill out this questionnaire describing your community vision. Remember, there are no wrong answers - this is about your authentic thoughts and dreams. All questions in this section will be visible simultaneously and you can jump between them. Each answer can always be changed. Style: 1st person plural (what WILL WE do?)"
+  },
+  "version": "1.0.0",
+  "language": "pl",
+  "category": "community",
+  "description": {
+    "pl": "Kwestionariusz do tworzenia wizji wspólnoty mieszkaniowej oparty na 4 kluczowych obszarach życia społecznego",
+    "en": "Questionnaire for creating a housing community vision based on 4 key areas of social life"
+  },
+  "estimated_time_minutes": 30,
+  "settings": {
+    "anonymous": false,
+    "require_consent": true,
+    "max_responses": null,
+    "close_after_workshop": false,
+    "show_all_questions": true,
+    "allow_edit": true,
+    "question_style": "first_person_plural",
+    "auto_save_interval_seconds": 30
+  },
+  "sections": [
+    {
+      "section_id": "work_life_balance",
+      "order": 1,
+      "title": {
+        "pl": "1. WIZJA / MANIFEST",
+        "en": "1. VISION / MANIFEST"
+      },
+      "description": {
+        "pl": "Podstawowe wartości i cel wspólnoty",
+        "en": "Core values and community purpose"
+      },
+      "icon": "flag",
+      "questions": [
+        {
+          "question_id": "key_values",
+          "order": 1,
+          "label": "Kluczowe wartości",
+          "text": {
+            "pl": "Co jest dla Was ważne we wspólnym miejscu zamieszkania? Co leży u podstaw tego pomysłu? Z jakimi wartościami utożsamiacie się?",
+            "en": "What is important to you in a shared living space? What is the foundation of this idea? What values do you identify with?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 10,
+            "max_length": 500
+          },
+          "help_text": {
+            "pl": "Możesz wymienić wartości rozdzielone przecinkami lub napisać swobodny tekst",
+            "en": "You can list values separated by commas or write free text"
+          }
+        },
+        {
+          "question_id": "purpose",
+          "order": 2,
+          "label": "Cel",
+          "text": {
+            "pl": "Dlaczego Wasze miejsce istnieje? By żyło się łatwiej, zabawniej i na własnych zasadach",
+            "en": "Why does your place exist? So that life is easier, more fun, and on your own terms"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 300
+          }
+        },
+        {
+          "question_id": "needs",
+          "order": 3,
+          "label": "Potrzeby",
+          "text": {
+            "pl": "Jakie potrzeby będziecie realizować w Waszym miejscu?",
+            "en": "What needs will you fulfill in your place?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 400
+          }
+        },
+        {
+          "question_id": "external_perception",
+          "order": 4,
+          "label": "Obraz nas",
+          "text": {
+            "pl": "W jaki sposób jesteśmy postrzegani przez osoby z zewnątrz?",
+            "en": "How are we perceived by people from outside?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 300
+          }
+        },
+        {
+          "question_id": "communication_tools",
+          "order": 5,
+          "label": "Komunikacja zewnętrzna",
+          "text": {
+            "pl": "W jaki sposób komunikujemy się na zewnątrz? Jakie mamy narzędzia?",
+            "en": "How do we communicate externally? What tools do we have?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 300
+          }
+        },
+        {
+          "question_id": "collaboration_culture",
+          "order": 6,
+          "label": "Kultura współpracy",
+          "text": {
+            "pl": "Jak wygląda nasza kultura współpracy?",
+            "en": "What does our collaboration culture look like?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 400
+          }
+        }
+      ]
+    },
+    {
+      "section_id": "personal_values",
+      "order": 2,
+      "title": {
+        "pl": "2. PRZESTRZEŃ I MATERIA",
+        "en": "2. SPACE AND MATTER"
+      },
+      "description": {
+        "pl": "Fizyczna i wirtualna przestrzeń wspólnoty",
+        "en": "Physical and virtual community space"
+      },
+      "icon": "home",
+      "questions": [
+        {
+          "question_id": "material_relationships",
+          "order": 7,
+          "label": "Relacje z materialnością",
+          "text": {
+            "pl": "Jak wyglądają nasze relacje z materialnością? Zasilanie, odpady, jedzenie, transport?",
+            "en": "What are our relationships with materiality? Power, waste, food, transport?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 400
+          }
+        },
+        {
+          "question_id": "income_strategies",
+          "order": 8,
+          "label": "Zarabianie pieniędzy",
+          "text": {
+            "pl": "Jakie są nasze sposoby na zarabianie pieniędzy?",
+            "en": "What are our ways of earning money?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 300
+          }
+        },
+        {
+          "question_id": "management_structures",
+          "order": 9,
+          "label": "Struktury zarządzania",
+          "text": {
+            "pl": "Jakie struktury zarządzania wybraliśmy? Jakie mają wady i zalety?",
+            "en": "What management structures have we chosen? What are their pros and cons?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 400
+          }
+        },
+        {
+          "question_id": "resource_management",
+          "order": 10,
+          "label": "Zarządzanie zasobami",
+          "text": {
+            "pl": "Jakie są nasze zasoby i jak nimi zarządzamy?",
+            "en": "What are our resources and how do we manage them?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 300
+          }
+        },
+        {
+          "question_id": "essential_materials",
+          "order": 11,
+          "label": "Istotne materiały i technologie",
+          "text": {
+            "pl": "Jakie materiały, narzędzia i technologie są dla nas istotne?",
+            "en": "What materials, tools, and technologies are important to us?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 300
+          }
+        }
+      ]
+    },
+    {
+      "section_id": "career_aspirations",
+      "order": 3,
+      "title": {
+        "pl": "3. RELACJE, INTERAKCJE I WOLNOŚĆ OSOBISTA",
+        "en": "3. RELATIONS, INTERACTIONS AND PERSONAL FREEDOM"
+      },
+      "description": {
+        "pl": "Społeczne i osobiste aspekty życia we wspólnocie",
+        "en": "Social and personal aspects of community life"
+      },
+      "icon": "people",
+      "questions": [
+        {
+          "question_id": "relationship_practices",
+          "order": 12,
+          "label": "Budowanie relacji",
+          "text": {
+            "pl": "Jakie są nasze praktyki budowania relacji?",
+            "en": "What are our relationship-building practices?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 400
+          }
+        },
+        {
+          "question_id": "communication_strategies",
+          "order": 13,
+          "label": "Komunikacja i konflikty",
+          "text": {
+            "pl": "Jakie mamy strategie komunikowania? Jak rozwiązujemy konflikty?",
+            "en": "What communication strategies do we have? How do we resolve conflicts?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 400
+          }
+        },
+        {
+          "question_id": "external_relations",
+          "order": 14,
+          "label": "Relacje zewnętrzne",
+          "text": {
+            "pl": "Jakie są nasze relacje z innymi grupami i społecznościami?",
+            "en": "What are our relationships with other groups and communities?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 300
+          }
+        },
+        {
+          "question_id": "family_motherhood",
+          "order": 15,
+          "label": "Rodzina i macierzyństwo",
+          "text": {
+            "pl": "Jakie mamy wyobrażenia na temat rodziny i macierzyństwa?",
+            "en": "What are our ideas about family and motherhood?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 300
+          }
+        },
+        {
+          "question_id": "emotional_handling",
+          "order": 16,
+          "label": "Radzenie sobie z emocjami",
+          "text": {
+            "pl": "Jak radzimy sobie z emocjami?",
+            "en": "How do we handle emotions?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 300
+          }
+        },
+        {
+          "question_id": "body_sexuality",
+          "order": 17,
+          "label": "Relacje z ciałem",
+          "text": {
+            "pl": "Jakie są nasze relacje z ciałem? Seksualnością? Intymnością?",
+            "en": "What are our relationships with the body? Sexuality? Intimacy?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 300
+          }
+        },
+        {
+          "question_id": "leisure_time",
+          "order": 18,
+          "label": "Czas wolny",
+          "text": {
+            "pl": "Jakie mamy sposoby spędzania czasu wolnego?",
+            "en": "What ways do we spend our free time?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 300
+          }
+        }
+      ]
+    },
+    {
+      "section_id": "workplace_preferences",
+      "order": 4,
+      "title": {
+        "pl": "4. ORGANIZOWANIE",
+        "en": "4. ORGANIZING"
+      },
+      "description": {
+        "pl": "Struktury organizacyjne i zarządzanie",
+        "en": "Organizational structures and management"
+      },
+      "icon": "organization",
+      "questions": [
+        {
+          "question_id": "traditions_rituals",
+          "order": 19,
+          "label": "Tradycje i rytuały",
+          "text": {
+            "pl": "Jakie mamy tradycje, rytuały, święta?",
+            "en": "What traditions, rituals, holidays do we have?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 300
+          }
+        },
+        {
+          "question_id": "safety_strategies",
+          "order": 20,
+          "label": "Strategie bezpieczeństwa",
+          "text": {
+            "pl": "Jakie są nasze strategie bezpieczeństwa?",
+            "en": "What are our safety strategies?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 300
+          }
+        },
+        {
+          "question_id": "educational_strategies",
+          "order": 21,
+          "label": "Strategie edukacyjne",
+          "text": {
+            "pl": "Jakie mamy strategie edukacyjne?",
+            "en": "What educational strategies do we have?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 300
+          }
+        },
+        {
+          "question_id": "development_support",
+          "order": 22,
+          "label": "Wspieranie rozwoju",
+          "text": {
+            "pl": "Jak wspieramy swoje rozwój?",
+            "en": "How do we support our development?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 300
+          }
+        },
+        {
+          "question_id": "future_aspirations",
+          "order": 23,
+          "label": "Przyszłość i rozwój",
+          "text": {
+            "pl": "Jakie są nasze dążenia na przyszłość? Plany rozwoju?",
+            "en": "What are our aspirations for the future? Development plans?"
+          },
+          "type": "textarea",
+          "required": false,
+          "validation": {
+            "min_length": 5,
+            "max_length": 400
+          }
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "total_questions": 23,
+    "total_sections": 4,
+    "created_by": "workshopsAI",
+    "created_at": "2025-01-15T00:00:00Z",
+    "last_updated": "2025-01-15T00:00:00Z",
+    "tags": ["wspólnota", "mieszkalnictwo", "użytkowanie", "wizja", "planowanie"],
+    "difficulty": "beginner",
+    "target_audience": ["future_residents", "community_planners", "architects", "sociologists"]
+  }
+}

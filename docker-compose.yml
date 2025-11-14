@@ -10,16 +10,17 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - DB_HOST=mysql
-      - DB_PORT=3306
+      - DB_HOST=postgres
+      - DB_PORT=5432
       - DB_USER=workshopsai
       - DB_PASSWORD=secure_password_here
       - DB_NAME=workshopsai_cms
+      - DATABASE_URL=postgresql://workshopsai:secure_password_here@postgres:5432/workshopsai_cms
       - JWT_SECRET=your-super-secret-jwt-key-change-in-production-min-32-chars
       - JWT_EXPIRES_IN=7d
       - CORS_ORIGIN=http://localhost:3000
     depends_on:
-      - mysql
+      - postgres
       - redis
     volumes:
       - ./uploads:/app/uploads
@@ -28,22 +29,23 @@ services:
     networks:
       - workshopsai-network
 
-  mysql:
-    image: mysql:8.0
+  postgres:
+    image: postgres:15-alpine
     environment:
-      - MYSQL_ROOT_PASSWORD=root_password_here
-      - MYSQL_DATABASE=workshopsai_cms
-      - MYSQL_USER=workshopsai
-      - MYSQL_PASSWORD=secure_password_here
+      - POSTGRES_DB=workshopsai_cms
+      - POSTGRES_USER=workshopsai
+      - POSTGRES_PASSWORD=secure_password_here
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./scripts/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations/001_initial_postgresql_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./migrations/002_data_migration_mysql_to_postgresql.sql:/docker-entrypoint-initdb.d/02_migration.sql:ro
     restart: unless-stopped
     networks:
       - workshopsai-network
-    command: --default-authentication-plugin=mysql_native_password
+    command: postgres -c log_statement=all -c log_min_duration_statement=0
 
   redis:
     image: redis:7-alpine
@@ -102,7 +104,7 @@ services:
       - monitoring
 
 volumes:
-  mysql_data:
+  postgres_data:
     driver: local
   redis_data:
     driver: local

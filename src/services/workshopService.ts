@@ -1,4 +1,4 @@
-import { db } from "../config/database";
+import { db } from '../config/database';
 import {
   workshops,
   sessions,
@@ -11,15 +11,26 @@ import {
   facilitators,
   locations,
   enrollments,
-} from "../models/schema";
-import { eq, and, or, desc, asc, like, count, gte, lte, inArray } from "drizzle-orm";
-import { v4 as uuidv4 } from "uuid";
-import slugify from "slugify";
+} from '../models/postgresql-schema';
+import {
+  eq,
+  and,
+  or,
+  desc,
+  asc,
+  like,
+  count,
+  gte,
+  lte,
+  inArray,
+} from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
+import slugify from 'slugify';
 import type {
   CreateWorkshopInput,
   UpdateWorkshopInput,
   WorkshopFilter,
-} from "../types/validation";
+} from '../types/validation';
 
 export class WorkshopService {
   // Create workshop
@@ -27,31 +38,35 @@ export class WorkshopService {
     const workshopId = uuidv4();
 
     // Create workshop with slug if not provided
-    const slug = data.slug || slugify(data.title, { lower: true, strict: true });
+    const slug =
+      data.slug || slugify(data.title, { lower: true, strict: true });
 
-    const [workshop] = await db.insert(workshops).values({
-      id: workshopId,
-      title: data.title,
-      slug,
-      subtitle: data.subtitle,
-      description: data.description,
-      shortDescription: data.shortDescription,
-      startDate: data.startDate ? new Date(data.startDate) : null,
-      endDate: data.endDate ? new Date(data.endDate) : null,
-      seatLimit: data.seatLimit,
-      enableWaitingList: data.enableWaitingList,
-      templateTheme: data.templateTheme,
-      language: data.language,
-      price: data.price.toString(),
-      currency: data.currency,
-      imageUrl: data.imageUrl || null,
-      gallery: data.gallery,
-      requirements: data.requirements,
-      objectives: data.objectives,
-      materials: data.materials,
-      createdBy: userId,
-      status: "draft",
-    }).returning();
+    const [workshop] = await db
+      .insert(workshops)
+      .values({
+        id: workshopId,
+        title: data.title,
+        slug,
+        subtitle: data.subtitle,
+        description: data.description,
+        shortDescription: data.shortDescription,
+        startDate: data.startDate ? new Date(data.startDate) : null,
+        endDate: data.endDate ? new Date(data.endDate) : null,
+        seatLimit: data.seatLimit,
+        enableWaitingList: data.enableWaitingList,
+        templateTheme: data.templateTheme,
+        language: data.language,
+        price: data.price.toString(),
+        currency: data.currency,
+        imageUrl: data.imageUrl || null,
+        gallery: data.gallery,
+        requirements: data.requirements,
+        objectives: data.objectives,
+        materials: data.materials,
+        createdBy: userId,
+        status: 'draft',
+      })
+      .returning();
 
     // Handle tags
     if (data.tagIds && data.tagIds.length > 0) {
@@ -65,27 +80,35 @@ export class WorkshopService {
 
     // Handle locations
     if (data.locationIds && data.locationIds.length > 0) {
-      await this.addWorkshopLocations(workshopId, data.locationIds, data.locationIds[0]);
+      await this.addWorkshopLocations(
+        workshopId,
+        data.locationIds,
+        data.locationIds[0],
+      );
     }
 
     return workshop;
   }
 
   // Update workshop
-  static async updateWorkshop(id: string, userId: number, data: UpdateWorkshopInput) {
+  static async updateWorkshop(
+    id: string,
+    userId: number,
+    data: UpdateWorkshopInput,
+  ) {
     // Check if workshop exists and user has permission
     const workshop = await this.getWorkshopById(id);
     if (!workshop) {
-      throw new Error("Workshop not found");
+      throw new Error('Workshop not found');
     }
 
     // Check if user is creator or admin
     if (workshop.createdBy !== userId) {
-      throw new Error("Permission denied");
+      throw new Error('Permission denied');
     }
 
     // Update slug if title changed and slug not provided
-    let updateData = { ...data };
+    const updateData = { ...data };
     if (data.title && !data.slug) {
       updateData.slug = slugify(data.title, { lower: true, strict: true });
     }
@@ -114,7 +137,11 @@ export class WorkshopService {
 
     // Handle locations update
     if (data.locationIds !== undefined) {
-      await this.updateWorkshopLocations(id, data.locationIds, data.locationIds[0]);
+      await this.updateWorkshopLocations(
+        id,
+        data.locationIds,
+        data.locationIds[0],
+      );
     }
 
     return updatedWorkshop;
@@ -236,8 +263,8 @@ export class WorkshopService {
     const {
       page,
       limit,
-      sortBy = "createdAt",
-      sortOrder = "desc",
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
       status,
       templateTheme,
       language,
@@ -278,8 +305,8 @@ export class WorkshopService {
         or(
           like(workshops.title, `%${search}%`),
           like(workshops.description, `%${search}%`),
-          like(workshops.subtitle, `%${search}%`)
-        )
+          like(workshops.subtitle, `%${search}%`),
+        ),
       );
     }
 
@@ -290,7 +317,7 @@ export class WorkshopService {
         .from(workshopTags)
         .where(inArray(workshopTags.tagId, tagIds));
 
-      const workshopIdsByTags = tagWorkshops.map((tw) => tw.workshopId);
+      const workshopIdsByTags = tagWorkshops.map(tw => tw.workshopId);
       conditions.push(inArray(workshops.id, workshopIdsByTags));
     }
 
@@ -301,14 +328,17 @@ export class WorkshopService {
         .from(workshopFacilitators)
         .where(inArray(workshopFacilitators.facilitatorId, facilitatorIds));
 
-      const workshopIdsByFacilitators = facilitatorWorkshops.map((fw) => fw.workshopId);
+      const workshopIdsByFacilitators = facilitatorWorkshops.map(
+        fw => fw.workshopId,
+      );
       conditions.push(inArray(workshops.id, workshopIdsByFacilitators));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     // Build order clause
-    const orderClause = sortOrder === "asc" ? asc(workshops[sortBy]) : desc(workshops[sortBy]);
+    const orderClause =
+      sortOrder === 'asc' ? asc(workshops[sortBy]) : desc(workshops[sortBy]);
 
     // Get total count
     const [totalCountResult] = await db
@@ -370,22 +400,22 @@ export class WorkshopService {
   static async publishWorkshop(id: string, userId: number, publishDate?: Date) {
     const workshop = await this.getWorkshopById(id);
     if (!workshop) {
-      throw new Error("Workshop not found");
+      throw new Error('Workshop not found');
     }
 
     if (workshop.createdBy !== userId) {
-      throw new Error("Permission denied");
+      throw new Error('Permission denied');
     }
 
     // Validate required fields
     if (!workshop.title || !workshop.description) {
-      throw new Error("Title and description are required to publish workshop");
+      throw new Error('Title and description are required to publish workshop');
     }
 
     const [publishedWorkshop] = await db
       .update(workshops)
       .set({
-        status: "published",
+        status: 'published',
         publishedAt: publishDate || new Date(),
         updatedAt: new Date(),
       })
@@ -399,17 +429,17 @@ export class WorkshopService {
   static async archiveWorkshop(id: string, userId: number) {
     const workshop = await this.getWorkshopById(id);
     if (!workshop) {
-      throw new Error("Workshop not found");
+      throw new Error('Workshop not found');
     }
 
     if (workshop.createdBy !== userId) {
-      throw new Error("Permission denied");
+      throw new Error('Permission denied');
     }
 
     const [archivedWorkshop] = await db
       .update(workshops)
       .set({
-        status: "archived",
+        status: 'archived',
         updatedAt: new Date(),
       })
       .where(eq(workshops.id, id))
@@ -422,11 +452,11 @@ export class WorkshopService {
   static async deleteWorkshop(id: string, userId: number) {
     const workshop = await this.getWorkshopById(id);
     if (!workshop) {
-      throw new Error("Workshop not found");
+      throw new Error('Workshop not found');
     }
 
     if (workshop.createdBy !== userId) {
-      throw new Error("Permission denied");
+      throw new Error('Permission denied');
     }
 
     // Check if workshop has enrollments
@@ -436,7 +466,7 @@ export class WorkshopService {
       .where(eq(enrollments.workshopId, id));
 
     if (enrollmentCount.count > 0) {
-      throw new Error("Cannot delete workshop with enrollments");
+      throw new Error('Cannot delete workshop with enrollments');
     }
 
     await db.delete(workshops).where(eq(workshops.id, id));
@@ -448,7 +478,7 @@ export class WorkshopService {
   static async duplicateWorkshop(id: string, userId: number, newTitle: string) {
     const originalWorkshop = await this.getWorkshopById(id);
     if (!originalWorkshop) {
-      throw new Error("Workshop not found");
+      throw new Error('Workshop not found');
     }
 
     const newWorkshopId = uuidv4();
@@ -478,7 +508,7 @@ export class WorkshopService {
         objectives: originalWorkshop.objectives,
         materials: originalWorkshop.materials,
         createdBy: userId,
-        status: "draft",
+        status: 'draft',
       })
       .returning();
 
@@ -519,21 +549,29 @@ export class WorkshopService {
     }
 
     // Copy tags
-    const tagIds = originalWorkshop.workshopTags.map((wt) => wt.tagId);
+    const tagIds = originalWorkshop.workshopTags.map(wt => wt.tagId);
     if (tagIds.length > 0) {
       await this.addWorkshopTags(newWorkshopId, tagIds);
     }
 
     // Copy facilitators
-    const facilitatorIds = originalWorkshop.workshopFacilitators.map((wf) => wf.facilitatorId);
+    const facilitatorIds = originalWorkshop.workshopFacilitators.map(
+      wf => wf.facilitatorId,
+    );
     if (facilitatorIds.length > 0) {
       await this.addWorkshopFacilitators(newWorkshopId, facilitatorIds);
     }
 
     // Copy locations
-    const locationIds = originalWorkshop.workshopLocations.map((wl) => wl.locationId);
+    const locationIds = originalWorkshop.workshopLocations.map(
+      wl => wl.locationId,
+    );
     if (locationIds.length > 0) {
-      await this.addWorkshopLocations(newWorkshopId, locationIds, locationIds[0]);
+      await this.addWorkshopLocations(
+        newWorkshopId,
+        locationIds,
+        locationIds[0],
+      );
     }
 
     return duplicateWorkshop;
@@ -541,7 +579,7 @@ export class WorkshopService {
 
   // Helper methods
   private static async addWorkshopTags(workshopId: string, tagIds: number[]) {
-    const values = tagIds.map((tagId) => ({
+    const values = tagIds.map(tagId => ({
       workshopId,
       tagId,
     }));
@@ -549,9 +587,14 @@ export class WorkshopService {
     await db.insert(workshopTags).values(values);
   }
 
-  private static async updateWorkshopTags(workshopId: string, tagIds: number[]) {
+  private static async updateWorkshopTags(
+    workshopId: string,
+    tagIds: number[],
+  ) {
     // Remove existing tags
-    await db.delete(workshopTags).where(eq(workshopTags.workshopId, workshopId));
+    await db
+      .delete(workshopTags)
+      .where(eq(workshopTags.workshopId, workshopId));
 
     // Add new tags
     if (tagIds.length > 0) {
@@ -562,12 +605,12 @@ export class WorkshopService {
   private static async addWorkshopFacilitators(
     workshopId: string,
     facilitatorIds: number[],
-    role: "lead" | "assistant" | "guest" = "assistant"
+    role: 'lead' | 'assistant' | 'guest' = 'assistant',
   ) {
     const values = facilitatorIds.map((facilitatorId, index) => ({
       workshopId,
       facilitatorId,
-      role: index === 0 ? "lead" : role, // First facilitator is lead
+      role: index === 0 ? 'lead' : role, // First facilitator is lead
     }));
 
     await db.insert(workshopFacilitators).values(values);
@@ -575,7 +618,7 @@ export class WorkshopService {
 
   private static async updateWorkshopFacilitators(
     workshopId: string,
-    facilitatorIds: number[]
+    facilitatorIds: number[],
   ) {
     // Remove existing facilitators
     await db
@@ -591,9 +634,9 @@ export class WorkshopService {
   private static async addWorkshopLocations(
     workshopId: string,
     locationIds: number[],
-    primaryLocationId?: number
+    primaryLocationId?: number,
   ) {
-    const values = locationIds.map((locationId) => ({
+    const values = locationIds.map(locationId => ({
       workshopId,
       locationId,
       isPrimary: locationId === primaryLocationId,
@@ -605,7 +648,7 @@ export class WorkshopService {
   private static async updateWorkshopLocations(
     workshopId: string,
     locationIds: number[],
-    primaryLocationId?: number
+    primaryLocationId?: number,
   ) {
     // Remove existing locations
     await db
@@ -614,7 +657,11 @@ export class WorkshopService {
 
     // Add new locations
     if (locationIds.length > 0) {
-      await this.addWorkshopLocations(workshopId, locationIds, primaryLocationId);
+      await this.addWorkshopLocations(
+        workshopId,
+        locationIds,
+        primaryLocationId,
+      );
     }
   }
 }

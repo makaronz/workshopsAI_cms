@@ -1,0 +1,401 @@
+# Comprehensive CI/CD Pipeline for workshopsAI CMS
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ['v*']
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Run daily security scan at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  NODE_VERSION: '18'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Code Quality and Security Checks
+  quality-check:
+    name: Code Quality & Security
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type checking
+        run: npm run typecheck
+
+      - name: Linting
+        run: npm run lint
+
+      - name: Security audit
+        run: npm audit --audit-level=high
+
+      - name: Security scanning with Semgrep
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/security-audit
+            p/secrets
+            p/owasp-top-ten
+            p/jwt
+            p/nodejs
+            p/cwe-top-25
+
+      - name: SAST with CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript
+
+      - name: CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+
+  # Testing
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_USER: workshopsai_test
+          POSTGRES_DB: workshopsai_cms_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Wait for services
+        run: |
+          timeout 60 bash -c 'until nc -z localhost 5432; do sleep 1; done'
+          timeout 60 bash -c 'until nc -z localhost 6379; do sleep 1; done'
+
+      - name: Run database migrations
+        run: |
+          export DATABASE_URL=postgresql://workshopsai_test:test_password@localhost:5432/workshopsai_cms_test
+          npm run db:migrate || true  # Allow failure if migrations already applied
+
+      - name: Run unit tests
+        run: npm run test:coverage
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+
+      - name: Run integration tests
+        run: npm run test -- --testPathPattern=integration
+        env:
+          DATABASE_URL: postgresql://workshopsai_test:test_password@localhost:5432/workshopsai_cms_test
+          REDIS_HOST: localhost
+          NODE_ENV: test
+
+  # Build and Test Docker Image
+  build-test:
+    name: Build & Test Docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [quality-check, test]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build development image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: development
+          push: false
+          load: true
+          tags: workshopsai/cms:dev-test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build production image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: production
+          push: false
+          load: true
+          tags: workshopsai/cms:prod-test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run security scan on production image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: workshopsai/cms:prod-test
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Test production image
+        run: |
+          docker run -d --name test-app \
+            -e NODE_ENV=production \
+            -e PORT=3001 \
+            -e DATABASE_URL=postgresql://test:test@host.docker.internal:5432/test \
+            -e REDIS_HOST=host.docker.internal \
+            -p 3001:3001 \
+            workshopsai/cms:prod-test
+
+          # Wait for health check
+          timeout 60 bash -c 'until curl -f http://localhost:3001/health; do sleep 2; done'
+
+  # Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [build-test]
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.workshopsai.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push to ECR
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: production
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/workshopsai-cms:staging
+            ${{ steps.login-ecr.outputs.registry }}/workshopsai-cms:staging-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to ECS Staging
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: .aws/task-staging.json
+          service: workshopsai-cms-staging
+          cluster: workshopsai-staging
+          wait-for-service-stability: true
+
+      - name: Run smoke tests
+        run: |
+          timeout 300 bash -c 'until curl -f https://staging.workshopsai.com/health; do sleep 10; done'
+          curl -f https://staging.workshopsai.com/api/health || exit 1
+
+  # Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [build-test]
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    environment:
+      name: production
+      url: https://workshopsai.com
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push to ECR
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: production
+          push: true
+          tags: |
+            ${{ steps.login-ecr.outputs.registry }}/workshopsai-cms:latest
+            ${{ steps.login-ecr.outputs.registry }}/workshopsai-cms:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/workshopsai-cms:v${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to ECS Production with Blue/Green
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: .aws/task-production.json
+          service: workshopsai-cms-production
+          cluster: workshopsai-production
+          wait-for-service-stability: true
+          codedeploy-appspec: .aws/appspec.yml
+          codedeploy-application: workshopsai-cms
+          codedeploy-deployment-group: workshopsai-cms-production
+
+      - name: Run production health checks
+        run: |
+          # Wait for deployment to stabilize
+          timeout 600 bash -c 'until curl -f https://workshopsai.com/health; do sleep 15; done'
+
+          # Run comprehensive health checks
+          curl -f https://workshopsai.com/api/health || exit 1
+          curl -f https://workshopsai.com/api/metrics || exit 1
+
+          # Check database connectivity
+          curl -f https://workshopsai.com/api/health/db || exit 1
+
+  # Performance Testing
+  performance-test:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [deploy-staging]
+    if: github.ref == 'refs/heads/develop'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install Artillery
+        run: npm install -g artillery@latest
+
+      - name: Run performance tests
+        run: |
+          artillery run tests/performance/load-test.yml --target https://staging.workshopsai.com
+        continue-on-error: true
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: artillery-report.html
+
+  # Security Scan (Scheduled)
+  security-scan:
+    name: Scheduled Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: github.event_name == 'schedule'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run comprehensive security scan
+        uses: securecodewarrior/github-action-add-sarif@v1
+        with:
+          sarif-file: 'security-scan-results.sarif'
+
+      - name: Create security issue if vulnerabilities found
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'Security vulnerabilities detected in scheduled scan',
+              body: 'Automated security scan found potential vulnerabilities. Please review the scan results and address any issues.',
+              labels: ['security', 'automated-scan']
+            })
+
+  # Notify Slack on deployment
+  notify:
+    name: Notify Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: always() && (needs.deploy-production.result == 'success' || needs.deploy-production.result == 'failure')
+
+    steps:
+      - name: Notify Slack on success
+        if: needs.deploy-production.result == 'success'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          channel: '#deployments'
+          text: '🚀 workshopsAI CMS deployed successfully to production!'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack on failure
+        if: needs.deploy-production.result == 'failure'
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#deployments'
+          text: '❌ workshopsAI CMS deployment to production failed!'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workshop Editor Demo - WorkshopsAI CMS</title>
+
+  <style>
+    :root {
+      --color-primary: #3b82f6;
+      --color-primary-50: #eff6ff;
+      --color-primary-100: #dbeafe;
+      --color-primary-600: #2563eb;
+      --color-primary-700: #1d4ed8;
+      --color-secondary: #64748b;
+      --color-success: #10b981;
+      --color-warning: #f59e0b;
+      --color-error: #ef4444;
+      --color-background: #ffffff;
+      --color-surface: #f9fafb;
+      --color-text: #1f2937;
+      --color-text-secondary: #6b7280;
+      --color-gray-200: #e5e7eb;
+      --color-gray-300: #d1d5db;
+      --color-gray-600: #4b5563;
+      --color-gray-900: #111827;
+      --color-green-600: #10b981;
+      --color-green-700: #059669;
+      --color-yellow-100: #fef3c7;
+      --color-yellow-700: #a16207;
+      --color-red-100: #fee2e2;
+      --color-red-700: #b91c1c;
+      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --spacing-1: 0.25rem;
+      --spacing-2: 0.5rem;
+      --spacing-3: 0.75rem;
+      --spacing-4: 1rem;
+      --spacing-6: 1.5rem;
+      --spacing-8: 2rem;
+      --spacing-20: 5rem;
+      --spacing-24: 6rem;
+      --radius-sm: 0.25rem;
+      --radius-md: 0.375rem;
+      --radius-lg: 0.5rem;
+      --radius-xl: 0.75rem;
+      --radius-full: 9999px;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+      --transition: all 0.2s ease;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-family);
+      line-height: 1.5;
+      color: var(--color-text);
+      background-color: var(--color-background);
+      margin: 0;
+      padding: 1rem;
+    }
+
+    .demo-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .demo-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding: 2rem;
+      background: linear-gradient(135deg, var(--color-primary) 0%, #1e40af 100%);
+      color: white;
+      border-radius: var(--radius-lg);
+    }
+
+    .demo-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .demo-subtitle {
+      font-size: 1.125rem;
+      opacity: 0.9;
+      margin: 0;
+    }
+
+    .demo-controls {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .control-button {
+      padding: 0.5rem 1rem;
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .control-button:hover {
+      background: var(--color-primary-600);
+    }
+
+    .control-button.secondary {
+      background: var(--color-secondary);
+    }
+
+    .control-button.outline {
+      background: transparent;
+      color: var(--color-primary);
+      border: 1px solid var(--color-primary);
+    }
+
+    .control-button.outline:hover {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .editor-container {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: var(--spacing-8);
+      margin-top: var(--spacing-6);
+    }
+
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-6);
+    }
+
+    .sidebar {
+      position: sticky;
+      top: var(--spacing-4);
+      height: fit-content;
+    }
+
+    .progress-indicator {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-4);
+      padding: var(--spacing-4);
+      background: var(--color-primary-50);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--spacing-6);
+    }
+
+    .progress-bar {
+      flex: 1;
+      height: 8px;
+      background: var(--color-primary-100);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--color-primary-600);
+      transition: width 0.3s ease;
+    }
+
+    .step-indicator {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-2);
+      font-weight: 500;
+    }
+
+    .step-number {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: var(--color-primary-600);
+      color: white;
+      border-radius: var(--radius-full);
+      font-weight: 600;
+    }
+
+    .step-number.active {
+      background: var(--color-primary-700);
+      box-shadow: 0 0 0 4px var(--color-primary-100);
+    }
+
+    .step-number.completed {
+      background: var(--color-green-600);
+    }
+
+    .form-section {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: var(--spacing-6);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-gray-200);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--spacing-4);
+    }
+
+    .section-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .section-description {
+      color: var(--color-text-secondary);
+      margin-top: var(--spacing-1);
+    }
+
+    .bilingual-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-4);
+    }
+
+    .language-label {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-2);
+      font-weight: 500;
+      margin-bottom: var(--spacing-2);
+    }
+
+    .language-flag {
+      font-size: 1.125rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--spacing-4);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-2);
+    }
+
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    .required {
+      color: var(--color-error);
+    }
+
+    input, textarea, select {
+      padding: var(--spacing-3);
+      border: 1px solid var(--color-gray-300);
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-100);
+    }
+
+    .error {
+      border-color: var(--color-error) !important;
+      box-shadow: 0 0 0 3px var(--color-red-100) !important;
+    }
+
+    .error-message {
+      color: var(--color-error);
+      font-size: 0.875rem;
+      margin-top: var(--spacing-1);
+    }
+
+    .actions {
+      display: flex;
+      gap: var(--spacing-4);
+      justify-content: flex-end;
+      margin-top: var(--spacing-6);
+    }
+
+    .ui-button {
+      padding: var(--spacing-3) var(--spacing-6);
+      border-radius: var(--radius-md);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--spacing-2);
+      font-family: inherit;
+      font-size: 1rem;
+    }
+
+    .ui-button.primary {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .ui-button.primary:hover {
+      background: var(--color-primary-600);
+    }
+
+    .ui-button.outline {
+      background: transparent;
+      color: var(--color-primary);
+      border: 1px solid var(--color-primary);
+    }
+
+    .ui-button.outline:hover {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .autosave-status {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-2);
+      padding: var(--spacing-2) var(--spacing-3);
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+    }
+
+    .autosave-status.saving {
+      background: var(--color-yellow-100);
+      color: var(--color-yellow-700);
+    }
+
+    .autosave-status.saved {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--color-success);
+    }
+
+    .autosave-status.error {
+      background: var(--color-red-100);
+      color: var(--color-red-700);
+    }
+
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-4);
+      margin-top: var(--spacing-4);
+    }
+
+    .timeline-item {
+      display: flex;
+      gap: var(--spacing-4);
+      position: relative;
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: 20px;
+      top: 40px;
+      width: 2px;
+      height: calc(100% + var(--spacing-4));
+      background: var(--color-gray-200);
+    }
+
+    .timeline-item:last-child::before {
+      display: none;
+    }
+
+    .timeline-marker {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background: var(--color-primary-100);
+      border: 2px solid var(--color-primary);
+      border-radius: var(--radius-full);
+      font-weight: 600;
+      color: var(--color-primary-700);
+      flex-shrink: 0;
+      z-index: 1;
+    }
+
+    .timeline-marker.completed {
+      background: var(--color-green-600);
+      border-color: var(--color-green-600);
+      color: white;
+    }
+
+    .timeline-marker.active {
+      background: var(--color-primary-600);
+      color: white;
+      box-shadow: 0 0 0 4px var(--color-primary-100);
+    }
+
+    .timeline-content {
+      flex: 1;
+      background: white;
+      padding: var(--spacing-4);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-gray-200);
+    }
+
+    .timeline-title {
+      font-weight: 600;
+      margin-bottom: var(--spacing-1);
+    }
+
+    .timeline-description {
+      color: var(--color-text-secondary);
+      font-size: 0.875rem;
+      margin-bottom: var(--spacing-3);
+    }
+
+    .time-estimate {
+      display: flex;
+      align-items: center;
+      gap: var(--spacing-1);
+      color: var(--color-gray-600);
+      font-size: 0.875rem;
+    }
+
+    .step-content {
+      display: none;
+    }
+
+    .step-content.active {
+      display: block;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 1024px) {
+      .editor-container {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        order: -1;
+      }
+
+      .bilingual-inputs {
+        grid-template-columns: 1fr;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .demo-container {
+        padding: 0.5rem;
+      }
+
+      .actions {
+        flex-direction: column;
+      }
+
+      .ui-button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-container">
+    <header class="demo-header">
+      <h1 class="demo-title">Workshop Editor</h1>
+      <p class="demo-subtitle">Multi-step guided workflow for creating comprehensive workshop experiences</p>
+    </header>
+
+    <div class="demo-controls">
+      <button class="control-button" onclick="fillSampleData()">📝 Fill Sample Data</button>
+      <button class="control-button secondary" onclick="goToStep(2)">🎯 Jump to Sessions</button>
+      <button class="control-button secondary" onclick="goToStep(3)">📦 Jump to Modules</button>
+      <button class="control-button outline" onclick="validateAndShow()">✅ Validate & Show</button>
+    </div>
+
+    <div class="editor-container">
+      <div class="main-content">
+        <!-- Step 1: Metadata -->
+        <div class="step-content active" id="step-1">
+          <div class="form-section">
+            <div class="section-header">
+              <h2 class="section-title">Basic Information</h2>
+              <p class="section-description">Set up the fundamental details about your workshop</p>
+            </div>
+
+            <div class="form-group full-width">
+              <label>
+                Workshop Slug <span class="required">*</span>
+              </label>
+              <input type="text" id="workshopSlug" placeholder="workshop-unique-identifier" />
+              <div class="error-message" style="display: none;">This field is required</div>
+            </div>
+
+            <div class="bilingual-inputs">
+              <div class="form-group">
+                <div class="language-label">
+                  <span class="language-flag">🇵🇱</span>
+                  <span>Title (PL) <span class="required">*</span></span>
+                </div>
+                <input type="text" id="titlePl" placeholder="Wprowadź tytuł warsztatów" />
+              </div>
+
+              <div class="form-group">
+                <div class="language-label">
+                  <span class="language-flag">🇬🇧</span>
+                  <span>Title (EN) <span class="required">*</span></span>
+                </div>
+                <input type="text" id="titleEn" placeholder="Enter workshop title" />
+              </div>
+            </div>
+
+            <div class="bilingual-inputs">
+              <div class="form-group">
+                <div class="language-label">
+                  <span class="language-flag">🇵🇱</span>
+                  <span>Description (PL) <span class="required">*</span></span>
+                </div>
+                <textarea rows="4" id="descriptionPl" placeholder="Wprowadź opis warsztatów"></textarea>
+              </div>
+
+              <div class="form-group">
+                <div class="language-label">
+                  <span class="language-flag">🇬🇧</span>
+                  <span>Description (EN) <span class="required">*</span></span>
+                </div>
+                <textarea rows="4" id="descriptionEn" placeholder="Enter workshop description"></textarea>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Start Date</label>
+                <input type="datetime-local" id="startDate" />
+              </div>
+
+              <div class="form-group">
+                <label>End Date</label>
+                <input type="datetime-local" id="endDate" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Seat Limit</label>
+                <input type="number" min="1" id="seatLimit" placeholder="Maximum participants" />
+              </div>
+
+              <div class="form-group">
+                <label>Template Theme</label>
+                <select id="templateTheme">
+                  <option value="integracja">Integracja</option>
+                  <option value="konflikty">Konflikty</option>
+                  <option value="well-being">Well-being</option>
+                  <option value="custom">Custom</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Price</label>
+                <input type="number" min="0" step="0.01" id="price" placeholder="0.00" />
+              </div>
+
+              <div class="form-group">
+                <label>Currency</label>
+                <select id="currency">
+                  <option value="PLN">PLN (zł)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="USD">USD ($)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Sessions -->
+        <div class="step-content" id="step-2">
+          <div class="form-section">
+            <div class="section-header">
+              <h2 class="section-title">Workshop Sessions</h2>
+              <p class="section-description">Schedule and organize your workshop sessions</p>
+            </div>
+
+            <div class="form-group">
+              <label>Session Management</label>
+              <div style="padding: 2rem; background: var(--color-surface); border-radius: var(--radius-md); text-align: center; color: var(--color-text-secondary);">
+                <div style="font-size: 2rem; margin-bottom: 1rem;">📅</div>
+                <p>Session Manager Component</p>
+                <p style="font-size: 0.875rem; margin-top: 0.5rem;">Interactive session scheduling with time blocks and resource allocation</p>
+                <button class="ui-button primary" style="margin-top: 1rem;">Add Sample Session</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Modules -->
+        <div class="step-content" id="step-3">
+          <div class="form-section">
+            <div class="section-header">
+              <h2 class="section-title">Content Modules</h2>
+              <p class="section-description">Create and organize workshop content modules</p>
+            </div>
+
+            <div class="form-group">
+              <label>Module Builder</label>
+              <div style="padding: 2rem; background: var(--color-surface); border-radius: var(--radius-md); text-align: center; color: var(--color-text-secondary);">
+                <div style="font-size: 2rem; margin-bottom: 1rem;">📦</div>
+                <p>Module Builder Component</p>
+                <p style="font-size: 0.875rem; margin-top: 0.5rem;">Drag-and-drop interface for organizing workshop content</p>
+                <button class="ui-button primary" style="margin-top: 1rem;">Add Sample Module</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Review -->
+        <div class="step-content" id="step-4">
+          <div class="form-section">
+            <div class="section-header">
+              <h2 class="section-title">Review & Publish</h2>
+              <p class="section-description">Review your workshop and prepare for publication</p>
+            </div>
+
+            <div class="form-group">
+              <label>Publishing Checklist</label>
+              <div style="padding: 2rem; background: var(--color-surface); border-radius: var(--radius-md);">
+                <h4 style="margin-bottom: 1rem;">Workshop Status</h4>
+
+                <div style="display: grid; gap: 0.75rem; margin-bottom: 2rem;">
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="color: var(--color-success);">✅</span>
+                    <span>Basic information completed</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="color: var(--color-warning);">⚠️</span>
+                    <span>At least one session recommended</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="color: var(--color-warning);">⚠️</span>
+                    <span>Add content modules for better engagement</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="color: var(--color-success);">✅</span>
+                    <span>Bilingual content available</span>
+                  </div>
+                </div>
+
+                <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: var(--radius-md); border-left: 4px solid var(--color-primary);">
+                  <h5 style="margin-bottom: 0.5rem; color: var(--color-primary);">Ready to Publish</h5>
+                  <p style="margin: 0; font-size: 0.875rem; color: var(--color-text-secondary);">
+                    Your workshop is ready for publication. Click "Publish Workshop" to make it available to participants.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="ui-button outline" onclick="previousStep()" id="prevButton" style="display: none;">
+            ← Previous
+          </button>
+
+          <button class="ui-button primary" onclick="nextStep()" id="nextButton">
+            Next →
+          </button>
+
+          <button class="ui-button outline" onclick="saveWorkshop()">
+            💾 Save Draft
+          </button>
+        </div>
+      </div>
+
+      <div class="sidebar">
+        <div class="form-section">
+          <h3 class="section-title">Workshop Progress</h3>
+          <div class="progress-indicator">
+            <div class="step-indicator">
+              <span class="step-number active" id="stepIndicator">1</span>
+              <span id="stepText">Step 1 of 4</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressBar" style="width: 25%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="autosave-status saved" id="autosaveStatus">
+          ✅ Saved 2 minutes ago
+        </div>
+
+        <div class="timeline">
+          <div class="timeline-item">
+            <div class="timeline-marker active" id="timeline-1">1</div>
+            <div class="timeline-content">
+              <div class="timeline-title">Metadata</div>
+              <div class="timeline-description">
+                Basic workshop information and settings
+              </div>
+              <div class="time-estimate">
+                ⏱️ 10min
+              </div>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-marker" id="timeline-2">2</div>
+            <div class="timeline-content">
+              <div class="timeline-title">Sessions</div>
+              <div class="timeline-description">
+                Schedule workshop sessions and timing
+              </div>
+              <div class="time-estimate">
+                ⏱️ 15min
+              </div>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-marker" id="timeline-3">3</div>
+            <div class="timeline-content">
+              <div class="timeline-title">Modules</div>
+              <div class="timeline-description">
+                Create content modules and activities
+              </div>
+              <div class="time-estimate">
+                ⏱️ 10min
+              </div>
+            </div>
+          </div>
+
+          <div class="timeline-item">
+            <div class="timeline-marker" id="timeline-4">4</div>
+            <div class="timeline-content">
+              <div class="timeline-title">Review</div>
+              <div class="timeline-description">
+                Review and prepare for publication
+              </div>
+              <div class="time-estimate">
+                ⏱️ 5min
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentStep = 1;
+    const totalSteps = 4;
+
+    function goToStep(step) {
+      if (step < 1 || step > totalSteps) return;
+
+      // Hide current step
+      document.getElementById(`step-${currentStep}`).classList.remove('active');
+      document.getElementById(`timeline-${currentStep}`).classList.remove('active');
+
+      // Update current step
+      currentStep = step;
+
+      // Show new step
+      document.getElementById(`step-${currentStep}`).classList.add('active');
+      document.getElementById(`timeline-${currentStep}`).classList.add('active');
+
+      // Update UI elements
+      updateStepUI();
+    }
+
+    function nextStep() {
+      if (currentStep < totalSteps) {
+        goToStep(currentStep + 1);
+      }
+    }
+
+    function previousStep() {
+      if (currentStep > 1) {
+        goToStep(currentStep - 1);
+      }
+    }
+
+    function updateStepUI() {
+      // Update progress bar
+      const progressPercent = (currentStep / totalSteps) * 100;
+      document.getElementById('progressBar').style.width = `${progressPercent}%`;
+
+      // Update step indicator
+      document.getElementById('stepIndicator').textContent = currentStep;
+      document.getElementById('stepIndicator').className = `step-number active`;
+
+      // Update step text
+      document.getElementById('stepText').textContent = `Step ${currentStep} of ${totalSteps}`;
+
+      // Update timeline markers
+      for (let i = 1; i <= totalSteps; i++) {
+        const marker = document.getElementById(`timeline-${i}`);
+        marker.classList.remove('active', 'completed');
+
+        if (i < currentStep) {
+          marker.classList.add('completed');
+          marker.textContent = '✓';
+        } else if (i === currentStep) {
+          marker.classList.add('active');
+          marker.textContent = i;
+        } else {
+          marker.textContent = i;
+        }
+      }
+
+      // Update action buttons
+      const prevButton = document.getElementById('prevButton');
+      const nextButton = document.getElementById('nextButton');
+
+      prevButton.style.display = currentStep > 1 ? 'inline-flex' : 'none';
+
+      if (currentStep === totalSteps) {
+        nextButton.textContent = '🚀 Publish Workshop';
+        nextButton.onclick = publishWorkshop;
+      } else {
+        nextButton.textContent = 'Next →';
+        nextButton.onclick = nextStep;
+      }
+    }
+
+    function fillSampleData() {
+      document.getElementById('workshopSlug').value = 'integracja-team-2024';
+      document.getElementById('titlePl').value = 'Warsztaty Integracji Zespołowej';
+      document.getElementById('titleEn').value = 'Team Integration Workshop';
+      document.getElementById('descriptionPl').value = 'Kompleksowe warsztaty mające na celu poprawę komunikacji i współpracy w zespole.';
+      document.getElementById('descriptionEn').value = 'Comprehensive workshop aimed at improving team communication and collaboration.';
+      document.getElementById('startDate').value = '2024-06-15T09:00';
+      document.getElementById('endDate').value = '2024-06-15T17:00';
+      document.getElementById('seatLimit').value = '20';
+      document.getElementById('price').value = '299';
+
+      // Show save notification
+      showAutosaveStatus('saving');
+      setTimeout(() => showAutosaveStatus('saved'), 2000);
+    }
+
+    function saveWorkshop() {
+      showAutosaveStatus('saving');
+
+      // Simulate save operation
+      setTimeout(() => {
+        showAutosaveStatus('saved');
+      }, 2000);
+    }
+
+    function publishWorkshop() {
+      if (confirm('Are you ready to publish this workshop? It will become available to participants.')) {
+        showAutosaveStatus('saving');
+
+        setTimeout(() => {
+          showAutosaveStatus('saved');
+          alert('🎉 Workshop published successfully!');
+        }, 2000);
+      }
+    }
+
+    function validateAndShow() {
+      let isValid = true;
+      const errors = [];
+
+      // Check required fields
+      const slug = document.getElementById('workshopSlug').value;
+      const titlePl = document.getElementById('titlePl').value;
+      const titleEn = document.getElementById('titleEn').value;
+      const descriptionPl = document.getElementById('descriptionPl').value;
+      const descriptionEn = document.getElementById('descriptionEn').value;
+
+      if (!slug) {
+        errors.push('Workshop slug is required');
+      }
+      if (!titlePl || !titleEn) {
+        errors.push('Both Polish and English titles are required');
+      }
+      if (!descriptionPl || !descriptionEn) {
+        errors.push('Both Polish and English descriptions are required');
+      }
+
+      if (errors.length > 0) {
+        alert('Validation Errors:\n\n' + errors.join('\n'));
+        return false;
+      }
+
+      // Show success message
+      alert('✅ Workshop data is valid!\n\nSummary:\n- Slug: ' + slug +
+            '\n- Title: ' + titleEn +
+            '\n- Ready for: Session scheduling');
+      return true;
+    }
+
+    function showAutosaveStatus(status) {
+      const statusElement = document.getElementById('autosaveStatus');
+      statusElement.className = `autosave-status ${status}`;
+
+      const now = new Date().toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      switch (status) {
+        case 'saving':
+          statusElement.innerHTML = '⏳ Saving...';
+          break;
+        case 'saved':
+          statusElement.innerHTML = `✅ Saved at ${now}`;
+          break;
+        case 'error':
+          statusElement.innerHTML = '❌ Save failed';
+          break;
+      }
+    }
+
+    // Auto-save simulation
+    let autoSaveTimer;
+    function setupAutoSave() {
+      autoSaveTimer = setInterval(() => {
+        const hasContent = document.getElementById('workshopSlug').value ||
+                          document.getElementById('titlePl').value ||
+                          document.getElementById('titleEn').value;
+
+        if (hasContent) {
+          saveWorkshop();
+        }
+      }, 30000); // Auto-save every 30 seconds
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      updateStepUI();
+      setupAutoSave();
+
+      // Add input listeners for auto-save trigger
+      const inputs = document.querySelectorAll('input, textarea, select');
+      inputs.forEach(input => {
+        input.addEventListener('input', () => {
+          // Reset auto-save timer on user input
+          clearTimeout(autoSaveTimer);
+          autoSaveTimer = setTimeout(() => {
+            saveWorkshop();
+          }, 5000); // Auto-save 5 seconds after user stops typing
+        });
+      });
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer);
+      }
+    });
+  </script>
+</body>
+</html>

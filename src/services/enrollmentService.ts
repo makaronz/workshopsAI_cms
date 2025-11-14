@@ -1,16 +1,12 @@
-import { db } from "../config/database";
-import {
-  enrollments,
-  workshops,
-  users,
-} from "../models/schema";
-import { eq, and, desc, asc, gte, lte, inArray } from "drizzle-orm";
-import { v4 as uuidv4 } from "uuid";
+import { db } from '../config/database';
+import { enrollments, workshops, users } from '../models/postgresql-schema';
+import { eq, and, desc, asc, gte, lte, inArray } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
 import type {
   CreateEnrollmentInput,
   UpdateEnrollmentInput,
   EnrollmentFilter,
-} from "../types/validation";
+} from '../types/validation';
 
 export class EnrollmentService {
   // Create enrollment
@@ -21,23 +17,23 @@ export class EnrollmentService {
     });
 
     if (!workshop) {
-      throw new Error("Workshop not found");
+      throw new Error('Workshop not found');
     }
 
-    if (workshop.status !== "published") {
-      throw new Error("Workshop is not available for enrollment");
+    if (workshop.status !== 'published') {
+      throw new Error('Workshop is not available for enrollment');
     }
 
     // Check if user is already enrolled
     const existingEnrollment = await db.query.enrollments.findFirst({
       where: and(
         eq(enrollments.workshopId, data.workshopId),
-        eq(enrollments.participantId, userId)
+        eq(enrollments.participantId, userId),
       ),
     });
 
     if (existingEnrollment) {
-      throw new Error("User is already enrolled in this workshop");
+      throw new Error('User is already enrolled in this workshop');
     }
 
     // Check workshop capacity
@@ -47,8 +43,8 @@ export class EnrollmentService {
       .where(
         and(
           eq(enrollments.workshopId, data.workshopId),
-          inArray(enrollments.status, ["confirmed", "pending"])
-        )
+          inArray(enrollments.status, ['confirmed', 'pending']),
+        ),
       );
 
     const enrolledCount = currentEnrollments.count.count;
@@ -56,7 +52,7 @@ export class EnrollmentService {
 
     if (seatLimit && enrolledCount >= seatLimit) {
       if (!workshop.enableWaitingList) {
-        throw new Error("Workshop is full and waiting list is disabled");
+        throw new Error('Workshop is full and waiting list is disabled');
       }
       // Add to waiting list
       const [enrollment] = await db
@@ -65,7 +61,7 @@ export class EnrollmentService {
           id: uuidv4(),
           workshopId: data.workshopId,
           participantId: userId,
-          status: "waitlisted",
+          status: 'waitlisted',
           notes: data.notes,
           specialRequirements: data.specialRequirements,
           enrollmentDate: new Date(),
@@ -82,7 +78,7 @@ export class EnrollmentService {
         id: uuidv4(),
         workshopId: data.workshopId,
         participantId: userId,
-        status: "pending",
+        status: 'pending',
         notes: data.notes,
         specialRequirements: data.specialRequirements,
         enrollmentDate: new Date(),
@@ -93,24 +89,31 @@ export class EnrollmentService {
   }
 
   // Update enrollment
-  static async updateEnrollment(id: string, userId: number, data: UpdateEnrollmentInput) {
+  static async updateEnrollment(
+    id: string,
+    userId: number,
+    data: UpdateEnrollmentInput,
+  ) {
     const enrollment = await this.getEnrollmentById(id);
 
     if (!enrollment) {
-      throw new Error("Enrollment not found");
+      throw new Error('Enrollment not found');
     }
 
     // Check permissions
     const isParticipant = enrollment.participantId === userId;
-    const isFacilitator = await this.checkIfUserIsFacilitator(enrollment.workshopId, userId);
+    const isFacilitator = await this.checkIfUserIsFacilitator(
+      enrollment.workshopId,
+      userId,
+    );
     const isAdmin = false; // Will be checked by middleware
 
     if (!isParticipant && !isFacilitator && !isAdmin) {
-      throw new Error("Permission denied");
+      throw new Error('Permission denied');
     }
 
     // Update attendance tracking - only facilitators or admins can update attendance
-    let updateData = { ...data };
+    const updateData = { ...data };
     if (data.attendance && !isFacilitator && !isAdmin) {
       delete updateData.attendance;
     }
@@ -120,9 +123,9 @@ export class EnrollmentService {
       .set({
         ...updateData,
         paymentAmount: data.paymentAmount?.toString(),
-        confirmedAt: data.status === "confirmed" ? new Date() : undefined,
-        cancelledAt: data.status === "cancelled" ? new Date() : undefined,
-        completedAt: data.status === "completed" ? new Date() : undefined,
+        confirmedAt: data.status === 'confirmed' ? new Date() : undefined,
+        cancelledAt: data.status === 'cancelled' ? new Date() : undefined,
+        completedAt: data.status === 'completed' ? new Date() : undefined,
         updatedAt: new Date(),
       })
       .where(eq(enrollments.id, id))
@@ -160,12 +163,16 @@ export class EnrollmentService {
   }
 
   // List enrollments with filtering and pagination
-  static async listEnrollments(filter: EnrollmentFilter, requestingUserId?: number, userRole?: string) {
+  static async listEnrollments(
+    filter: EnrollmentFilter,
+    requestingUserId?: number,
+    userRole?: string,
+  ) {
     const {
       page,
       limit,
-      sortBy = "enrollmentDate",
-      sortOrder = "desc",
+      sortBy = 'enrollmentDate',
+      sortOrder = 'desc',
       status,
       workshopId,
       paymentStatus,
@@ -179,7 +186,7 @@ export class EnrollmentService {
     const conditions = [];
 
     // Participants can only see their own enrollments
-    if (userRole === "participant" && requestingUserId) {
+    if (userRole === 'participant' && requestingUserId) {
       conditions.push(eq(enrollments.participantId, requestingUserId));
     }
 
@@ -206,7 +213,10 @@ export class EnrollmentService {
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     // Build order clause
-    const orderClause = sortOrder === "asc" ? asc(enrollments[sortBy]) : desc(enrollments[sortBy]);
+    const orderClause =
+      sortOrder === 'asc'
+        ? asc(enrollments[sortBy])
+        : desc(enrollments[sortBy]);
 
     // Get total count
     const [totalCountResult] = await db
@@ -259,23 +269,26 @@ export class EnrollmentService {
     const enrollment = await this.getEnrollmentById(id);
 
     if (!enrollment) {
-      throw new Error("Enrollment not found");
+      throw new Error('Enrollment not found');
     }
 
     // Check if user is facilitator or admin
-    const isFacilitator = await this.checkIfUserIsFacilitator(enrollment.workshopId, userId);
+    const isFacilitator = await this.checkIfUserIsFacilitator(
+      enrollment.workshopId,
+      userId,
+    );
     if (!isFacilitator) {
-      throw new Error("Permission denied");
+      throw new Error('Permission denied');
     }
 
-    if (enrollment.status !== "pending" && enrollment.status !== "waitlisted") {
-      throw new Error("Enrollment cannot be confirmed");
+    if (enrollment.status !== 'pending' && enrollment.status !== 'waitlisted') {
+      throw new Error('Enrollment cannot be confirmed');
     }
 
     const [confirmedEnrollment] = await db
       .update(enrollments)
       .set({
-        status: "confirmed",
+        status: 'confirmed',
         confirmedAt: new Date(),
         updatedAt: new Date(),
       })
@@ -290,23 +303,29 @@ export class EnrollmentService {
     const enrollment = await this.getEnrollmentById(id);
 
     if (!enrollment) {
-      throw new Error("Enrollment not found");
+      throw new Error('Enrollment not found');
     }
 
     // Check if user is participant, facilitator, or admin
     const isParticipant = enrollment.participantId === userId;
-    const isFacilitator = await this.checkIfUserIsFacilitator(enrollment.workshopId, userId);
+    const isFacilitator = await this.checkIfUserIsFacilitator(
+      enrollment.workshopId,
+      userId,
+    );
 
     if (!isParticipant && !isFacilitator) {
-      throw new Error("Permission denied");
+      throw new Error('Permission denied');
     }
 
-    if (enrollment.status === "cancelled" || enrollment.status === "completed") {
-      throw new Error("Enrollment cannot be cancelled");
+    if (
+      enrollment.status === 'cancelled' ||
+      enrollment.status === 'completed'
+    ) {
+      throw new Error('Enrollment cannot be cancelled');
     }
 
     const updateData: any = {
-      status: "cancelled",
+      status: 'cancelled',
       cancelledAt: new Date(),
       updatedAt: new Date(),
     };
@@ -325,28 +344,39 @@ export class EnrollmentService {
   }
 
   // Mark attendance
-  static async markAttendance(id: string, sessionId: string, userId: number, attended: boolean, notes?: string) {
+  static async markAttendance(
+    id: string,
+    sessionId: string,
+    userId: number,
+    attended: boolean,
+    notes?: string,
+  ) {
     const enrollment = await this.getEnrollmentById(id);
 
     if (!enrollment) {
-      throw new Error("Enrollment not found");
+      throw new Error('Enrollment not found');
     }
 
     // Check if user is facilitator
-    const isFacilitator = await this.checkIfUserIsFacilitator(enrollment.workshopId, userId);
+    const isFacilitator = await this.checkIfUserIsFacilitator(
+      enrollment.workshopId,
+      userId,
+    );
     if (!isFacilitator) {
-      throw new Error("Permission denied");
+      throw new Error('Permission denied');
     }
 
-    if (enrollment.status !== "confirmed") {
-      throw new Error("Can only mark attendance for confirmed enrollments");
+    if (enrollment.status !== 'confirmed') {
+      throw new Error('Can only mark attendance for confirmed enrollments');
     }
 
     // Get current attendance
     const currentAttendance = (enrollment.attendance as any[]) || [];
 
     // Update or add attendance record
-    const attendanceIndex = currentAttendance.findIndex((a: any) => a.sessionId === sessionId);
+    const attendanceIndex = currentAttendance.findIndex(
+      (a: any) => a.sessionId === sessionId,
+    );
 
     if (attendanceIndex >= 0) {
       currentAttendance[attendanceIndex] = {
@@ -396,7 +426,7 @@ export class EnrollmentService {
       completed: 0,
     };
 
-    stats.forEach((stat) => {
+    stats.forEach(stat => {
       result.total += stat.count.count;
       result[stat.status] = stat.count.count;
     });
@@ -429,7 +459,10 @@ export class EnrollmentService {
   }
 
   // Helper method to check if user is facilitator of a workshop
-  private static async checkIfUserIsFacilitator(workshopId: string, userId: number): Promise<boolean> {
+  private static async checkIfUserIsFacilitator(
+    workshopId: string,
+    userId: number,
+  ): Promise<boolean> {
     // This would need to be implemented based on your facilitator relationship
     // For now, returning false (would be implemented when we have facilitator-workshop relations)
     return false;

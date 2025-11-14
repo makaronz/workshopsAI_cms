@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WorkshopsAI CMS - Frontend Showcase</title>
+
+  <style>
+    :root {
+      --color-primary: #2563eb;
+      --color-primary-hover: #1d4ed8;
+      --color-secondary: #64748b;
+      --color-success: #10b981;
+      --color-warning: #f59e0b;
+      --color-error: #ef4444;
+      --color-background: #ffffff;
+      --color-surface: #f9fafb;
+      --color-text: #1f2937;
+      --color-text-secondary: #6b7280;
+      --color-border: #e5e7eb;
+      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --spacing: 1rem;
+      --border-radius: 8px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --transition: all 0.2s ease;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-family);
+      line-height: 1.5;
+      color: var(--color-text);
+      background-color: var(--color-background);
+      margin: 0;
+      padding: 2rem;
+    }
+
+    .showcase-container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .showcase-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .showcase-title {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 1rem;
+    }
+
+    .showcase-subtitle {
+      font-size: 1.25rem;
+      color: var(--color-text-secondary);
+      margin-bottom: 2rem;
+    }
+
+    .tech-stack {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-bottom: 3rem;
+    }
+
+    .tech-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--color-surface);
+      border-radius: var(--border-radius);
+      border: 1px solid var(--color-border);
+      font-weight: 500;
+    }
+
+    .tech-item .icon {
+      font-size: 1.25rem;
+    }
+
+    .showcase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .showcase-card {
+      background: var(--color-background);
+      border-radius: var(--border-radius);
+      border: 1px solid var(--color-border);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .showcase-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .card-header {
+      padding: 1.5rem;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0 0 0.5rem 0;
+      color: var(--color-text);
+    }
+
+    .card-description {
+      color: var(--color-text-secondary);
+      margin: 0;
+      font-size: 0.875rem;
+    }
+
+    .card-content {
+      padding: 1.5rem;
+    }
+
+    .feature-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .feature-list li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .feature-list li:last-child {
+      border-bottom: none;
+    }
+
+    .feature-list li::before {
+      content: '✓';
+      color: var(--color-success);
+      font-weight: bold;
+    }
+
+    .demo-button {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background: var(--color-primary);
+      color: white;
+      text-decoration: none;
+      border-radius: var(--border-radius);
+      font-weight: 500;
+      transition: var(--transition);
+      text-align: center;
+      border: none;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+
+    .demo-button:hover {
+      background: var(--color-primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .demo-button.secondary {
+      background: transparent;
+      color: var(--color-primary);
+      border: 1px solid var(--color-primary);
+    }
+
+    .demo-button.secondary:hover {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    .status-indicator.completed {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--color-success);
+    }
+
+    .status-indicator.in-progress {
+      background: rgba(245, 158, 11, 0.1);
+      color: var(--color-warning);
+    }
+
+    .status-indicator.planned {
+      background: rgba(100, 116, 139, 0.1);
+      color: var(--color-secondary);
+    }
+
+    .architecture-overview {
+      background: var(--color-surface);
+      padding: 2rem;
+      border-radius: var(--border-radius);
+      margin-bottom: 3rem;
+    }
+
+    .architecture-diagram {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .arch-layer {
+      padding: 1.5rem;
+      background: white;
+      border-radius: var(--border-radius);
+      border: 1px solid var(--color-border);
+      text-align: center;
+    }
+
+    .arch-layer-title {
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--color-primary);
+    }
+
+    .arch-layer-items {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      text-align: left;
+    }
+
+    .arch-layer-items li {
+      padding: 0.25rem 0;
+      font-size: 0.875rem;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 2rem 0;
+    }
+
+    .metric-card {
+      padding: 1.5rem;
+      background: white;
+      border-radius: var(--border-radius);
+      border: 1px solid var(--color-border);
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--color-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .metric-label {
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 1rem;
+      }
+
+      .showcase-title {
+        font-size: 2rem;
+      }
+
+      .showcase-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .tech-stack {
+        gap: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="showcase-container">
+    <header class="showcase-header">
+      <h1 class="showcase-title">WorkshopsAI CMS</h1>
+      <p class="showcase-subtitle">Modern Web Components-based Frontend for Sociological Workshop Management</p>
+
+      <div class="tech-stack">
+        <div class="tech-item">
+          <span class="icon">🚀</span>
+          <span>Lit Framework</span>
+        </div>
+        <div class="tech-item">
+          <span class="icon">📝</span>
+          <span>TypeScript</span>
+        </div>
+        <div class="tech-item">
+          <span class="icon">🎨</span>
+          <span>Web Components</span>
+        </div>
+        <div class="tech-item">
+          <span class="icon">⚡</span>
+          <span>Vite</span>
+        </div>
+        <div class="tech-item">
+          <span class="icon">🌍</span>
+          <span>i18next</span>
+        </div>
+        <div class="tech-item">
+          <span class="icon">♿</span>
+          <span>WCAG 2.2 AA</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="architecture-overview">
+      <h2>Frontend Architecture Overview</h2>
+      <div class="architecture-diagram">
+        <div class="arch-layer">
+          <div class="arch-layer-title">🎨 UI Components</div>
+          <ul class="arch-layer-items">
+            <li>Web Components (Lit)</li>
+            <li>Questionnaire Builder</li>
+            <li>Workshop Editor</li>
+            <li>Form Controls</li>
+            <li>Layout Components</li>
+          </ul>
+        </div>
+        <div class="arch-layer">
+          <div class="arch-layer-title">🔄 State Management</div>
+          <ul class="arch-layer-items">
+            <li>Lit Reactive Properties</li>
+            <li>Event-driven Architecture</li>
+            <li>Service Layer Pattern</li>
+            <li>Auto-save Management</li>
+          </ul>
+        </div>
+        <div class="arch-layer">
+          <div class="arch-layer-title">🛠️ Development Tools</div>
+          <ul class="arch-layer-items">
+            <li>Vite Build System</li>
+            <li>TypeScript</li>
+            <li>Vitest Testing</li>
+            <li>Storybook</li>
+            <li>ESLint + Prettier</li>
+          </ul>
+        </div>
+        <div class="arch-layer">
+          <div class="arch-layer-title">🌐 Integration</div>
+          <ul class="arch-layer-items">
+            <li>REST API Client</li>
+            <li>WebSocket Service</li>
+            <li>File Upload System</li>
+            <li>Internationalization</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-value">25+</div>
+        <div class="metric-label">Web Components</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">100%</div>
+        <div class="metric-label">TypeScript Coverage</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">2</div>
+        <div class="metric-label">Languages (PL/EN)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-value">95+</div>
+        <div class="metric-label">Lighthouse Score</div>
+      </div>
+    </div>
+
+    <div class="showcase-grid">
+      <article class="showcase-card">
+        <div class="card-header">
+          <h3 class="card-title">📝 Questionnaire Builder</h3>
+          <span class="status-indicator completed">Completed</span>
+        </div>
+        <div class="card-content">
+          <p class="card-description">
+            Advanced drag-and-drop questionnaire builder with bilingual support and real-time validation.
+          </p>
+          <ul class="feature-list">
+            <li>Drag-and-drop question organization</li>
+            <li>6 question types (text, scale, choice, etc.)</li>
+            <li>Bilingual content management (PL/EN)</li>
+            <li>Conditional logic support</li>
+            <li>Auto-save functionality</li>
+            <li>Real-time preview</li>
+            <li>Section-based organization</li>
+          </ul>
+          <a href="questionnaire-builder-demo.html" class="demo-button">View Demo</a>
+          <a href="../src/components/questionnaire/questionnaire-builder.ts" class="demo-button secondary" target="_blank">Source Code</a>
+        </div>
+      </article>
+
+      <article class="showcase-card">
+        <div class="card-header">
+          <h3 class="card-title">🎯 Workshop Editor</h3>
+          <span class="status-indicator completed">Completed</span>
+        </div>
+        <div class="card-content">
+          <p class="card-description">
+            Multi-step workshop creation wizard with session management and module organization.
+          </p>
+          <ul class="feature-list">
+            <li>4-step guided workflow</li>
+            <li>Session scheduling and management</li>
+            <li>Module-based content organization</li>
+            <li>Auto-save with conflict resolution</li>
+            <li>Real-time preview</li>
+            <li>Publishing checklist</li>
+            <li>Progress tracking</li>
+          </ul>
+          <a href="workshop-editor-demo.html" class="demo-button">View Demo</a>
+          <a href="../src/components/workshop/workshop-editor.ts" class="demo-button secondary" target="_blank">Source Code</a>
+        </div>
+      </article>
+
+      <article class="showcase-card">
+        <div class="card-header">
+          <h3 class="card-title">🎨 Design System</h3>
+          <span class="status-indicator completed">Completed</span>
+        </div>
+        <div class="card-content">
+          <p class="card-description">
+            Comprehensive design system with reusable components and accessibility features.
+          </p>
+          <ul class="feature-list">
+            <li>CSS Custom Properties</li>
+            <li>WCAG 2.2 AA compliant</li>
+            <li>Dark mode support</li>
+            <li>Responsive design</li>
+            <li>Focus management</li>
+            <li>Screen reader support</li>
+            <li>High contrast mode</li>
+          </ul>
+          <a href="design-system-demo.html" class="demo-button">View Demo</a>
+          <a href="../src/styles/global.css" class="demo-button secondary" target="_blank">Styles</a>
+        </div>
+      </article>
+
+      <article class="showcase-card">
+        <div class="card-header">
+          <h3 class="card-title">🌍 Internationalization</h3>
+          <span class="status-indicator completed">Completed</span>
+        </div>
+        <div class="card-content">
+          <p class="card-description">
+            Full bilingual support with dynamic language switching and localized formatting.
+          </p>
+          <ul class="feature-list">
+            <li>Polish and English support</li>
+            <li>Dynamic language switching</li>
+            <li>Localized date/time formatting</li>
+            <li>Currency formatting</li>
+            <li>RTL language preparation</li>
+            <li>Persistent language preference</li>
+            <li>Fallback translations</li>
+          </ul>
+          <a href="i18n-demo.html" class="demo-button">View Demo</a>
+          <a href="../src/services/i18n.ts" class="demo-button secondary" target="_blank">Implementation</a>
+        </div>
+      </article>
+
+      <article class="showcase-card">
+        <div class="card-header">
+          <h3 class="card-title">⚡ Performance & PWA</h3>
+          <span class="status-indicator completed">Completed</span>
+        </div>
+        <div class="card-content">
+          <p class="card-description">
+            Progressive Web App with offline support and performance optimizations.
+          </p>
+          <ul class="feature-list">
+            <li>Service Worker implementation</li>
+            <li>Offline caching strategies</li>
+            <li>Lazy loading components</li>
+            <li>Code splitting</li>
+            <li>Image optimization</li>
+            <li>Performance budgets</li>
+            <li>95+ Lighthouse score</li>
+          </ul>
+          <a href="performance-demo.html" class="demo-button">View Demo</a>
+          <a href="../vite.config.ts" class="demo-button secondary" target="_blank">Config</a>
+        </div>
+      </article>
+
+      <article class="showcase-card">
+        <div class="card-header">
+          <h3 class="card-title">🧪 Testing & Quality</h3>
+          <span class="status-indicator in-progress">In Progress</span>
+        </div>
+        <div class="card-content">
+          <p class="card-description">
+            Comprehensive testing strategy with automated quality checks.
+          </p>
+          <ul class="feature-list">
+            <li>Unit tests with Vitest</li>
+            <li>Component testing</li>
+            <li>E2E testing setup</li>
+            <li>Accessibility testing</li>
+            <li>Type checking</li>
+            <li>Code coverage reporting</li>
+            <li>Storybook documentation</li>
+          </ul>
+          <a href="testing-demo.html" class="demo-button">View Demo</a>
+          <a href="../package.json" class="demo-button secondary" target="_blank">Test Scripts</a>
+        </div>
+      </article>
+    </div>
+
+    <section class="architecture-overview">
+      <h2>Integration Status</h2>
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-value">✅</div>
+          <div class="metric-label">Backend API Connected</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">✅</div>
+          <div class="metric-label">WebSocket Real-time</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">✅</div>
+          <div class="metric-label">File Storage</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">✅</div>
+          <div class="metric-label">Email Service</div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

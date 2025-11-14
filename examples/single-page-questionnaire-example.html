@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Single Page Questionnaire Example - WorkshopsAI CMS</title>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+
+    <!-- Import Web Components -->
+    <script type="module" src="/src/components/SinglePageQuestionnaire.js"></script>
+    <script type="module" src="/src/components/QuestionRenderer.js"></script>
+    <script type="module" src="/src/components/ProgressTracker.js"></script>
+    <script type="module" src="/src/components/SaveStatus.js"></script>
+    <script type="module" src="/src/services/AutoSaveManager.js"></script>
+    <script type="module" src="/src/services/offlineStorage.js"></script>
+    <script type="module" src="/src/i18n/translations.js"></script>
+    <script type="module" src="/src/i18n/LanguageSwitcher.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/src/styles/single-page-questionnaire.css">
+
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/src/i18n/translations.js" as="script">
+    <link rel="preload" href="/src/components/QuestionRenderer.js" as="script">
+</head>
+<body>
+    <!-- Single Page Questionnaire Component -->
+    <single-page-questionnaire
+        id="questionnaire"
+        questionnaire-id="demo-questionnaire-001"
+        api-endpoint="/api/v1"
+        auto-save="true"
+        offline-enabled="true"
+    >
+        <!-- Loading state -->
+        <div class="loading-container">
+            <div class="loading-spinner"></div>
+            <p>Ładowanie kwestionariusza...</p>
+        </div>
+    </single-page-questionnaire>
+
+    <!-- Script to initialize and load questionnaire data -->
+    <script type="module">
+        import { questionnaireTemplate } from '/src/i18n/translations.js';
+        import { offlineStorage } from '/src/services/offlineStorage.js';
+
+        // Demo questionnaire data based on cmsplan6.md
+        const demoQuestionnaire = {
+            id: 'demo-questionnaire-001',
+            title: {
+                pl: 'NASZA (NIE)UTOPIA',
+                en: 'OUR (DIS)UTOPIA'
+            },
+            instructions: {
+                pl: 'Wypełnij kwestionariusz opisujący Waszą wizję wspólnoty. Wszystkie pytania są widoczne jednocześnie, dzięki czemu możecie między nimi swobodnie przeskakiwać i edytować odpowiedzi w dowolnym momencie.',
+                en: 'Complete the questionnaire describing your community vision. All questions are visible simultaneously, allowing you to jump between them and edit answers at any time.'
+            },
+            settings: {
+                show_all_questions: true,
+                allow_edit: true,
+                require_consent: true,
+                anonymous: true,
+                question_style: 'first_person_plural'
+            },
+            questionGroups: [
+                {
+                    id: 'group-1',
+                    title: {
+                        pl: '1. WIZJA / MANIFEST',
+                        en: '1. VISION / MANIFEST'
+                    },
+                    description: {
+                        pl: 'Kluczowe wartości i cele Waszej wspólnoty',
+                        en: 'Core values and community purpose'
+                    },
+                    orderIndex: 1,
+                    questions: [
+                        {
+                            id: 'q1',
+                            text: {
+                                pl: 'Co jest dla Was ważne we wspólnym miejscu zamieszkania? Co leży u podstaw tego pomysłu? Z jakimi wartościami utożsamiacie się?',
+                                en: 'What is important to you in a shared living space? What is the foundation of this idea? What values do you identify with?'
+                            },
+                            type: 'textarea',
+                            orderIndex: 1,
+                            validation: {
+                                required: false,
+                                max_length: 500
+                            },
+                            helpText: {
+                                pl: 'Możesz wymienić kilka kluczowych wartości rozdzielonych przecinkami',
+                                en: 'You can list several key values separated by commas'
+                            }
+                        },
+                        {
+                            id: 'q2',
+                            text: {
+                                pl: 'Dlaczego Wasze miejsce istnieje? By żyło się łatwiej, zabawniej I na własnych zasadach',
+                                en: 'Why does your place exist? So that life is easier, more fun, and on your own terms'
+                            },
+                            type: 'textarea',
+                            orderIndex: 2,
+                            validation: {
+                                required: false,
+                                max_length: 300
+                            }
+                        },
+                        {
+                            id: 'q3',
+                            text: {
+                                pl: 'Jakie potrzeby będziecie realizować w Waszym miejscu?',
+                                en: 'What needs will you fulfill in your place?'
+                            },
+                            type: 'textarea',
+                            orderIndex: 3,
+                            validation: {
+                                required: false,
+                                max_length: 400
+                            }
+                        },
+                        {
+                            id: 'q4',
+                            text: {
+                                pl: 'W jaki sposób jesteśmy postrzegani przez osoby z zewnątrz?',
+                                en: 'How are we perceived by people from outside?'
+                            },
+                            type: 'textarea',
+                            orderIndex: 4,
+                            validation: {
+                                required: false,
+                                max_length: 400
+                            }
+                        }
+                    ]
+                },
+                {
+                    id: 'group-2',
+                    title: {
+                        pl: '2. PRZESTRZEŃ I MATERIA',
+                        en: '2. SPACE AND MATTER'
+                    },
+                    description: {
+                        pl: 'Fizyczna i wirtualna przestrzeń wspólnoty',
+                        en: 'Physical and virtual community space'
+                    },
+                    orderIndex: 2,
+                    questions: [
+                        {
+                            id: 'q5',
+                            text: {
+                                pl: 'Jak wyglądają nasze relacje z materialnością? Zasilanie, odpady, jedzenie, transport?',
+                                en: 'What are our relationships with materiality? Power, waste, food, transport?'
+                            },
+                            type: 'textarea',
+                            orderIndex: 5,
+                            validation: {
+                                required: false,
+                                max_length: 400
+                            }
+                        },
+                        {
+                            id: 'q6',
+                            text: {
+                                pl: 'Jakie są nasze relacje z technologią i cyfrowym światem?',
+                                en: 'What are our relationships with technology and the digital world?'
+                            },
+                            type: 'scale',
+                            orderIndex: 6,
+                            validation: {
+                                required: false,
+                                min_value: 1,
+                                max_value: 5
+                            },
+                            options: [
+                                { value: '1', label: { pl: 'Bardzo negatywne', en: 'Very negative' } },
+                                { value: '2', label: { pl: 'Negatywne', en: 'Negative' } },
+                                { value: '3', label: { pl: 'Neutralne', en: 'Neutral' } },
+                                { value: '4', label: { pl: 'Pozytywne', en: 'Positive' } },
+                                { value: '5', label: { pl: 'Bardzo pozytywne', en: 'Very positive' } }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 'group-3',
+                    title: {
+                        pl: '3. RELACJE, INTERAKCJE I WOLNOŚĆ OSOBISTA',
+                        en: '3. RELATIONSHIPS, INTERACTIONS AND PERSONAL FREEDOM'
+                    },
+                    description: {
+                        pl: 'Społeczne i osobiste aspekty życia we wspólnocie',
+                        en: 'Social and personal aspects of community life'
+                    },
+                    orderIndex: 3,
+                    questions: [
+                        {
+                            id: 'q7',
+                            text: {
+                                pl: 'Jakie formy komunikacji preferujemy?',
+                                en: 'What forms of communication do we prefer?'
+                            },
+                            type: 'multiple_choice',
+                            orderIndex: 7,
+                            validation: {
+                                required: false
+                            },
+                            options: [
+                                { value: 'face-to-face', label: { pl: 'Spotkania twarzą w twarz', en: 'Face-to-face meetings' } },
+                                { value: 'digital', label: { pl: 'Komunikacja cyfrowa', en: 'Digital communication' } },
+                                { value: 'written', label: { pl: 'Komunikacja pisemna', en: 'Written communication' } },
+                                { value: 'artistic', label: { pl: 'Wyrażanie artystyczne', en: 'Artistic expression' } }
+                            ]
+                        },
+                        {
+                            id: 'q8',
+                            text: {
+                                pl: 'Jak radzimy sobie z konfliktami?',
+                                en: 'How do we handle conflicts?'
+                            },
+                            type: 'single_choice',
+                            orderIndex: 8,
+                            validation: {
+                                required: true
+                            },
+                            options: [
+                                { value: 'discussion', label: { pl: 'Otwarta dyskusja', en: 'Open discussion' } },
+                                { value: 'mediation', label: { pl: 'Mediacja', en: 'Mediation' } },
+                                { value: 'voting', label: { pl: 'Głosowanie', en: 'Voting' } },
+                                { value: 'individual', label: { pl: 'Rozwiązania indywidualne', en: 'Individual solutions' } }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: 'group-4',
+                    title: {
+                        pl: '4. ORGANIZOWANIE I PROCESY',
+                        en: '4. ORGANIZATION AND PROCESSES'
+                    },
+                    description: {
+                        pl: 'Struktury decyzyjne i organizacyjne',
+                        en: 'Decision-making and organizational structures'
+                    },
+                    orderIndex: 4,
+                    questions: [
+                        {
+                            id: 'q9',
+                            text: {
+                                pl: 'Jakie procesy decyzyjne stosujemy?',
+                                en: 'What decision-making processes do we use?'
+                            },
+                            type: 'single_choice',
+                            orderIndex: 9,
+                            validation: {
+                                required: false
+                            },
+                            options: [
+                                { value: 'consensus', label: { pl: 'Konsensus', en: 'Consensus' } },
+                                { value: 'majority', label: { pl: 'Większość', en: 'Majority vote' } },
+                                { value: 'delegated', label: { pl: 'Delegowane decyzje', en: 'Delegated decisions' } },
+                                { value: 'distributed', label: { pl: 'Rozproszone decyzje', en: 'Distributed decisions' } }
+                            ]
+                        },
+                        {
+                            id: 'q10',
+                            text: {
+                                pl: 'Jakie zasoby dzielimy się i zarządzamy?',
+                                en: 'What resources do we share and manage?'
+                            },
+                            type: 'textarea',
+                            orderIndex: 10,
+                            validation: {
+                                required: false,
+                                max_length: 500
+                            }
+                        }
+                    ]
+                }
+            ]
+        };
+
+        // Initialize questionnaire when DOM is loaded
+        document.addEventListener('DOMContentLoaded', async () => {
+            const questionnaireElement = document.getElementById('questionnaire');
+
+            try {
+                // Load questionnaire data
+                await questionnaireElement.loadQuestionnaire(demoQuestionnaire);
+
+                console.log('Questionnaire loaded successfully');
+
+                // Setup offline sync listener
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.addEventListener('message', (event) => {
+                        if (event.data.type === 'SYNC_COMPLETE') {
+                            const { successful, failed } = event.data.data;
+
+                            // Show notification to user
+                            const message = failed > 0
+                                ? `Zsynchronizowano ${successful} elementów. ${failed} nie udało się.`
+                                : `Pomyślnie zsynchronizowano ${successful} elementów.`;
+
+                            showSyncNotification(message, failed > 0 ? 'warning' : 'success');
+                        }
+                    });
+                }
+
+            } catch (error) {
+                console.error('Failed to load questionnaire:', error);
+
+                // Show error message
+                questionnaireElement.innerHTML = `
+                    <div class="error-container">
+                        <h2>Wystąpił błąd</h2>
+                        <p>Nie udało się załadować kwestionariusza. Spróbuj odświeżyć stronę.</p>
+                        <button onclick="location.reload()">Odśwież</button>
+                    </div>
+                `;
+            }
+        });
+
+        // Show sync notification
+        function showSyncNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `sync-notification sync-${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'warning' ? '#f59e0b' : '#10b981'};
+                color: white;
+                padding: 12px 24px;
+                border-radius: 6px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                z-index: 1000;
+                font-size: 14px;
+                max-width: 80%;
+                text-align: center;
+            `;
+
+            document.body.appendChild(notification);
+
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
+        }
+
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', (event) => {
+            // Ctrl/Cmd + S to save
+            if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+                event.preventDefault();
+
+                const questionnaire = document.getElementById('questionnaire');
+                if (questionnaire && questionnaire.saveAllAnswers) {
+                    questionnaire.saveAllAnswers();
+                    showSyncNotification('Zapisano szkic', 'success');
+                }
+            }
+
+            // Ctrl/Cmd + Enter to submit
+            if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+                event.preventDefault();
+
+                const questionnaire = document.getElementById('questionnaire');
+                if (questionnaire && questionnaire.submitQuestionnaire) {
+                    if (confirm('Czy na pewno chcesz wysłać odpowiedzi?')) {
+                        questionnaire.submitQuestionnaire();
+                    }
+                }
+            }
+        });
+
+        // Network status listener
+        window.addEventListener('online', () => {
+            showSyncNotification('Połączono z internetem', 'success');
+        });
+
+        window.addEventListener('offline', () => {
+            showSyncNotification('Tryb offline - zmiany zostaną zsynchronizowane po połączeniu', 'warning');
+        });
+    </script>
+
+    <!-- Loading styles -->
+    <style>
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 50vh;
+            gap: 1rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #6b7280;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 50vh;
+            gap: 1rem;
+            padding: 2rem;
+            text-align: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .error-container h2 {
+            color: #dc2626;
+            margin: 0;
+        }
+
+        .error-container button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .error-container button:hover {
+            background: #2563eb;
+        }
+
+        /* Accessibility improvements */
+        @media (prefers-reduced-motion: reduce) {
+            .loading-spinner {
+                animation: none;
+            }
+        }
+    </style>
+</body>
+</html>

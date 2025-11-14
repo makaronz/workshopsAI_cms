@@ -1,0 +1,114 @@
+<h1>{{#if language 'pl'}}Przypomnienie o wypełnieniu ankiety{{else}}Questionnaire Reminder{{/if}}</h1>
+
+<p>{{#if language 'pl'}}
+Prosimy o poświęcenie kilku minut na wypełnienie ankiety {{#if questionnaire.title.en}}"{{questionnaire.title.en}}"{{else}}"{{questionnaire.title.pl}}"{{/if}}.
+{{else}}
+Please take a few moments to complete the questionnaire "{{questionnaire.title.en if questionnaire.title.en else questionnaire.title.pl}}".
+{{/if}}</p>
+
+{% if questionnaire.instructions %}
+<div class="alert alert-info">
+    {{#if language 'pl'}}
+        <strong>Instrukcje:</strong> {{questionnaire.instructions.pl}}
+    {{else}}
+        <strong>Instructions:</strong> {{questionnaire.instructions.en}}
+    {{/if}}
+</div>
+{% endif %}
+
+{% if questionnaire.workshop %}
+<div class="workshop-card">
+    <h3>{{#if language 'pl'}}Związane warsztaty{{else}}Related Workshop{{/if}}</h3>
+    <div class="workshop-detail">
+        <div class="workshop-detail-content">
+            <span class="workshop-detail-label">{{#if language 'pl'}}Tytuł{{else}}Title{{/if}}:</span>
+            {{questionnaire.workshop.title}}
+        </div>
+    </div>
+
+    {% if questionnaire.workshop.startDate %}
+    <div class="workshop-detail">
+        <div class="workshop-detail-content">
+            <span class="workshop-detail-label">{{#if language 'pl'}}Termin{{else}}Date{{/if}}:</span>
+            {{#formatDate questionnaire.workshop.startDate 'LLLL'}}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<h2>{{#if language 'pl'}}Dlaczego Twoja opinia jest ważna?{{else}}Why your feedback matters{{/if}}</h2>
+
+{% if questionnaire.workshop %}
+    {{#if language 'pl'}}
+    <p>Twoje odpowiedzi pomogą nam:</p>
+    <ul>
+        <li>Zrozumieć Twoje doświadczenia podczas warsztatu</li>
+        <li>Ulepszyć przyszłe edycje tego warsztatu</li>
+        <li>Dostosować nasze programy do potrzeb uczestników</li>
+        <li>Zapewnić jeszcze lepsze doświadczenia edukacyjne</li>
+    </ul>
+    {{else}}
+    <p>Your responses will help us:</p>
+    <ul>
+        <li>Understand your experience during the workshop</li>
+        <li>Improve future editions of this workshop</li>
+        <li>Adapt our programs to participant needs</li>
+        <li>Provide better educational experiences</li>
+    </ul>
+    {{/if}}
+{% else %}
+    {{#if language 'pl'}}
+    <p>Twoje odpowiedzi pomogą nam lepiej zrozumieć Twoje preferencje i oczekiwania, co pozwoli nam dostarczyć Ci bardziej trafne i wartościowe treści.</p>
+    {{else}}
+    <p>Your responses will help us better understand your preferences and expectations, allowing us to deliver more relevant and valuable content.</p>
+    {{/if}}
+{% endif %}
+
+<div style="text-align: center;">
+    <a href="{{baseUrl}}/questionnaires/{{questionnaire.id}}" class="btn">
+        {{#if language 'pl'}}Wypełnij ankietę{{else}}Complete Questionnaire{{/if}}
+    </a>
+</div>
+
+{% if questionnaire.settings.max_responses %}
+<div class="alert alert-warning">
+    {{#if language 'pl'}}
+        <strong>Uwaga:</strong> Liczba miejsc w ankiecie jest ograniczona do {{questionnaire.settings.max_responses}} odpowiedzi.
+    {{else}}
+        <strong>Note:</strong> This questionnaire has a limit of {{questionnaire.settings.max_responses}} responses.
+    {{/if}}
+</div>
+{% endif %}
+
+{% if questionnaire.closeAfterWorkshop && questionnaire.workshop %}
+<div class="alert alert-info">
+    {{#if language 'pl'}}
+        <strong>Informacja:</strong> Ankieta zostanie zamknięta po zakończeniu warsztatu ({{#formatDate questionnaire.workshop.endDate workshop.language 'LLLL'}}).
+    {{else}}
+        <strong>Information:</strong> This questionnaire will close after the workshop ends ({{#formatDate questionnaire.workshop.endDate 'LLLL'}}).
+    {{/if}}
+</div>
+{% endif %}
+
+{% if estimatedTime %}
+<p style="text-align: center; margin-top: 15px;">
+    <small>
+        {{#if language 'pl'}}
+            Szacowany czas wypełnienia: {{estimatedTime}}
+        {{else}}
+            Estimated completion time: {{estimatedTime}}
+        {{/if}}
+    </small>
+</p>
+{% endif %}
+
+<p style="text-align: center; margin-top: 20px;">
+    <small>
+        {{#if language 'pl'}}
+            Dziękujemy za Twój czas i wkład w nasz rozwój!
+        {{else}}
+            Thank you for your time and contribution to our improvement!
+        {{/if}}
+    </small>
+</p>

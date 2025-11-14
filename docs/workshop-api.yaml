@@ -1,0 +1,1132 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "WorkshopsAI CMS API",
+    "description": "Comprehensive Workshop Management API with i18n support and RLS enforcement",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support",
+      "email": "support@workshopsai.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api/v1",
+      "description": "Development server"
+    },
+    {
+      "url": "https://api.workshopsai.com/v1",
+      "description": "Production server"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT authentication token"
+      }
+    },
+    "schemas": {
+      "Workshop": {
+        "type": "object",
+        "required": ["id", "slug", "titleI18n", "descriptionI18n", "status", "language"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique workshop identifier"
+          },
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$",
+            "description": "URL-friendly workshop identifier"
+          },
+          "titleI18n": {
+            "type": "object",
+            "description": "Workshop title in multiple languages",
+            "example": {
+              "pl": "Warsztaty Integracji",
+              "en": "Integration Workshop"
+            }
+          },
+          "subtitleI18n": {
+            "type": "object",
+            "description": "Workshop subtitle in multiple languages"
+          },
+          "descriptionI18n": {
+            "type": "object",
+            "description": "Workshop description in multiple languages"
+          },
+          "shortDescriptionI18n": {
+            "type": "object",
+            "description": "Short workshop description in multiple languages"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["draft", "published", "archived", "cancelled"],
+            "description": "Current workshop status"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Workshop start date"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Workshop end date"
+          },
+          "seatLimit": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Maximum number of participants"
+          },
+          "seatReserved": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Currently reserved seats"
+          },
+          "enableWaitingList": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable waiting list when workshop is full"
+          },
+          "templateTheme": {
+            "type": "string",
+            "enum": ["integracja", "konflikty", "well-being", "custom"],
+            "description": "Workshop template theme"
+          },
+          "language": {
+            "type": "string",
+            "enum": ["pl", "en"],
+            "default": "pl",
+            "description": "Primary workshop language"
+          },
+          "price": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d{2}$",
+            "description": "Workshop price in decimal format"
+          },
+          "currency": {
+            "type": "string",
+            "length": 3,
+            "default": "PLN",
+            "description": "Currency code (ISO 4217)"
+          },
+          "imageUrl": {
+            "type": "string",
+            "format": "uri",
+            "description": "Workshop cover image URL"
+          },
+          "gallery": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            },
+            "description": "Workshop image gallery URLs"
+          },
+          "requirementsI18n": {
+            "type": "object",
+            "description": "Participant requirements in multiple languages"
+          },
+          "objectivesI18n": {
+            "type": "object",
+            "description": "Workshop objectives in multiple languages"
+          },
+          "materials": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "url", "type"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Material name"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri",
+                  "description": "Material URL"
+                },
+                "type": {
+                  "type": "string",
+                  "description": "Material type"
+                }
+              }
+            },
+            "description": "Workshop materials"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Creator user ID"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Publication timestamp"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Creation timestamp"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Last update timestamp"
+          }
+        }
+      },
+      "CreateWorkshop": {
+        "type": "object",
+        "required": ["slug", "titleI18n", "descriptionI18n"],
+        "properties": {
+          "slug": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "URL-friendly workshop identifier"
+          },
+          "titleI18n": {
+            "type": "object",
+            "description": "Workshop title in multiple languages",
+            "minProperties": 1,
+            "example": {
+              "pl": "Warsztaty Integracji",
+              "en": "Integration Workshop"
+            }
+          },
+          "subtitleI18n": {
+            "type": "object",
+            "description": "Workshop subtitle in multiple languages"
+          },
+          "descriptionI18n": {
+            "type": "object",
+            "minProperties": 1,
+            "description": "Workshop description in multiple languages"
+          },
+          "shortDescriptionI18n": {
+            "type": "object",
+            "description": "Short workshop description in multiple languages"
+          },
+          "startDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endDate": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "seatLimit": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "enableWaitingList": {
+            "type": "boolean",
+            "default": true
+          },
+          "templateTheme": {
+            "type": "string",
+            "enum": ["integracja", "konflikty", "well-being", "custom"]
+          },
+          "language": {
+            "type": "string",
+            "enum": ["pl", "en"],
+            "default": "pl"
+          },
+          "price": {
+            "type": "number",
+            "minimum": 0
+          },
+          "currency": {
+            "type": "string",
+            "length": 3,
+            "default": "PLN"
+          },
+          "imageUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "gallery": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "requirementsI18n": {
+            "type": "object",
+            "description": "Participant requirements in multiple languages"
+          },
+          "objectivesI18n": {
+            "type": "object",
+            "description": "Workshop objectives in multiple languages"
+          },
+          "materials": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "url", "type"],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "type": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "tagIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Associated tag IDs"
+          }
+        }
+      },
+      "UpdateWorkshop": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CreateWorkshop"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": ["draft", "published", "archived", "cancelled"]
+              },
+              "publishedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        ]
+      },
+      "WorkshopFilters": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["draft", "published", "archived", "cancelled"]
+          },
+          "publishedAfter": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "publishedBefore": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "hasQuestionnaire": {
+            "type": "boolean"
+          },
+          "hasSessions": {
+            "type": "boolean"
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 20
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          }
+        }
+      },
+      "WorkshopListResponse": {
+        "type": "object",
+        "required": ["workshops", "total", "pagination"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "object",
+            "required": ["workshops", "total", "pagination"],
+            "properties": {
+              "workshops": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Workshop"
+                }
+              },
+              "total": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Total number of workshops matching filters"
+              },
+              "pagination": {
+                "type": "object",
+                "required": ["total", "limit", "offset", "hasMore"],
+                "properties": {
+                  "total": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "offset": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "hasMore": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              "filters": {
+                "$ref": "#/components/schemas/WorkshopFilters"
+              }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["success", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "description": "Error type (e.g., ValidationError, NotFound, Unauthorized)"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable error message"
+          },
+          "details": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "description": "Field path with validation error"
+                },
+                "message": {
+                  "type": "string",
+                  "description": "Validation error message"
+                },
+                "code": {
+                  "type": "string",
+                  "description": "Error code"
+                }
+              }
+            },
+            "description": "Detailed validation errors"
+          }
+        }
+      },
+      "PublishChecklist": {
+        "type": "object",
+        "required": ["hasSessions", "hasQuestionnaire", "allRequiredFields", "wcagCompliant", "canPublish"],
+        "properties": {
+          "hasSessions": {
+            "type": "boolean",
+            "description": "Workshop has at least one session"
+          },
+          "hasQuestionnaire": {
+            "type": "boolean",
+            "description": "Workshop has at least one questionnaire"
+          },
+          "allRequiredFields": {
+            "type": "boolean",
+            "description": "All required fields are filled"
+          },
+          "wcagCompliant": {
+            "type": "boolean",
+            "description": "Workshop meets WCAG accessibility standards"
+          },
+          "canPublish": {
+            "type": "boolean",
+            "description": "Workshop can be published"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of issues preventing publication"
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/workshops": {
+      "get": {
+        "summary": "List workshops",
+        "description": "Retrieve a paginated list of workshops with optional filtering",
+        "tags": ["Workshops"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/WorkshopFilters/properties/status"
+            },
+            "description": "Filter by workshop status"
+          },
+          {
+            "name": "publishedAfter",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/WorkshopFilters/properties/publishedAfter"
+            },
+            "description": "Filter workshops published after this date"
+          },
+          {
+            "name": "publishedBefore",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/WorkshopFilters/properties/publishedBefore"
+            },
+            "description": "Filter workshops published before this date"
+          },
+          {
+            "name": "createdBy",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/WorkshopFilters/properties/createdBy"
+            },
+            "description": "Filter workshops by creator user ID"
+          },
+          {
+            "name": "hasQuestionnaire",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/WorkshopFilters/properties/hasQuestionnaire"
+            },
+            "description": "Filter workshops with/without questionnaires"
+          },
+          {
+            "name": "hasSessions",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/WorkshopFilters/properties/hasSessions"
+            },
+            "description": "Filter workshops with/without sessions"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/WorkshopFilters/properties/limit"
+            },
+            "description": "Number of workshops per page"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/WorkshopFilters/properties/offset"
+            },
+            "description": "Number of workshops to skip"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful workshop listing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkshopListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create workshop",
+        "description": "Create a new workshop with comprehensive validation and i18n support",
+        "tags": ["Workshops"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWorkshop"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Workshop created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["success", "data", "message"],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Workshop"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Workshop created successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error - invalid request data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - workshop slug already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workshops/{id}": {
+      "get": {
+        "summary": "Get workshop by ID",
+        "description": "Retrieve detailed workshop information including sessions and questionnaires",
+        "tags": ["Workshops"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Workshop UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful workshop retrieval",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["success", "data"],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/Workshop"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "sessions": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/Session"
+                              },
+                              "description": "Workshop sessions"
+                            },
+                            "questionnaires": {
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/Questionnaire"
+                              },
+                              "description": "Workshop questionnaires"
+                            },
+                            "creator": {
+                              "type": "object",
+                              "required": ["id", "name", "email"],
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "uuid"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "email": {
+                                  "type": "string",
+                                  "format": "email"
+                                }
+                              }
+                            },
+                            "tags": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "required": ["id", "name", "category", "color"],
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  },
+                                  "category": {
+                                    "type": "string",
+                                    "enum": ["theme", "skill", "level", "format", "audience"]
+                                  },
+                                  "color": {
+                                    "type": "string",
+                                    "pattern": "^#[0-9A-Fa-f]{6}$"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workshop not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update workshop",
+        "description": "Update workshop details with validation and audit logging",
+        "tags": ["Workshops"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Workshop UUID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWorkshop"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Workshop updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["success", "data", "message"],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Workshop"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Workshop updated successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation error - invalid request data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workshop not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - workshop slug already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete workshop",
+        "description": "Soft delete a workshop (marks as deleted, keeps data)",
+        "tags": ["Workshops"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Workshop UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Workshop deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["success", "message"],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Workshop deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workshop not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/workshops/{id}/publish-checklist": {
+      "get": {
+        "summary": "Check publishing checklist",
+        "description": "Validate workshop readiness for publication",
+        "tags": ["Workshops"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Workshop UUID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Publishing checklist results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["success", "data"],
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PublishChecklist"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - authentication required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Workshop not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Workshops",
+      "description": "Workshop management operations"
+    }
+  ]
+}

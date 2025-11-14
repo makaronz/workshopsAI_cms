@@ -1,0 +1,288 @@
+# Development Docker Compose configuration for workshopsAI CMS
+version: '3.8'
+
+services:
+  # Main application service
+  app:
+    build:
+      context: .
+      target: development
+      dockerfile: Dockerfile
+    image: workshopsai/cms:dev
+    container_name: workshopsai-cms-dev
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3001}:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${DB_USER:-workshopsai}
+      - DB_PASSWORD=${DB_PASSWORD:-dev_password}
+      - DB_NAME=${DB_NAME:-workshopsai_cms_dev}
+      - DATABASE_URL=postgresql://${DB_USER:-workshopsai}:${DB_PASSWORD:-dev_password}@postgres:5432/${DB_NAME:-workshopsai_cms_dev}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET:-dev_secret_key_minimum_32_characters}
+      - JWT_EXPIRES_IN=7d
+      - SESSION_SECRET=${SESSION_SECRET:-dev_session_secret}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3000}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+      - SKIP_AUTH=${SKIP_AUTH:-false}
+      - ENABLE_SWAGGER_DOCS=${ENABLE_SWAGGER_DOCS:-true}
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - uploads_dev:/app/uploads
+      - logs_dev:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - workshopsai-dev-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # PostgreSQL database for development
+  postgres:
+    image: postgres:15-alpine
+    container_name: workshopsai-postgres-dev
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${DB_NAME:-workshopsai_cms_dev}
+      - POSTGRES_USER=${DB_USER:-workshopsai}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-dev_password}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./migrations/001_initial_postgresql_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - ./migrations/002_data_migration_mysql_to_postgresql.sql:/docker-entrypoint-initdb.d/02_migration.sql:ro
+      - ./dev-data/seed.sql:/docker-entrypoint-initdb.d/03_seed.sql:ro
+    networks:
+      - workshopsai-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-workshopsai} -d ${DB_NAME:-workshopsai_cms_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: >
+      postgres
+      -c max_connections=100
+      -c shared_buffers=128MB
+      -c log_statement=all
+      -c log_min_duration_statement=0
+      -c log_checkpoints=on
+      -c log_connections=on
+      -c log_disconnections=on
+
+  # Redis for development
+  redis:
+    image: redis:7-alpine
+    container_name: workshopsai-redis-dev
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6380}:6379"
+    volumes:
+      - redis_dev_data:/data
+    networks:
+      - workshopsai-dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    command: redis-server --appendonly yes
+
+  # Redis Commander for Redis management
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: workshopsai-redis-commander
+    restart: unless-stopped
+    ports:
+      - "${REDIS_COMMANDER_PORT:-8081}:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+    networks:
+      - workshopsai-dev-network
+    profiles:
+      - tools
+
+  # pgAdmin for PostgreSQL management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: workshopsai-pgadmin-dev
+    restart: unless-stopped
+    ports:
+      - "${PGADMIN_PORT:-8080}:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@workshopsai.dev}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    volumes:
+      - pgadmin_dev_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - workshopsai-dev-network
+    profiles:
+      - tools
+
+  # Development mail testing (MailHog)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: workshopsai-mailhog-dev
+    restart: unless-stopped
+    ports:
+      - "${MAILHOG_SMTP_PORT:-1025}:1025"
+      - "${MAILHOG_WEB_PORT:-8025}:8025"
+    networks:
+      - workshopsai-dev-network
+    profiles:
+      - tools
+
+  # Nginx for development (optional)
+  nginx:
+    image: nginx:alpine
+    container_name: workshopsai-nginx-dev
+    restart: unless-stopped
+    ports:
+      - "${NGINX_DEV_PORT:-8082}:80"
+    volumes:
+      - ./nginx/dev.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./public:/usr/share/nginx/html:ro
+    depends_on:
+      - app
+    networks:
+      - workshopsai-dev-network
+    profiles:
+      - nginx
+
+  # Test database (isolated for testing)
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: workshopsai-postgres-test
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${TEST_DB_NAME:-workshopsai_cms_test}
+      - POSTGRES_USER=${TEST_DB_USER:-workshopsai_test}
+      - POSTGRES_PASSWORD=${TEST_DB_PASSWORD:-test_password}
+    ports:
+      - "${TEST_DB_PORT:-5434}:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./migrations/001_initial_postgresql_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    networks:
+      - workshopsai-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${TEST_DB_USER:-workshopsai_test} -d ${TEST_DB_NAME:-workshopsai_cms_test}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    profiles:
+      - test
+
+  # Redis for testing
+  redis-test:
+    image: redis:7-alpine
+    container_name: workshopsai-redis-test
+    restart: unless-stopped
+    ports:
+      - "${TEST_REDIS_PORT:-6381}:6379"
+    volumes:
+      - redis_test_data:/data
+    networks:
+      - workshopsai-dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    profiles:
+      - test
+
+  # Test runner service
+  test-runner:
+    build:
+      context: .
+      target: test
+      dockerfile: Dockerfile
+    container_name: workshopsai-test-runner
+    environment:
+      - NODE_ENV=test
+      - DB_HOST=postgres-test
+      - DB_PORT=5432
+      - DB_USER=${TEST_DB_USER:-workshopsai_test}
+      - DB_PASSWORD=${TEST_DB_PASSWORD:-test_password}
+      - DB_NAME=${TEST_DB_NAME:-workshopsai_cms_test}
+      - DATABASE_URL=postgresql://${TEST_DB_USER:-workshopsai_test}:${TEST_DB_PASSWORD:-test_password}@postgres-test:5432/${TEST_DB_NAME:-workshopsai_cms_test}
+      - REDIS_HOST=redis-test
+      - REDIS_PORT=6379
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - test_reports:/app/test-reports
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    networks:
+      - workshopsai-dev-network
+    profiles:
+      - test
+    command: npm run test:coverage
+
+  # Documentation server (optional)
+  docs:
+    image: nginx:alpine
+    container_name: workshopsai-docs-dev
+    restart: unless-stopped
+    ports:
+      - "${DOCS_PORT:-8083}:80"
+    volumes:
+      - ./docs:/usr/share/nginx/html/docs:ro
+      - ./api-docs:/usr/share/nginx/html/api:ro
+    networks:
+      - workshopsai-dev-network
+    profiles:
+      - docs
+
+volumes:
+  postgres_dev_data:
+    driver: local
+  postgres_test_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+  redis_test_data:
+    driver: local
+  uploads_dev:
+    driver: local
+  logs_dev:
+    driver: local
+  pgadmin_dev_data:
+    driver: local
+  test_reports:
+    driver: local
+
+networks:
+  workshopsai-dev-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

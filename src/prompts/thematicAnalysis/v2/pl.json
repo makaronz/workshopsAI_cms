@@ -1,0 +1,91 @@
+{
+  "templateId": "thematic_analysis_v2_pl",
+  "version": "2.0",
+  "language": "pl",
+  "category": "thematic",
+  "metadata": {
+    "name": "Zaawansowana Analiza Tematyczna (PL)",
+    "description": "Sophisticated thematic analysis with Polish cultural context",
+    "author": "Prompt Engineering Team",
+    "createdAt": "2025-01-13T10:00:00Z",
+    "updatedAt": "2025-01-13T10:00:00Z",
+    "tags": ["thematic", "analysis", "polish", "cultural", "advanced"]
+  },
+  "systemPrompt": "Jesteś zaawansowanym systemem analizy socjologicznej specjalizującym się w polskim kontekście kulturowym. Posiadasz głęboką wiedzę o polskim społeczeństwie, jego wartościach, normach kulturowych i specyfice komunikacyjnej. Twoje analizy są wnikliwe, wrażliwe kulturowo i zawsze zachowują najwyższe standardy etyczne oraz zgodność z RODO.",
+  "userPromptTemplate": "# ZADANIE: Zaawansowana Analiza Tematyczna\n\nPrzeprowadź głęboką analizę tematyczną odpowiedzi na kwestionariusz dotyczący wspólnoty, z uwzględnieniem polskiego kontekstu kulturowego i społeczno-historycznego.\n\n# KONTEKST ANALIZY\n- **Typ kwestionariusza**: {{questionnaireType}}\n- **Liczba odpowiedzi**: {{responseCount}}\n- **Główny temat**: {{topic}}\n- **Język analizy**: Polski\n- **Typ wspólnoty**: {{communityType || 'nieokreślony'}}\n- **Kontekst demograficzny**: {{demographicContext || 'brak danych'}}\n\n# METODOLOGIA ANALIZY\n\n## Krok 1: Identyfikacja tematów\n1. **Przeczytanie i zrozumienie**: Analyzuj każda odpowiedź indywidualnie, zwracając uwagę na:\n   - Niuanse językowe i idiomaty polskie\n   - Kontekst kulturowy i historyczny\n   - Emocjonalny ton i podteksty\n   - Ukryte znaczenia i implikacje\n\n2. **Grupowanie**: Grupuj podobne odpowiedzi, szukając wspólnych motywów i wzorców\n\n## Krok 2: Analiza kontekstu kulturowego\nUwzględnij w analizie:\n- **Wartości polskie**: rodzina, wspólnota, solidarność, tradycja, niepodległość\n- **Kontekst historyczny**: dziedzictwo PRL-u, transformacja ustrojowa, integracja europejska\n- **Normy społeczne**: zaufanie społeczne, relacje władza-obywatel, katolicyzm vs świeckość\n- **Realia polskie**: sytuacja ekonomiczna, emigracja, demografia\n\n## Krok 3: Ekstrakcja tematów\nDla każdego zidentyfikowanego tematu podaj:\n\n### Podstawowe informacje\n- **Nazwa tematu** (zwięzła, opisowa, max 60 znaków)\n- **Częstotliwość** (liczba i procent odpowiedzi)\n- **Waga tematu** (wg skali 1-5, gdzie 5 = najważniejszy)\n\n### Kontekst kulturowy\n- **Adaptacja polska**: Jak polskie wartości wpływają na ten temat\n- **Odniesienia historyczne**: Czy temat nawiązuje do polskich doświadczeń\n- **Specyfika lokalna**: Unikalne aspekty dla polskiego kontekstu\n\n### Przykłady i cytaty\n- **Reprezentatywne przykłady** (2-3 cytaty, bez danych osobowych)\n- **Kontekst cytatów** (krótkie wyjaśnienie kontekstu każdego cytatu)\n- **Różnorodność perspektyw** (różne punkty widzenia w ramach tematu)\n\n### Analiza sentymentu\n- **Sentyment** (-1 do +1, z uzasadnieniem)\n- **Emocje dominujące** (radość, obawa, nadzieja, frustracja, etc.)\n- **Zmienność emocjonalna** (czy odpowiedzi są jednolite emocjonalnie)\n\n### Słowa kluczowe\n- **Słowa kluczowe** (5-10 najważniejszych terminów w języku polskim)\n- **Synonimy i warianty** (polskie synonimy i regionalizmy)\n- **Powiązania semantyczne** (powiązane koncepcje w polskiej mentalności)\n\n## Krok 4: Analiza wzorców\nZidentyfikuj i opisz:\n\n### Główne konflikty wartości\n- **Tradycja vs nowoczesność** (konflikty między tradycyjnymi a nowoczesnymi wartościami)\n- **Indywidualizm vs kolektywizm** (napięcia między potrzebami indywidualnymi a grupowymi)\n- **Liberalizm vs konserwatyzm** (spory o wartości liberalne i konserwatywne)\n\n### Wspólne aspiracje i obawy\n- **Aspiracje ekonomiczne** (materialny status, stabilność, rozwój)\n- **Obawy społeczne** (migracje, zmiany klimatyczne, inflacja)\n- **Pragnienia kulturowe** (tożsamość, autonomia, przynależność)\n\n### Wpływ kontekstu społecznego\n- **Rola Kościoła katolickiego** (wpływ na wartości i normy)\n- **Znaczenie rodziny** (rodzina jako instytucja i wartość)\n- **Stosunek do władzy** (zaufanie, krytyka, oczekiwania)\n\n### Unikalne polskie perspektywy\n- **Mentalność \"kombinatorstwa\"** (kreatywne rozwiązywanie problemów)\n- **Stosunek do własności** (historyczne uwarunkowania)\n- **Rola emigracji** (wpływ doświadczeń emigracyjnych)\n\n# DANE WEJŚCIOWE\n{{responses}}\n\n# INSTRUKCJE SZCZEGÓŁOWE\n\n## Standardy jakości\n1. **Dokładność**: Bazuj wyłącznie na dostarczonych danych\n2. **Obiektywizm**: Unikaj osobistych interpretacji i ocen\n3. **Wrażliwość kulturowa**: Szanuj polską specyfikę i unikaj stereotypów\n4. **Poufność**: Zachowaj pełną anonimowość respondentów\n\n## Formatowanie odpowiedzi\n1. **Struktura JSON**: Użyj dokładnie podanej struktury\n2. **Język polski**: Wszystkie opisy i komentarze w języku polskim\n3. **Precyzja**: Użyj precyzyjnego języka polskiego, unikaj potoczności\n4. **Kompletność**: Wypełnij wszystkie wymagane pola\n\n# FORMAT WYJŚCIA - JSON\n\n```json\n{\n  \"analysisMetadata\": {\n    \"templateVersion\": \"2.0\",\n    \"analysisType\": \"thematic_analysis\",\n    \"language\": \"pl\",\n    \"culturalContext\": \"polski kontekst społeczno-kulturowy\",\n    \"totalResponses\": {{responseCount}},\n    \"analysisDate\": \"{{currentDate}}\",\n    \"confidenceScore\": 0.85\n  },\n  \"analysisSummary\": {\n    \"totalResponses\": {{responseCount}},\n    \"identifiedThemes\": 5,\n    \"culturalContext\": \"polski kontekst społeczno-kulturowy\",\n    \"keyInsights\": [\n      \"kluczowe spostrzeżenie 1\",\n      \"kluczowe spostrzeżenie 2\",\n      \"kluczowe spostrzeżenie 3\"\n    ],\n    \"dominantValues\": [\n      \"wartość dominująca 1\",\n      \"wartość dominująca 2\"\n    ],\n    \"culturalSpecificity\": \"wysoka\"\n  },\n  \"themes\": [\n    {\n      \"id\": \"theme_1\",\n      \"name\": \"Nazwa tematu\",\n      \"frequency\": {\n        \"count\": 25,\n        \"percentage\": 45.5,\n        \"importance\": 4\n      },\n      \"culturalContext\": {\n        \"polishAdaptation\": \"Opis wpływu polskich wartości na ten temat\",\n        \"historicalReferences\": \"Odniesienia do polskich doświadczeń historycznych\",\n        \"localSpecificity\": \"Unikalne aspekty dla polskiego kontekstu\",\n        \"culturalDrivers\": [\"czynnik kulturowy 1\", \"czynnik kulturowy 2\"]\n      },\n      \"examples\": [\n        {\n          \"quote\": \"cytat bez danych osobowych\",\n          \"context\": \"krótki kontekst cytatu\",\n          \"perspective\": \"punktu widzenia\",\n          \"culturalNote\": \"uwaga kulturowa\"\n        }\n      ],\n      \"sentiment\": {\n        \"score\": 0.6,\n        \"explanation\": \"Uzasadnienie oceny sentymentu\",\n        \"dominantEmotions\": [\"nadzieja\", \"obawa\"],\n        \"emotionalVariability\": \"średnia\"\n      },\n      \"keywords\": {\n        \"primary\": [\"słowo1\", \"słowo2\", \"słowo3\"],\n        \"synonyms\": [\"synonim1\", \"synonim2\"],\n        \"semanticConnections\": [\"powiązanie1\", \"powiązanie2\"]\n      },\n      \"relatedThemes\": [\"theme_2\", \"theme_3\"],\n      \"polishSpecifics\": {\n        \"culturalMarkers\": [\"marker1\", \"marker2\"],\n        \"historicalContext\": \"kontekst historyczny\",\n        \"socialImplications\": \"implikacje społeczne\"\n      }\n    }\n  ],\n  \"culturalPatterns\": [\n    {\n      \"pattern\": \"Wzorzec kulturowy\",\n      \"description\": \"Opis wzorca w polskim kontekście\",\n      \"frequency\": 0.7,\n      \"impact\": \"medium\",\n      \"polishSpecificity\": \"specyfika polska\",\n      \"examples\": [\"przykład 1\", \"przykład 2\"]\n    }\n  ],\n  \"valueConflicts\": [\n    {\n      \"conflict\": \"Konflikt wartości\",\n      \"description\": \"Opis konfliktu w polskim kontekście\",\n      \"traditionalView\": \"perspektywa tradycyjna\",\n      \"modernView\": \"perspektywa nowoczesna\",\n      \"examples\": [\"przykład 1\", \"przykład 2\"],\n      \"resolutionPotential\": \"możliwość rozwiązania\"\n    }\n  ],\n  \"socialContextAnalysis\": {\n    \"institutions\": {\n      \"churchInfluence\": \"medium\",\n      \"familyRole\": \"high\",\n      \"authorityRelation\": \"mixed\"\n    },\n    \"historicalInfluences\": [\n      \"wpływ historyczny 1\",\n      \"wpływ historyczny 2\"\n    ],\n    \"contemporaryFactors\": [\n      \"czynnik współczesny 1\",\n      \"czynnik współczesny 2\"\n    ]\n  },\n  \"qualityMetrics\": {\n    \"confidence\": 0.85,\n    \"completeness\": 0.9,\n    \"culturalAdaptation\": 0.95,\n    \"dataCoverage\": 0.88,\n    \"analysisDepth\": 0.82\n  },\n  \"recommendations\": [\n    {\n      \"type\": \"cultural\",\n      \"description\": \"Rekomendacja dotycząca kontekstu kulturowego\",\n      \"rationale\": \"Uzasadnienie rekomendacji\",\n      \"priority\": \"medium\"\n    }\n  ]\n}\n```\n\n# WAŻNE ZASADY ETYCZNE I ZGODNOŚĆ\n\n## Zasady RODO\n- **Anonimowość**: Usuń wszelkie dane osobowe i identyfikatory\n- **Minimalizacja**: Przetwarzaj tylko niezbędne dane\n- **Poufność**: Nie ujawniaj informacji pozwalających na identyfikację\n\n## Standardy etyczne\n- **Obiektywizm**: Przedstawiaj fakty bez osobistych osądów\n- **Równość**: Traktuj wszystkie perspektywy z równym szacunkiem\n- **Wrażliwość**: Unikaj języka, który może być krzywdzący lub dyskryminujący\n- **Transparentność**: Jasno określ granice swoich analiz\n\n## Kontekst polski\n- **Unikaj stereotypów**: Nie generalizuj o \"Polakach\" czy \"polskim charakterze\"\n- **Szczegółowość**: Uwzględnij złożoność i różnorodność polskiego społeczeństwa\n- **Kontekst historyczny**: Rozumiej wpływ historii na współczesne postawy\n- **Wartości lokalne**: Uznaj regionalne różnice w wartościach i normach\n\n# PROCEDURA WALIDACJI\n\nPo wygenerowaniu analizy sprawdź:\n1. **Struktura JSON**: Czy wszystkie pola są wypełnione poprawnie?\n2. **Anonimowość**: Czy usunięto wszystkie dane osobowe?\n3. **Kontekst kulturowy**: Czy uwzględniono polską specyfikę?\n4. **Jakość**: Czy analiza jest wnikliwa i zrównoważona?\n5. **Completność**: Czy wszystkie sekcje są kompletnie wypełnione?",
+  "requiredVariables": [
+    "responses",
+    "responseCount",
+    "questionnaireType",
+    "topic",
+    "currentDate"
+  ],
+  "optionalVariables": [
+    "communityType",
+    "demographicContext",
+    "minThemeFrequency",
+    "maxThemes",
+    "includeCulturalContext",
+    "sentimentAnalysis"
+  ],
+  "examples": [
+    {
+      "input": {
+        "responses": "[{\"answer\": \"Chcę miejsca gdzie ludzie sobie pomagają i czują się bezpiecznie\"}, {\"answer\": \"Ważne jest dla mnie poczucie wspólnoty i wzajemny szacunek\"}]",
+        "responseCount": 25,
+        "questionnaireType": "wspólnota mieszkaniowa",
+        "topic": "wizja idealnej wspólnoty",
+        "currentDate": "2025-01-13"
+      },
+      "output": {
+        "analysisSummary": {
+          "totalResponses": 25,
+          "identifiedThemes": 3,
+          "culturalContext": "polski kontekst społeczno-kulturowy",
+          "keyInsights": ["silna potrzeba bezpieczeństwa", "wspólnota jako wartość kluczowa"],
+          "dominantValues": ["bezpieczeństwo", "wspólnota"],
+          "culturalSpecificity": "wysoka"
+        },
+        "themes": [
+          {
+            "id": "theme_1",
+            "name": "Bezpieczeństwo i zaufanie",
+            "frequency": {
+              "count": 18,
+              "percentage": 72.0,
+              "importance": 5
+            },
+            "culturalContext": {
+              "polishAdaptation": "Potrzeba bezpieczeństwa wynika z historycznych doświadczeń",
+              "historicalReferences": "Okres transformacji i niepewność zwiększyły znaczenie bezpieczeństwa",
+              "localSpecificity": "W polskim kontekście bezpieczeństwo łączy się ze stabilnością ekonomiczną",
+              "culturalDrivers": ["historia niepewności", "wartość stabilności"]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "constraints": {
+    "maxInputLength": 50000,
+    "maxOutputLength": 4000,
+    "temperature": 0.3,
+    "maxTokens": 3000,
+    "topP": 0.9,
+    "frequencyPenalty": 0.1,
+    "presencePenalty": 0.1
+  },
+  "validationRules": [
+    "validate_json_structure",
+    "check_pii_absence",
+    "verify_cultural_adaptation",
+    "ensure_polish_language",
+    "validate_theme_extraction"
+  ],
+  "performanceMetrics": {
+    "expectedConfidence": 0.85,
+    "expectedProcessingTime": 2500,
+    "expectedTokenUsage": 2000,
+    "qualityThreshold": 0.8
+  }
+}

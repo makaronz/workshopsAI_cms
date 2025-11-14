@@ -1,0 +1,32 @@
+{{subject}}
+===============================================
+
+{{{content}}}
+
+---
+{{#if language 'pl'}}
+Z pozdrowieniami,
+Zespół {{fromName}}
+{{else}}
+Best regards,
+The {{fromName}} Team
+{{/if}}
+
+{{#if socialLinks.facebook}}Facebook: {{socialLinks.facebook}}{{/if}}
+{{#if socialLinks.twitter}}Twitter: {{socialLinks.twitter}}{{/if}}
+{{#if socialLinks.linkedin}}LinkedIn: {{socialLinks.linkedin}}{{/if}}
+{{#if socialLinks.instagram}}Instagram: {{socialLinks.instagram}}{{/if}}
+
+{{#if unsubscribeToken}}
+{{#if language 'pl'}}
+Nie chcesz otrzymywać tych wiadomości? Wypisz się: {{baseUrl}}/unsubscribe?token={{unsubscribeToken}}
+{{else}}
+Don't want to receive these messages? Unsubscribe: {{baseUrl}}/unsubscribe?token={{unsubscribeToken}}
+{{/if}}
+{{/if}}
+
+{{#if language 'pl'}}
+© {{currentYear}} {{fromName}}. Wszystkie prawa zastrzeżone.
+{{else}}
+© {{currentYear}} {{fromName}}. All rights reserved.
+{{/if}}

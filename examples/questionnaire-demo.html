@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NASZA (NIE)UTOPIA - Kwestionariusz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .question-section {
+            scroll-margin-top: 100px;
+        }
+        .saved-indicator {
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .saved-indicator.show {
+            opacity: 1;
+        }
+        .progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto max-w-4xl p-4">
+        <!-- Header -->
+        <header class="sticky top-0 bg-white shadow-sm z-10 mb-6">
+            <div class="py-4">
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">NASZA (NIE)UTOPIA</h1>
+                <p class="text-gray-600 mb-4">Wizja i manifest wspólnoty</p>
+
+                <!-- Progress Bar -->
+                <div class="mb-2">
+                    <div class="flex justify-between text-sm text-gray-600 mb-1">
+                        <span>Postęp</span>
+                        <span id="progressText">0/23 (0%)</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="progressBar" class="progress-bar bg-blue-600 h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Save Status -->
+                <div class="flex items-center justify-between">
+                    <div id="saveStatus" class="saved-indicator text-green-600 text-sm">
+                        <i class="fas fa-check-circle mr-1"></i>
+                        <span>Zapisano</span>
+                    </div>
+                    <div class="space-x-2">
+                        <button id="saveDraftBtn" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition">
+                            <i class="fas fa-save mr-1"></i> Zapisz szkic
+                        </button>
+                        <button id="submitBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                            <i class="fas fa-paper-plane mr-1"></i> Wyślij odpowiedzi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- GDPR Consent Modal -->
+        <div id="consentModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[80vh] overflow-y-auto">
+                <h2 class="text-xl font-bold mb-4">Zgoda na przetwarzanie danych</h2>
+
+                <div class="space-y-4 mb-6">
+                    <div class="border rounded p-4">
+                        <label class="flex items-start cursor-pointer">
+                            <input type="checkbox" id="aiProcessing" class="mt-1 mr-3">
+                            <div>
+                                <strong>Przetwarzanie przez AI</strong>
+                                <p class="text-sm text-gray-600 mt-1">
+                                    Wyrażam zgodę na przetwarzanie moich odpowiedzi przez systemy sztucznej inteligencji w celu analizy i identyfikacji wzorców. Odpowiedzi będą anonimowe.
+                                </p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="border rounded p-4">
+                        <label class="flex items-start cursor-pointer">
+                            <input type="checkbox" id="dataProcessing" class="mt-1 mr-3" checked>
+                            <div>
+                                <strong>Przetwarzanie danych</strong>
+                                <p class="text-sm text-gray-600 mt-1">
+                                    Wyrażam zgodę na przetwarzanie moich danych osobowych zawartych w odpowiedziach na kwestionariusz w celach badawczych i analitycznych.
+                                </p>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="border rounded p-4">
+                        <label class="flex items-start cursor-pointer">
+                            <input type="checkbox" id="anonymousSharing" class="mt-1 mr-3">
+                            <div>
+                                <strong>Anonimowe udostępnianie</strong>
+                                <p class="text-sm text-gray-600 mt-1">
+                                    Wyrażam zgodę na anonimowe udostępnianie moich odpowiedzi w celach badawczych. Dane osobowe nie będą ujawnione.
+                                </p>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="flex justify-end space-x-2">
+                    <button id="cancelConsent" class="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 transition">
+                        Anuluj
+                    </button>
+                    <button id="acceptConsent" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                        Akceptuję i kontynuuj
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Questionnaire Content -->
+        <div id="questionnaireContent" class="hidden space-y-8">
+            <!-- Questions will be loaded here -->
+        </div>
+
+        <!-- Success Message -->
+        <div id="successMessage" class="hidden text-center py-12">
+            <i class="fas fa-check-circle text-green-600 text-6xl mb-4"></i>
+            <h2 class="text-2xl font-bold mb-2">Dziękujemy!</h2>
+            <p class="text-gray-600">Twoje odpowiedzi zostały pomyślnie przesłane.</p>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const API_BASE = 'http://localhost:3001/api/v1';
+        const QUESTIONNAIRE_ID = 'demo-questionnaire-id'; // This would be dynamic
+
+        // State
+        let currentAnswers = {};
+        let isSubmitting = false;
+        let hasConsent = false;
+
+        // Demo questionnaire data (simulating API response)
+        const demoQuestionnaire = {
+            id: 'demo-questionnaire-id',
+            title: {
+                pl: 'NASZA (NIE)UTOPIA',
+                en: 'OUR (DIS)UTOPIA'
+            },
+            instructions: {
+                pl: 'Wypełnij kwestionariusz opisujący Waszą wizję wspólnoty. Pamiętaj, że nie ma złych odpowiedzi - chodzi o Wasze autentyczne przemyślenia i marzenia.',
+                en: 'Fill out this questionnaire describing your community vision. Remember, there are no wrong answers - this is about your authentic thoughts and dreams.'
+            },
+            settings: {
+                show_all_questions: true,
+                allow_edit: true,
+                require_consent: true
+            },
+            questionGroups: [
+                {
+                    id: 'group-1',
+                    title: {
+                        pl: '1. WIZJA / MANIFEST',
+                        en: '1. VISION / MANIFEST'
+                    },
+                    description: {
+                        pl: 'Podstawowe wartości i cel wspólnoty',
+                        en: 'Core values and community purpose'
+                    },
+                    orderIndex: 1,
+                    questions: [
+                        {
+                            id: 'q1',
+                            text: {
+                                pl: 'Co jest dla Was ważne we wspólnym miejscu zamieszkania? Co leży u podstaw tego pomysłu? Z jakimi wartościami utożsamiacie się?',
+                                en: 'What is important to you in a shared living space? What is the foundation of this idea? What values do you identify with?'
+                            },
+                            type: 'textarea',
+                            orderIndex: 1,
+                            validation: {
+                                required: false,
+                                max_length: 500
+                            }
+                        },
+                        {
+                            id: 'q2',
+                            text: {
+                                pl: 'Dlaczego Wasze miejsce istnieje? By żyło się łatwiej, zabawniej i na własnych zasadach',
+                                en: 'Why does your place exist? So that life is easier, more fun, and on your own terms'
+                            },
+                            type: 'textarea',
+                            orderIndex: 2,
+                            validation: {
+                                required: false,
+                                max_length: 300
+                            }
+                        },
+                        {
+                            id: 'q3',
+                            text: {
+                                pl: 'Jakie potrzeby będziecie realizować w Waszym miejscu?',
+                                en: 'What needs will you fulfill in your place?'
+                            },
+                            type: 'textarea',
+                            orderIndex: 3,
+                            validation: {
+                                required: false,
+                                max_length: 400
+                            }
+                        }
+                    ]
+                },
+                {
+                    id: 'group-2',
+                    title: {
+                        pl: '2. PRZESTRZEŃ I MATERIA',
+                        en: '2. SPACE AND MATTER'
+                    },
+                    description: {
+                        pl: 'Fizyczna i wirtualna przestrzeń wspólnoty',
+                        en: 'Physical and virtual community space'
+                    },
+                    orderIndex: 2,
+                    questions: [
+                        {
+                            id: 'q4',
+                            text: {
+                                pl: 'Jak wyglądają nasze relacje z materialnością? Zasilanie, odpady, jedzenie, transport?',
+                                en: 'What are our relationships with materiality? Power, waste, food, transport?'
+                            },
+                            type: 'textarea',
+                            orderIndex: 4,
+                            validation: {
+                                required: false,
+                                max_length: 400
+                            }
+                        }
+                    ]
+                }
+            ]
+        };
+
+        // Initialize questionnaire
+        function initQuestionnaire() {
+            // Check for consent first
+            if (demoQuestionnaire.settings.require_consent && !hasConsent) {
+                showConsentModal();
+            } else {
+                loadQuestionnaire();
+            }
+        }
+
+        // Show consent modal
+        function showConsentModal() {
+            document.getElementById('consentModal').classList.remove('hidden');
+        }
+
+        // Hide consent modal
+        function hideConsentModal() {
+            document.getElementById('consentModal').classList.add('hidden');
+        }
+
+        // Load questionnaire content
+        function loadQuestionnaire() {
+            const content = document.getElementById('questionnaireContent');
+            content.innerHTML = '';
+
+            demoQuestionnaire.questionGroups.forEach(group => {
+                const groupSection = document.createElement('div');
+                groupSection.className = 'question-section bg-white rounded-lg shadow-sm p-6';
+                groupSection.innerHTML = `
+                    <h2 class="text-xl font-bold mb-2">${group.title.pl}</h2>
+                    ${group.description.pl ? `<p class="text-gray-600 mb-4">${group.description.pl}</p>` : ''}
+                    <div class="space-y-6">
+                        ${group.questions.map(question => renderQuestion(question)).join('')}
+                    </div>
+                `;
+                content.appendChild(groupSection);
+            });
+
+            content.classList.remove('hidden');
+            setupEventListeners();
+            updateProgress();
+            loadExistingAnswers();
+        }
+
+        // Render individual question
+        function renderQuestion(question) {
+            let inputHtml = '';
+
+            switch(question.type) {
+                case 'textarea':
+                    inputHtml = `
+                        <textarea
+                            id="q-${question.id}"
+                            class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-vertical"
+                            rows="4"
+                            placeholder="Twoja odpowiedź..."
+                            maxlength="${question.validation?.max_length || 1000}"
+                            data-question-id="${question.id}"
+                        ></textarea>
+                        ${question.validation?.max_length ?
+                            `<div class="text-xs text-gray-500 mt-1">
+                                <span class="char-count">0</span>/${question.validation.max_length} znaków
+                            </div>` : ''
+                        }
+                    `;
+                    break;
+                case 'text':
+                    inputHtml = `
+                        <input
+                            type="text"
+                            id="q-${question.id}"
+                            class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Twoja odpowiedź..."
+                            maxlength="${question.validation?.max_length || 200}"
+                            data-question-id="${question.id}"
+                        />
+                    `;
+                    break;
+                case 'number':
+                    inputHtml = `
+                        <input
+                            type="number"
+                            id="q-${question.id}"
+                            class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Wprowadź liczbę"
+                            data-question-id="${question.id}"
+                        />
+                    `;
+                    break;
+                default:
+                    inputHtml = `
+                        <textarea
+                            id="q-${question.id}"
+                            class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            rows="3"
+                            placeholder="Twoja odpowiedź..."
+                            data-question-id="${question.id}"
+                        ></textarea>
+                    `;
+            }
+
+            return `
+                <div class="question-container" data-question-id="${question.id}">
+                    <div class="mb-2">
+                        <label for="q-${question.id}" class="block text-gray-800 font-medium">
+                            ${question.text.pl}
+                            ${question.validation?.required ? '<span class="text-red-500 ml-1">*</span>' : ''}
+                        </label>
+                    </div>
+                    ${inputHtml}
+                </div>
+            `;
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Auto-save on input change
+            document.querySelectorAll('input, textarea').forEach(element => {
+                element.addEventListener('input', debounce(handleInputChange, 1000));
+
+                // Character count for textareas
+                if (element.tagName === 'TEXTAREA' && element.maxLength) {
+                    element.addEventListener('input', updateCharCount);
+                }
+            });
+
+            // Save draft button
+            document.getElementById('saveDraftBtn').addEventListener('click', saveAllAnswers);
+
+            // Submit button
+            document.getElementById('submitBtn').addEventListener('click', submitQuestionnaire);
+
+            // Consent modal buttons
+            document.getElementById('acceptConsent').addEventListener('click', acceptConsent);
+            document.getElementById('cancelConsent').addEventListener('click', () => {
+                // Could redirect back or show message
+                alert('Zgoda jest wymagana do wypełnienia kwestionariusza');
+            });
+        }
+
+        // Handle input changes with auto-save
+        function handleInputChange(event) {
+            const questionId = event.target.dataset.questionId;
+            const value = event.target.value;
+
+            // Store in current answers
+            currentAnswers[questionId] = value;
+
+            // Auto-save
+            saveAnswer(questionId, value);
+
+            // Update progress
+            updateProgress();
+        }
+
+        // Save individual answer
+        async function saveAnswer(questionId, answer) {
+            try {
+                // In real implementation, this would call the API
+                // await fetch(`${API_BASE}/public/responses`, {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify({
+                //         questionId,
+                //         answer,
+                //         metadata: { timeSpentMs: Date.now() - startTime }
+                //     })
+                // });
+
+                // Show save indicator
+                showSaveStatus();
+
+                console.log(`Saved answer for question ${questionId}:`, answer);
+            } catch (error) {
+                console.error('Error saving answer:', error);
+            }
+        }
+
+        // Save all answers
+        async function saveAllAnswers() {
+            try {
+                for (const [questionId, answer] of Object.entries(currentAnswers)) {
+                    await saveAnswer(questionId, answer);
+                }
+                alert('Wszystkie odpowiedzi zostały zapisane!');
+            } catch (error) {
+                console.error('Error saving all answers:', error);
+                alert('Wystąpił błąd podczas zapisywania odpowiedzi');
+            }
+        }
+
+        // Submit questionnaire
+        async function submitQuestionnaire() {
+            if (isSubmitting) return;
+
+            // Validate required questions (in this demo, none are required)
+
+            isSubmitting = true;
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Wysyłanie...';
+
+            try {
+                // In real implementation, this would call the API
+                // await fetch(`${API_BASE}/public/responses/submit`, {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify({
+                //         questionnaireId: QUESTIONNAIRE_ID
+                //     })
+                // });
+
+                // Save all answers first, then submit
+                await saveAllAnswers();
+
+                // Show success message
+                document.getElementById('questionnaireContent').classList.add('hidden');
+                document.getElementById('successMessage').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error submitting questionnaire:', error);
+                alert('Wystąpił błąd podczas wysyłania odpowiedzi. Spróbuj ponownie.');
+            } finally {
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i> Wyślij odpowiedzi';
+            }
+        }
+
+        // Handle consent acceptance
+        async function acceptConsent() {
+            const aiProcessing = document.getElementById('aiProcessing').checked;
+            const dataProcessing = document.getElementById('dataProcessing').checked;
+            const anonymousSharing = document.getElementById('anonymousSharing').checked;
+
+            if (!dataProcessing) {
+                alert('Zgoda na przetwarzanie danych jest wymagana');
+                return;
+            }
+
+            try {
+                // In real implementation, save consent to API
+                // await fetch(`${API_BASE}/public/consent`, {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify({
+                //         questionnaireId: QUESTIONNAIRE_ID,
+                //         aiProcessing,
+                //         dataProcessing,
+                //         anonymousSharing,
+                //         consentText: { /* get from API */ }
+                //     })
+                // });
+
+                hasConsent = true;
+                hideConsentModal();
+                loadQuestionnaire();
+
+            } catch (error) {
+                console.error('Error saving consent:', error);
+                alert('Wystąpił błąd podczas zapisywania zgody');
+            }
+        }
+
+        // Update progress bar
+        function updateProgress() {
+            const totalQuestions = demoQuestionnaire.questionGroups.reduce(
+                (total, group) => total + group.questions.length, 0
+            );
+            const answeredQuestions = Object.keys(currentAnswers).filter(
+                id => currentAnswers[id] && currentAnswers[id].trim() !== ''
+            ).length;
+
+            const percentage = Math.round((answeredQuestions / totalQuestions) * 100);
+
+            document.getElementById('progressBar').style.width = `${percentage}%`;
+            document.getElementById('progressText').textContent =
+                `${answeredQuestions}/${totalQuestions} (${percentage}%)`;
+        }
+
+        // Update character count
+        function updateCharCount(event) {
+            const textarea = event.target;
+            const charCount = textarea.value.length;
+            const maxLength = textarea.maxLength;
+            const countElement = textarea.parentElement.querySelector('.char-count');
+
+            if (countElement) {
+                countElement.textContent = charCount;
+
+                if (charCount > maxLength * 0.9) {
+                    countElement.classList.add('text-orange-500');
+                } else {
+                    countElement.classList.remove('text-orange-500');
+                }
+            }
+        }
+
+        // Show save status indicator
+        function showSaveStatus() {
+            const statusElement = document.getElementById('saveStatus');
+            statusElement.classList.add('show');
+
+            setTimeout(() => {
+                statusElement.classList.remove('show');
+            }, 2000);
+        }
+
+        // Load existing answers from localStorage (for demo)
+        function loadExistingAnswers() {
+            const saved = localStorage.getItem(`questionnaire-${QUESTIONNAIRE_ID}`);
+            if (saved) {
+                currentAnswers = JSON.parse(saved);
+
+                // Populate form fields
+                Object.entries(currentAnswers).forEach(([questionId, answer]) => {
+                    const element = document.querySelector(`[data-question-id="${questionId}"]`);
+                    if (element) {
+                        element.value = answer;
+                        updateCharCount({ target: element });
+                    }
+                });
+
+                updateProgress();
+            }
+        }
+
+        // Save answers to localStorage (for demo)
+        function saveToLocalStorage() {
+            localStorage.setItem(`questionnaire-${QUESTIONNAIRE_ID}`, JSON.stringify(currentAnswers));
+        }
+
+        // Utility: debounce function
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Auto-save to localStorage every 30 seconds
+        setInterval(saveToLocalStorage, 30000);
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', initQuestionnaire);
+    </script>
+</body>
+</html>

@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Questionnaire Builder Demo - WorkshopsAI CMS</title>
+
+  <style>
+    :root {
+      --color-primary: #3b82f6;
+      --color-primary-hover: #2563eb;
+      --color-primary-100: #dbeafe;
+      --color-secondary: #64748b;
+      --color-success: #10b981;
+      --color-warning: #f59e0b;
+      --color-error: #ef4444;
+      --color-background: #ffffff;
+      --color-surface: #f9fafb;
+      --color-text: #1f2937;
+      --color-text-secondary: #6b7280;
+      --color-border: #e5e7eb;
+      --color-border-hover: #d1d5db;
+      --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --spacing: 1rem;
+      --border-radius: 8px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --transition: all 0.2s ease;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-family);
+      line-height: 1.5;
+      color: var(--color-text);
+      background-color: var(--color-background);
+      margin: 0;
+      padding: 1rem;
+    }
+
+    .demo-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .demo-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding: 2rem;
+      background: linear-gradient(135deg, var(--color-primary) 0%, #1e40af 100%);
+      color: white;
+      border-radius: var(--border-radius);
+    }
+
+    .demo-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .demo-subtitle {
+      font-size: 1.125rem;
+      opacity: 0.9;
+      margin: 0;
+    }
+
+    .demo-controls {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .control-button {
+      padding: 0.5rem 1rem;
+      background: var(--color-primary);
+      color: white;
+      border: none;
+      border-radius: var(--border-radius);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .control-button:hover {
+      background: var(--color-primary-hover);
+    }
+
+    .control-button.secondary {
+      background: var(--color-secondary);
+    }
+
+    .control-button.outline {
+      background: transparent;
+      color: var(--color-primary);
+      border: 1px solid var(--color-primary);
+    }
+
+    .control-button.outline:hover {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .builder-container {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .main-panel {
+      min-width: 0;
+    }
+
+    .side-panel {
+      background: var(--color-surface);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      height: fit-content;
+      position: sticky;
+      top: 2rem;
+    }
+
+    .builder-header {
+      margin-bottom: 2rem;
+    }
+
+    .builder-title {
+      font-size: 1.875rem;
+      font-weight: 700;
+      margin: 0 0 0.5rem 0;
+      color: var(--color-text);
+    }
+
+    .builder-description {
+      color: var(--color-text-secondary);
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    .language-toggle {
+      display: flex;
+      background: var(--color-surface);
+      border-radius: var(--border-radius);
+      padding: 0.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .language-button {
+      flex: 1;
+      padding: 0.5rem 1rem;
+      border: none;
+      background: transparent;
+      border-radius: calc(var(--border-radius) - 4px);
+      cursor: pointer;
+      font-weight: 500;
+      transition: var(--transition);
+    }
+
+    .language-button.active {
+      background: white;
+      color: var(--color-primary);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-section {
+      background: white;
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--color-border);
+    }
+
+    .form-section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0 0 1rem 0;
+      color: var(--color-text);
+    }
+
+    .bilingual-inputs {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .language-input {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .language-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+    }
+
+    .input, .textarea {
+      padding: 0.75rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius);
+      font-size: 1rem;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+
+    .input:focus, .textarea:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-100);
+    }
+
+    .textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    .groups-container {
+      margin: 1.5rem 0;
+    }
+
+    .group-card {
+      background: white;
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius);
+      margin-bottom: 1rem;
+      overflow: hidden;
+      transition: var(--transition);
+    }
+
+    .group-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      cursor: pointer;
+    }
+
+    .group-title-section {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex: 1;
+    }
+
+    .group-icon {
+      width: 2rem;
+      height: 2rem;
+      background: var(--color-border);
+      border-radius: var(--border-radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: var(--color-text-secondary);
+    }
+
+    .group-title {
+      font-weight: 600;
+      margin: 0;
+      color: var(--color-text);
+    }
+
+    .group-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .icon-button {
+      width: 2rem;
+      height: 2rem;
+      border: none;
+      background: transparent;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      color: var(--color-text-secondary);
+    }
+
+    .icon-button:hover {
+      background: var(--color-border);
+    }
+
+    .icon-button.danger:hover {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--color-error);
+    }
+
+    .group-content {
+      padding: 1.5rem;
+    }
+
+    .group.collapsed .group-content {
+      display: none;
+    }
+
+    .questions-list {
+      margin: 1rem 0;
+    }
+
+    .question-item {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius);
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+      transition: var(--transition);
+    }
+
+    .question-item:hover {
+      border-color: var(--color-border-hover);
+    }
+
+    .question-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .question-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .question-text {
+      font-weight: 500;
+      margin: 0 0 0.25rem 0;
+      color: var(--color-text);
+    }
+
+    .question-meta {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+    }
+
+    .question-type {
+      background: var(--color-border);
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .question-required {
+      color: var(--color-error);
+      font-weight: 500;
+    }
+
+    .question-actions {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .add-question-button, .add-group-button {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px dashed var(--color-border);
+      background: transparent;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      color: var(--color-text-secondary);
+      font-weight: 500;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .add-question-button:hover, .add-group-button:hover {
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+      background: var(--color-primary-100);
+    }
+
+    .settings-panel {
+      margin-top: 1.5rem;
+    }
+
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .setting-item:last-child {
+      border-bottom: none;
+    }
+
+    .setting-label {
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 3rem;
+      height: 1.5rem;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: var(--color-border);
+      border-radius: 1.5rem;
+      transition: var(--transition);
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 1.125rem;
+      width: 1.125rem;
+      left: 0.1875rem;
+      bottom: 0.1875rem;
+      background: white;
+      border-radius: 50%;
+      transition: var(--transition);
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+      background: var(--color-primary);
+    }
+
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(1.5rem);
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .button {
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--border-radius);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition);
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: inherit;
+    }
+
+    .button-primary {
+      background: var(--color-primary);
+      color: white;
+    }
+
+    .button-primary:hover {
+      background: var(--color-primary-hover);
+    }
+
+    .button-secondary {
+      background: var(--color-surface);
+      color: var(--color-text);
+      border: 1px solid var(--color-border);
+    }
+
+    .button-secondary:hover {
+      background: var(--color-border);
+    }
+
+    .auto-save-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      color: var(--color-text-secondary);
+      margin-top: 1rem;
+    }
+
+    .auto-save-indicator.saving {
+      color: var(--color-warning);
+    }
+
+    .auto-save-indicator.saved {
+      color: var(--color-success);
+    }
+
+    .auto-save-indicator.error {
+      color: var(--color-error);
+    }
+
+    .dot {
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--color-text-secondary);
+    }
+
+    .empty-state-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .empty-state-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--color-text);
+    }
+
+    .empty-state-text {
+      margin-bottom: 1.5rem;
+    }
+
+    /* Mobile responsive */
+    @media (max-width: 1024px) {
+      .builder-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .side-panel {
+        position: static;
+        order: -1;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .demo-container {
+        padding: 0.5rem;
+      }
+
+      .form-section {
+        padding: 1rem;
+      }
+
+      .action-buttons {
+        flex-direction: column;
+      }
+
+      .button {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-container">
+    <header class="demo-header">
+      <h1 class="demo-title">Questionnaire Builder</h1>
+      <p class="demo-subtitle">Interactive demo of the drag-and-drop questionnaire creation interface</p>
+    </header>
+
+    <div class="demo-controls">
+      <button class="control-button" onclick="addSampleGroup()">📁 Add Sample Group</button>
+      <button class="control-button" onclick="addSampleQuestions()">❓ Add Sample Questions</button>
+      <button class="control-button secondary" onclick="toggleLanguage()">🌍 Toggle Language</button>
+      <button class="control-button outline" onclick="resetDemo()">🔄 Reset Demo</button>
+    </div>
+
+    <div class="builder-container">
+      <div class="main-panel">
+        <div class="builder-header">
+          <h2 class="builder-title">Create New Questionnaire</h2>
+          <p class="builder-description">
+            Design comprehensive questionnaires with bilingual support and advanced question types
+          </p>
+        </div>
+
+        <div class="language-toggle">
+          <button class="language-button active" onclick="setLanguage('pl')">🇵🇱 Polski</button>
+          <button class="language-button" onclick="setLanguage('en')">🇬🇧 English</button>
+        </div>
+
+        <div class="form-section">
+          <h3 class="form-section-title">Basic Information</h3>
+          <div class="bilingual-inputs">
+            <div class="language-input">
+              <label class="language-label">🇵🇱 Polish Title</label>
+              <input type="text" class="input" placeholder="Wprowadź tytuł kwestionariusza" value="" />
+            </div>
+            <div class="language-input">
+              <label class="language-label">🇬🇧 English Title</label>
+              <input type="text" class="input" placeholder="Enter questionnaire title" value="" />
+            </div>
+          </div>
+
+          <div class="bilingual-inputs" style="margin-top: 1rem;">
+            <div class="language-input">
+              <label class="language-label">🇵🇱 Polish Description</label>
+              <textarea class="textarea" placeholder="Wprowadź opis kwestionariusza"></textarea>
+            </div>
+            <div class="language-input">
+              <label class="language-label">🇬🇧 English Description</label>
+              <textarea class="textarea" placeholder="Enter questionnaire description"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3 class="form-section-title">Question Sections</h3>
+          <div class="groups-container" id="groupsContainer">
+            <div class="empty-state">
+              <div class="empty-state-icon">📝</div>
+              <div class="empty-state-title">No sections yet</div>
+              <div class="empty-state-text">
+                Start by adding a section to organize your questions
+              </div>
+            </div>
+          </div>
+
+          <button class="add-group-button" onclick="addGroup()">
+            <span>➕</span>
+            <span>Add Section</span>
+          </button>
+        </div>
+
+        <div class="action-buttons">
+          <button class="button button-primary">
+            <span>💾</span>
+            <span>Save Questionnaire</span>
+          </button>
+          <button class="button button-secondary">
+            <span>👁️</span>
+            <span>Preview</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="side-panel">
+        <div class="settings-panel">
+          <h3 class="form-section-title">Settings</h3>
+          <div class="setting-item">
+            <span class="setting-label">Anonymous responses</span>
+            <label class="toggle-switch">
+              <input type="checkbox" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <span class="setting-label">Require GDPR consent</span>
+            <label class="toggle-switch">
+              <input type="checkbox" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <span class="setting-label">Show all questions</span>
+            <label class="toggle-switch">
+              <input type="checkbox" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <span class="setting-label">Allow editing answers</span>
+            <label class="toggle-switch">
+              <input type="checkbox" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <span class="setting-label">Close after workshop</span>
+            <label class="toggle-switch">
+              <input type="checkbox" checked />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div class="auto-save-indicator saved">
+          <span class="dot"></span>
+          <span>✅ Auto-saved 2 minutes ago</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentLanguage = 'pl';
+    let groups = [];
+
+    function setLanguage(lang) {
+      currentLanguage = lang;
+      document.querySelectorAll('.language-button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+    }
+
+    function toggleLanguage() {
+      const buttons = document.querySelectorAll('.language-button');
+      const activeButton = document.querySelector('.language-button.active');
+      const currentIndex = Array.from(buttons).indexOf(activeButton);
+      const nextIndex = (currentIndex + 1) % buttons.length;
+      buttons[nextIndex].click();
+    }
+
+    function addGroup() {
+      const group = {
+        id: `group_${Date.now()}`,
+        title: {
+          pl: `Sekcja ${groups.length + 1}`,
+          en: `Section ${groups.length + 1}`
+        },
+        collapsed: false,
+        questions: []
+      };
+
+      groups.push(group);
+      renderGroups();
+    }
+
+    function addSampleGroup() {
+      const group = {
+        id: `group_${Date.now()}`,
+        title: {
+          pl: 'Informacje Demograficzne',
+          en: 'Demographic Information'
+        },
+        collapsed: false,
+        questions: []
+      };
+
+      groups.push(group);
+      renderGroups();
+
+      // Add sample questions after a short delay
+      setTimeout(() => addSampleQuestions(group.id), 300);
+    }
+
+    function addSampleQuestions(groupId = null) {
+      const targetGroupId = groupId || (groups.length > 0 ? groups[0].id : null);
+
+      if (!targetGroupId) {
+        alert('Please add a section first');
+        return;
+      }
+
+      const group = groups.find(g => g.id === targetGroupId);
+      if (!group) return;
+
+      const sampleQuestions = [
+        {
+          id: `question_${Date.now()}_1`,
+          text: {
+            pl: 'Jak masz na imię?',
+            en: 'What is your name?'
+          },
+          type: 'text',
+          required: true
+        },
+        {
+          id: `question_${Date.now()}_2`,
+          text: {
+            pl: 'Wiek',
+            en: 'Age'
+          },
+          type: 'number',
+          required: true
+        },
+        {
+          id: `question_${Date.now()}_3`,
+          text: {
+            pl: 'Jak oceniasz swoje zadowolenie?',
+            en: 'How satisfied are you?'
+          },
+          type: 'scale',
+          required: false
+        },
+        {
+          id: `question_${Date.now()}_4`,
+          text: {
+            pl: 'Wybierz swoje zainteresowania',
+            en: 'Select your interests'
+          },
+          type: 'multiple_choice',
+          required: false
+        }
+      ];
+
+      group.questions = [...group.questions, ...sampleQuestions];
+      renderGroups();
+    }
+
+    function deleteGroup(groupId) {
+      groups = groups.filter(g => g.id !== groupId);
+      renderGroups();
+    }
+
+    function deleteQuestion(groupId, questionId) {
+      const group = groups.find(g => g.id === groupId);
+      if (group) {
+        group.questions = group.questions.filter(q => q.id !== questionId);
+        renderGroups();
+      }
+    }
+
+    function toggleGroupCollapse(groupId) {
+      const group = groups.find(g => g.id === groupId);
+      if (group) {
+        group.collapsed = !group.collapsed;
+        renderGroups();
+      }
+    }
+
+    function getQuestionTypeLabel(type) {
+      const labels = {
+        text: currentLanguage === 'pl' ? 'Krótka odpowiedź' : 'Short Answer',
+        textarea: currentLanguage === 'pl' ? 'Długa odpowiedź' : 'Long Answer',
+        number: currentLanguage === 'pl' ? 'Liczba' : 'Number',
+        scale: currentLanguage === 'pl' ? 'Skala' : 'Scale',
+        single_choice: currentLanguage === 'pl' ? 'Wybór pojedynczy' : 'Single Choice',
+        multiple_choice: currentLanguage === 'pl' ? 'Wybór wielokrotny' : 'Multiple Choice'
+      };
+      return labels[type] || type;
+    }
+
+    function renderGroups() {
+      const container = document.getElementById('groupsContainer');
+
+      if (groups.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">📝</div>
+            <div class="empty-state-title">No sections yet</div>
+            <div class="empty-state-text">
+              Start by adding a section to organize your questions
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = groups.map(group => `
+        <div class="group-card ${group.collapsed ? 'collapsed' : ''}">
+          <div class="group-header" onclick="toggleGroupCollapse('${group.id}')">
+            <div class="group-title-section">
+              <div class="group-icon">${groups.indexOf(group) + 1}</div>
+              <h4 class="group-title">${group.title[currentLanguage]}</h4>
+            </div>
+            <div class="group-actions">
+              <button class="icon-button danger" onclick="event.stopPropagation(); deleteGroup('${group.id}')" title="Delete group">
+                🗑️
+              </button>
+              <button class="icon-button" onclick="event.stopPropagation(); toggleGroupCollapse('${group.id}')" title="Toggle collapse">
+                ${group.collapsed ? '📂' : '📁'}
+              </button>
+            </div>
+          </div>
+
+          <div class="group-content">
+            ${group.questions.length > 0 ? `
+              <div class="questions-list">
+                ${group.questions.map(question => `
+                  <div class="question-item">
+                    <div class="question-header">
+                      <div class="question-content">
+                        <div class="question-text">${question.text[currentLanguage]}</div>
+                        <div class="question-meta">
+                          <span class="question-type">${getQuestionTypeLabel(question.type)}</span>
+                          ${question.required ? '<span class="question-required">Required</span>' : ''}
+                        </div>
+                      </div>
+                      <div class="question-actions">
+                        <button class="icon-button" title="Edit question">✏️</button>
+                        <button class="icon-button danger" onclick="deleteQuestion('${group.id}', '${question.id}')" title="Delete question">🗑️</button>
+                      </div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            ` : `
+              <div class="empty-state">
+                <div class="empty-state-text">
+                  ${currentLanguage === 'pl' ? 'Brak pytań w tej sekcji' : 'No questions in this section yet'}
+                </div>
+              </div>
+            `}
+
+            <button class="add-question-button" onclick="addSampleQuestions('${group.id}')">
+              <span>➕</span>
+              <span>${currentLanguage === 'pl' ? 'Dodaj pytanie' : 'Add Question'}</span>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function resetDemo() {
+      groups = [];
+      currentLanguage = 'pl';
+      document.querySelectorAll('.language-button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelector('.language-button').classList.add('active');
+      renderGroups();
+    }
+
+    // Initialize with a welcome message
+    document.addEventListener('DOMContentLoaded', () => {
+      // Show auto-save animation
+      const indicator = document.querySelector('.auto-save-indicator');
+      setTimeout(() => {
+        indicator.classList.add('saving');
+        indicator.innerHTML = '<span class="dot"></span><span>⏳ Saving...</span>';
+
+        setTimeout(() => {
+          indicator.classList.remove('saving');
+          indicator.classList.add('saved');
+          indicator.innerHTML = '<span class="dot"></span><span>✅ Auto-saved 2 minutes ago</span>';
+        }, 2000);
+      }, 1000);
+    });
+  </script>
+</body>
+</html>

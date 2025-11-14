@@ -1,0 +1,77 @@
+{
+  "templateId": "hierarchical_clustering_v2",
+  "version": "2.0",
+  "language": "both",
+  "category": "clustering",
+  "metadata": {
+    "name": "Advanced Hierarchical Clustering",
+    "description": "Enhanced clustering with semantic similarity and cultural context",
+    "author": "Prompt Engineering Team",
+    "createdAt": "2025-01-13T10:00:00Z",
+    "updatedAt": "2025-01-13T10:00:00Z",
+    "tags": ["clustering", "hierarchical", "semantic", "cultural", "advanced"]
+  },
+  "systemPrompt": "You are an advanced clustering algorithm for qualitative data analysis with deep expertise in semantic similarity analysis and cultural context adaptation. You specialize in identifying natural groupings in textual responses while respecting cultural nuances and maintaining methodological rigor.",
+  "userPromptTemplate": "# TASK: Advanced Hierarchical Clustering Analysis\n\nConduct sophisticated clustering analysis of questionnaire responses, identifying natural groupings based on semantic similarity and shared perspectives.\n\n# ANALYSIS CONTEXT\n- **Response Count**: {{responseCount}}\n- **Minimum Cluster Size**: {{minClusterSize || 3}}\n- **Maximum Clusters**: {{maxClusters || 10}}\n- **Language**: {{language || 'auto-detect'}}\n- **Cultural Context**: {{culturalContext || 'auto-detect'}}\n- **Analysis Type**: {{analysisType || 'hierarchical'}}\n\n# METHODOLOGY\n\n## Step 1: Semantic Preparation\n1. **Text Preprocessing**: \n   - Clean and normalize text\n   - Handle multilingual content if present\n   - Preserve semantic meaning while reducing noise\n\n2. **Feature Extraction**:\n   - Identify key concepts and themes\n   - Extract semantic features\n   - Consider cultural markers and context\n\n## Step 2: Distance Matrix Construction\n1. **Similarity Calculation**:\n   - Compute semantic similarity between all response pairs\n   - Use cosine similarity or appropriate metric\n   - Weight cultural similarity appropriately\n\n2. **Distance Conversion**:\n   - Convert similarity scores to distances\n   - Apply appropriate transformation\n   - Ensure metric properties\n\n## Step 3: Hierarchical Clustering\n1. **Linkage Method**: Ward's method (minimum variance)\n2. **Dendrogram Analysis**: \n   - Construct hierarchical tree\n   - Identify natural cutting points\n   - Consider multiple resolution levels\n\n## Step 4: Optimal Cluster Selection\n1. **Elbow Method**: Find inflection points in within-cluster variance\n2. **Silhouette Analysis**: Evaluate cluster cohesion and separation\n3. **Gap Statistics**: Compare to null reference distribution\n4. **Domain Knowledge**: Ensure clusters make contextual sense\n\n## Step 5: Cluster Characterization\nFor each identified cluster:\n\n### Core Identity\n- **Cluster Name**: Descriptive, meaningful label\n- **Centroid Response**: Most representative response\n- **Size Metrics**: Member count and percentage\n\n### Semantic Profile\n- **Key Concepts**: Dominant themes and ideas\n- **Shared Vocabulary**: Common terms and expressions\n- **Narrative Pattern**: Typical story structure\n\n### Cultural Context\n- **Cultural Markers**: Specific cultural references\n- **Value Alignment**: Shared values and beliefs\n- **Social Context**: Common social references\n\n### Quality Metrics\n- **Cohesion Score**: Internal consistency (0-1)\n- **Separation Score**: Distance from other clusters\n- **Stability Score**: Robustness to sampling variations\n\n# INPUT DATA\n{{responses}}\n\n# OUTPUT REQUIREMENTS\n\n## JSON Structure\nProvide analysis in the following exact format:\n\n```json\n{\n  \"clusteringMetadata\": {\n    \"templateVersion\": \"2.0\",\n    \"analysisType\": \"hierarchical_clustering\",\n    \"language\": \"{{language || 'auto-detect'}}\",\n    \"culturalContext\": \"{{culturalContext || 'auto-detect'}}\",\n    \"totalResponses\": {{responseCount}},\n    \"analysisDate\": \"{{currentDate}}\",\n    \"methodology\": \"ward_linkage_hierarchical\",\n    \"confidenceScore\": 0.82\n  },\n  \"clusteringAnalysis\": {\n    \"method\": \"hierarchical\",\n    \"linkageMethod\": \"ward\",\n    \"distanceMetric\": \"cosine\",\n    \"optimalClusters\": 5,\n    \"selectionCriteria\": [\"elbow_method\", \"silhouette_analysis\", \"gap_statistics\"],\n    \"silhouetteScore\": 0.72,\n    \"calinskiHarabaszScore\": 245.6,\n    \"daviesBouldinScore\": 0.48,\n    \"qualityAssessment\": \"good\",\n    \"culturalContext\": \"contextually appropriate\"\n  },\n  \"dendrogramAnalysis\": {\n    \"cutPoints\": [\n      {\n        \"clusterCount\": 5,\n        \"height\": 2.34,\n        \"justification\": \"Elbow point with maximum silhouette\"\n      }\n    ],\n    \"alternativeSolutions\": [\n      {\n        \"clusterCount\": 4,\n        \"silhouetteScore\": 0.68,\n        \"interpretability\": \"high\"\n      },\n      {\n        \"clusterCount\": 6,\n        \"silhouetteScore\": 0.69,\n        \"interpretability\": \"medium\"\n      }\n    ]\n  },\n  \"clusters\": [\n    {\n      \"id\": \"cluster_1\",\n      \"name\": \"Community-Oriented Visionaries\",\n      \"size\": {\n        \"count\": 12,\n        \"percentage\": 24.0,\n        \"density\": 0.78\n      },\n      \"centroid\": {\n        \"text\": \"Most representative response capturing cluster essence\",\n        \"similarityToCentroid\": 0.89,\n        \"representativeness\": \"high\"\n      },\n      \"characteristics\": {\n        \"keyConcepts\": [\"collaboration\", \"shared space\", \"mutual support\", \"community values\"],\n        \"dominantThemes\": [\"cooperation\", \"inclusivity\", \"shared responsibility\"],\n        \"vocabularyPatterns\": [\"collaborative language\", \"inclusive terminology\", \"community-focused expressions\"]\n      },\n      \"culturalContext\": {\n        \"culturalMarkers\": [\"collectivist values\", \"community orientation\", \"social responsibility\"],\n        \"valueAlignment\": [\"cooperation\", \"mutual respect\", \"shared prosperity\"],\n        \"socialReferences\": [\"local traditions\", \"community practices\", \"cultural heritage\"]\n      },\n      \"semanticProfile\": {\n        \"semanticCohesion\": 0.84,\n        \"conceptualDensity\": 0.76,\n        \"thematicConsistency\": 0.82,\n        \"narrativeStructure\": \"collaborative_aspiration\"\n      },\n      \"qualityMetrics\": {\n        \"cohesionScore\": 0.85,\n        \"separationScore\": 0.67,\n        \"stabilityScore\": 0.78,\n        \"silhouetteScore\": 0.74,\n        \"overallQuality\": 0.76\n      },\n      \"members\": [\n        {\n          \"id\": \"response_1\",\n          \"similarityToCentroid\": 0.92,\n          \"representativenessScore\": 0.88,\n          \"keyPhrases\": [\"phrase1\", \"phrase2\"]\n        }\n      ],\n      \"relationships\": {\n        \"closestClusters\": [\"cluster_2\", \"cluster_3\"],\n        \"sharedThemes\": [\"community values\", \"sustainability\"],\n        \"distinguishingFeatures\": [\"stronger collaborative focus\", \"emphasis on shared resources\"]\n      },\n      \"sentimentProfile\": {\n        \"averageSentiment\": 0.7,\n        \"sentimentConsistency\": 0.81,\n        \"emotionalTone\": \"optimistic\",\n        \"dominantEmotions\": [\"hope\", \"enthusiasm\", \"cooperation\"]\n      },\n      \"interpretation\": {\n        \"summary\": \"Brief interpretation of cluster meaning and significance\",\n        \"keyInsights\": [\"insight1\", \"insight2\"],\n        \"implications\": [\"implication1\", \"implication2\"]\n      }\n    }\n  ],\n  \"interClusterAnalysis\": {\n    \"pairwiseDistances\": [\n      {\n        \"cluster1\": \"cluster_1\",\n        \"cluster2\": \"cluster_2\",\n        \"distance\": 0.43,\n        \"similarity\": 0.57,\n        \"sharedFeatures\": [\"community\", \"sustainability\"]\n      }\n    ],\n    \"globalPatterns\": {\n      \"dominantAxis\": \"individual_vs_community\",\n      \"secondaryAxis\": \"tradition_vs_innovation\",\n      \"culturalGradient\": \"local_vs_global_values\"\n    },\n    \"outlierDetection\": {\n      \"potentialOutliers\": [\"response_45\", \"response_67\"],\n      \"outlierReasons\": [\"unique perspective\", \"atypical language\"],\n      \"recommendation\": \"consider separate analysis or qualitative review\"\n    }\n  },\n  \"validationResults\": {\n    \"internalValidation\": {\n      \"silhouetteAnalysis\": {\n        \"averageScore\": 0.72,\n        \"interpretation\": \"reasonable_structure\",\n        \"clusterScores\": [0.74, 0.68, 0.71, 0.75, 0.69]\n      },\n      \"stabilityAnalysis\": {\n        \"bootstrapSupport\": 0.85,\n        \"jaccardStability\": 0.78,\n        \"interpretation\": \"moderately_stable\"\n      }\n    },\n    \"externalValidation\": {\n      \"domainExpertise\": \"consistent_with_theory\",\n      \"practicalInterpretability\": \"high\",\n      \"actionability\": \"good\"\n    }\n  },\n  \"qualityMetrics\": {\n    \"overallQuality\": 0.76,\n    \"methodologicalSoundness\": 0.82,\n    \"interpretability\": 0.85,\n    \"stability\": 0.78,\n    \"culturalAppropriateness\": 0.88,\n    \"completeness\": 0.91\n  },\n  \"recommendations\": [\n    {\n      \"type\": \"methodological\",\n      \"description\": \"Consider comparing with alternative clustering methods\",\n      \"priority\": \"medium\",\n      \"rationale\": \"Method validation and robustness checking\"\n    },\n    {\n      \"type\": \"interpretive\",\n      \"description\": \"Explore relationships between clusters in qualitative follow-up\",\n      \"priority\": \"high\",\n      \"rationale\": \"Deeper understanding of cluster dynamics\"\n    }\n  ]\n}\n```\n\n# ANALYSIS GUIDELINES\n\n## Quality Standards\n1. **Methodological Rigor**: Apply sound clustering methodology\n2. **Cultural Sensitivity**: Respect cultural contexts and variations\n3. **Interpretability**: Ensure clusters are meaningful and interpretable\n4. **Validation**: Provide validation metrics and justification\n\n## Technical Requirements\n1. **Minimum Cluster Size**: Respect specified minimum unless strongly justified\n2. **Maximum Clusters**: Stay within reasonable bounds for interpretability\n3. **Quality Metrics**: Include all specified quality assessments\n4. **Cultural Context**: Analyze and report cultural patterns explicitly\n\n## Validation Criteria\nAfter generating clusters, verify:\n1. **Statistical Validity**: Are clustering metrics acceptable?\n2. **Interpretative Sense**: Do clusters make contextual sense?\n3. **Cultural Appropriateness**: Is cultural context properly considered?\n4. **Completeness**: Are all required sections included?\n5. **Quality Metrics**: Are quality scores reasonable and justified?",
+  "requiredVariables": [
+    "responses",
+    "responseCount",
+    "currentDate"
+  ],
+  "optionalVariables": [
+    "minClusterSize",
+    "maxClusters",
+    "language",
+    "culturalContext",
+    "analysisType",
+    "linkageMethod",
+    "distanceMetric"
+  ],
+  "examples": [
+    {
+      "input": {
+        "responses": "[{\"id\": \"r1\", \"text\": \"We need shared spaces for collaboration\"}, {\"id\": \"r2\", \"text\": \"Private offices are essential for focus\"}]",
+        "responseCount": 25,
+        "currentDate": "2025-01-13",
+        "minClusterSize": 3
+      },
+      "output": {
+        "clusteringAnalysis": {
+          "optimalClusters": 2,
+          "silhouetteScore": 0.68,
+          "qualityAssessment": "acceptable"
+        },
+        "clusters": [
+          {
+            "id": "cluster_1",
+            "name": "Collaborative Space Advocates",
+            "size": {"count": 15, "percentage": 60.0},
+            "centroid": {"text": "Shared spaces for community collaboration and interaction"}
+          }
+        ]
+      }
+    }
+  ],
+  "constraints": {
+    "maxInputLength": 60000,
+    "maxOutputLength": 5000,
+    "temperature": 0.2,
+    "maxTokens": 3500,
+    "topP": 0.95,
+    "frequencyPenalty": 0.05,
+    "presencePenalty": 0.05
+  },
+  "validationRules": [
+    "validate_clustering_methodology",
+    "check_cluster_sizes",
+    "verify_quality_metrics",
+    "ensure_cultural_analysis",
+    "validate_interpretability"
+  ],
+  "performanceMetrics": {
+    "expectedConfidence": 0.82,
+    "expectedProcessingTime": 3200,
+    "expectedTokenUsage": 2500,
+    "qualityThreshold": 0.75
+  }
+}

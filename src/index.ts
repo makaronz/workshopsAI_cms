@@ -1,21 +1,39 @@
-import express from "express";
-import cors from "cors";
-import helmet from "helmet";
-import compression from "compression";
-import morgan from "morgan";
-import rateLimit from "express-rate-limit";
-import hpp from "hpp";
-import mongoSanitize from "express-mongo-sanitize";
-import xss from "xss";
-import { createServer } from "http";
-import { config } from "dotenv";
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
+import hpp from 'hpp';
+import mongoSanitize from 'express-mongo-sanitize';
+import xss from 'xss';
+import { createServer } from 'http';
+import { config } from 'dotenv';
 
 // Import routes
-import workshopRoutes from "./routes/workshops";
-import enrollmentRoutes from "./routes/enrollments";
+import workshopRoutes from './routes/workshops';
+import enrollmentRoutes from './routes/enrollments';
+import questionnaireRoutes from './routes/api/questionnaires-new';
+import responseRoutes from './routes/responses';
+import publicRoutes from './routes/public';
+import authRoutes from './routes/auth';
+import fileRoutes from './routes/api/files';
+import fileSignedRoutes from './routes/api/files-signed';
 
 // Import configuration
-import { db, checkDatabaseHealth, closeDatabaseConnection } from "./config/database";
+import {
+  checkDatabaseHealth,
+  closeDatabaseConnection,
+} from './config/postgresql-database';
+import { redisService } from './config/redis';
+
+// Import LLM services
+import { llmAnalysisWorker } from './services/llm-worker';
+import { embeddingsService } from './services/embeddings';
+
+// Import WebSocket and Preview services
+import { WebSocketService } from './services/websocketService';
+import { PreviewService } from './services/previewService';
 
 // Load environment variables
 config();
@@ -23,73 +41,98 @@ config();
 const app = express();
 const server = createServer(app);
 
-// Environment variables
-const PORT = process.env.PORT || 3001;
-const NODE_ENV = process.env.NODE_ENV || "development";
-const CORS_ORIGIN = process.env.CORS_ORIGIN || "http://localhost:3000";
+// Initialize services
+let webSocketService: WebSocketService;
+let previewService: PreviewService;
+
+// Environment variables - Fix index signature access
+const PORT = process.env['PORT'] || 3001;
+const NODE_ENV = process.env['NODE_ENV'] || 'development';
+const CORS_ORIGIN = process.env['CORS_ORIGIN'] || 'http://localhost:3000';
 
 // Security middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:"],
-      scriptSrc: ["'self'"],
-      connectSrc: ["'self'"],
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ['\'self\''],
+        styleSrc: ['\'self\'', '\'unsafe-inline\'', 'https://fonts.googleapis.com'],
+        fontSrc: ['\'self\'', 'https://fonts.gstatic.com'],
+        imgSrc: ['\'self\'', 'data:', 'https:'],
+        scriptSrc: ['\'self\''],
+        connectSrc: ['\'self\'', 'ws:', 'wss:'],
+      },
     },
-  },
-}));
+  }),
+);
 
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: NODE_ENV === "production" ? 100 : 1000, // Limit each IP to 100 requests per windowMs
+  max: NODE_ENV === 'production' ? 100 : 1000, // Limit each IP to 100 requests per windowMs
   message: {
-    error: "Too many requests from this IP, please try again later.",
+    error: 'Too many requests from this IP, please try again later.',
   },
   standardHeaders: true,
   legacyHeaders: false,
 });
 
-// Apply rate limiting to all requests
 app.use(limiter);
 
 // CORS configuration
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-
-    if (CORS_ORIGIN === "*" || CORS_ORIGIN.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-}));
+app.use(
+  cors({
+    origin: CORS_ORIGIN,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  }),
+);
 
 // Body parsing middleware
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Data sanitization and security
-app.use(mongoSanitize()); // Prevent NoSQL injection
-app.use(hpp()); // Protect against HTTP Parameter Pollution
+// Data sanitization
+app.use(mongoSanitize());
+app.use(hpp());
 
-// Custom XSS protection middleware
+// XSS Protection middleware
 app.use((req, res, next) => {
-  if (req.body) {
-    for (const key in req.body) {
-      if (typeof req.body[key] === "string") {
-        req.body[key] = xss(req.body[key]);
+  const sanitizeObject = (obj: any) => {
+    if (typeof obj !== 'object' || obj === null) {
+      return obj;
+    }
+
+    if (Array.isArray(obj)) {
+      return obj.map(sanitizeObject);
+    }
+
+    const sanitized: any = {};
+    for (const key in obj) {
+      if (obj.hasOwnProperty(key)) {
+        if (typeof obj[key] === 'string') {
+          sanitized[key] = xss(obj[key]);
+        } else if (typeof obj[key] === 'object') {
+          sanitized[key] = sanitizeObject(obj[key]);
+        } else {
+          sanitized[key] = obj[key];
+        }
       }
     }
+    return sanitized;
+  };
+
+  if (req.body) {
+    req.body = sanitizeObject(req.body);
   }
+  if (req.query) {
+    req.query = sanitizeObject(req.query);
+  }
+  if (req.params) {
+    req.params = sanitizeObject(req.params);
+  }
+
   next();
 });
 
@@ -97,164 +140,153 @@ app.use((req, res, next) => {
 app.use(compression());
 
 // Logging
-if (NODE_ENV === "development") {
-  app.use(morgan("dev"));
+if (NODE_ENV === 'development') {
+  app.use(morgan('dev'));
 } else {
-  app.use(morgan("combined"));
+  app.use(morgan('combined'));
 }
 
 // Health check endpoint
-app.get("/health", async (req, res) => {
-  try {
-    const dbHealthy = await checkDatabaseHealth();
+app.get('/health', async (_req, res) => {
+  const [dbHealthy, redisHealthy, llmServicesHealth] = await Promise.all([
+    checkDatabaseHealth(),
+    redisService.healthCheck(),
+    checkLLMServicesHealth(),
+  ]);
 
-    res.status(dbHealthy ? 200 : 503).json({
-      status: dbHealthy ? "healthy" : "unhealthy",
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      environment: NODE_ENV,
-      database: dbHealthy ? "connected" : "disconnected",
-    });
-  } catch (error) {
-    res.status(503).json({
-      status: "unhealthy",
-      timestamp: new Date().toISOString(),
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: NODE_ENV,
+    database: dbHealthy ? 'connected' : 'disconnected',
+    redis: redisHealthy ? 'connected' : 'disconnected',
+    llmServices: llmServicesHealth,
+  });
 });
 
+// LLM services health check
+async function checkLLMServicesHealth() {
+  try {
+    const health = await embeddingsService.healthCheck();
+    const queueStats = await llmAnalysisWorker.getQueueStats();
+
+    return {
+      embeddings: health,
+      analysisWorker: {
+        status: 'active',
+        queue: queueStats,
+      },
+    };
+  } catch (error) {
+    return {
+      embeddings: { status: 'error', error: error.message },
+      analysisWorker: { status: 'error', error: error.message },
+    };
+  }
+}
+
 // API routes
-const API_PREFIX = "/api";
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/workshops', workshopRoutes);
+app.use('/api/v1/enrollments', enrollmentRoutes);
+app.use('/api/v1/questionnaires', questionnaireRoutes);
+app.use('/api/v1/responses', responseRoutes);
+app.use('/api/v1/files', fileRoutes);
+app.use('/api/v1/files/signed', fileSignedRoutes);
+app.use('/api/v1/public', publicRoutes);
 
-app.use(`${API_PREFIX}/workshops`, workshopRoutes);
-app.use(`${API_PREFIX}/enrollments`, enrollmentRoutes);
+// Preview routes will be initialized dynamically after services are set up
 
-// API documentation endpoint
-app.get(`${API_PREFIX}/docs`, (req, res) => {
+// Root endpoint
+app.get('/', (_req, res) => {
   res.json({
-    title: "workshopsAI CMS API",
-    version: "1.0.0",
-    description: "RESTful API for workshop management system",
-    endpoints: {
-      workshops: {
-        "GET /api/workshops": "List workshops with filtering",
-        "GET /api/workshops/:id": "Get workshop by ID",
-        "GET /api/workshops/slug/:slug": "Get workshop by slug",
-        "POST /api/workshops": "Create new workshop",
-        "PUT /api/workshops/:id": "Update workshop",
-        "POST /api/workshops/:id/publish": "Publish workshop",
-        "POST /api/workshops/:id/archive": "Archive workshop",
-        "DELETE /api/workshops/:id": "Delete workshop",
-        "POST /api/workshops/:id/duplicate": "Duplicate workshop",
-      },
-      enrollments: {
-        "GET /api/enrollments": "List enrollments",
-        "GET /api/enrollments/:id": "Get enrollment by ID",
-        "GET /api/enrollments/history": "Get user enrollment history",
-        "POST /api/enrollments": "Create enrollment",
-        "PUT /api/enrollments/:id": "Update enrollment",
-        "POST /api/enrollments/:id/confirm": "Confirm enrollment",
-        "POST /api/enrollments/:id/cancel": "Cancel enrollment",
-        "POST /api/enrollments/:id/attendance": "Mark attendance",
-        "GET /api/enrollments/workshop/:workshopId/stats": "Get workshop stats",
-      },
-    },
-    authentication: {
-      type: "Bearer Token (JWT)",
-      description: "Include Authorization header with Bearer token for authenticated requests",
-    },
+    message: 'WorkshopsAI CMS API',
+    version: '1.0.0',
+    environment: NODE_ENV,
   });
 });
 
 // 404 handler
-app.use((req, res) => {
+app.use('*', (_req, res) => {
   res.status(404).json({
-    success: false,
-    error: "Route not found",
-    message: `Cannot ${req.method} ${req.path}`,
+    error: 'Route not found',
+    message: 'The requested resource does not exist',
   });
 });
 
 // Global error handler
-app.use((error: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error("Unhandled error:", error);
+app.use(
+  (
+    err: Error,
+    _req: express.Request,
+    res: express.Response,
+    _next: express.NextFunction,
+  ) => {
+    console.error('Unhandled error:', err);
 
-  // Don't leak error details in production
-  const isDevelopment = NODE_ENV === "development";
+    res.status(500).json({
+      error: 'Internal server error',
+      message:
+        NODE_ENV === 'development' ? err.message : 'Something went wrong',
+    });
+  },
+);
 
-  res.status(error.status || 500).json({
-    success: false,
-    error: error.name || "Internal Server Error",
-    message: error.message || "An unexpected error occurred",
-    ...(isDevelopment && { stack: error.stack }),
-  });
-});
-
-// Graceful shutdown handling
-const gracefulShutdown = async (signal: string) => {
-  console.log(`\nReceived ${signal}. Starting graceful shutdown...`);
-
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully');
   server.close(async () => {
-    console.log("HTTP server closed.");
-
-    try {
-      await closeDatabaseConnection();
-      console.log("Database connections closed.");
-      process.exit(0);
-    } catch (error) {
-      console.error("Error during shutdown:", error);
-      process.exit(1);
-    }
+    await llmAnalysisWorker.shutdown();
+    await redisService.disconnect();
+    await closeDatabaseConnection();
+    console.log('Process terminated');
+    process.exit(0);
   });
-
-  // Force close after 30 seconds
-  setTimeout(() => {
-    console.error("Could not close connections in time, forcefully shutting down");
-    process.exit(1);
-  }, 30000);
-};
-
-// Handle process signals
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
-
-// Handle uncaught exceptions
-process.on("uncaughtException", (error) => {
-  console.error("Uncaught Exception:", error);
-  gracefulShutdown("uncaughtException");
 });
 
-// Handle unhandled promise rejections
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("Unhandled Rejection at:", promise, "reason:", reason);
-  gracefulShutdown("unhandledRejection");
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, shutting down gracefully');
+  server.close(async () => {
+    await llmAnalysisWorker.shutdown();
+    await redisService.disconnect();
+    await closeDatabaseConnection();
+    console.log('Process terminated');
+    process.exit(0);
+  });
 });
 
 // Start server
 const startServer = async () => {
   try {
-    // Check database connection
-    const dbHealthy = await checkDatabaseHealth();
-    if (!dbHealthy) {
-      throw new Error("Database connection failed");
-    }
+    // Initialize WebSocket service
+    console.log('🔌 Initializing WebSocket service...');
+    webSocketService = new WebSocketService(server);
+
+    // Initialize Preview service
+    console.log('👁️ Initializing Preview service...');
+    previewService = new PreviewService(webSocketService);
+
+    // Initialize preview routes
+    console.log('🛣️ Initializing Preview routes...');
+    const { initializePreviewRoutes } = require('./routes/api/preview');
+    const previewRouter = initializePreviewRoutes(previewService);
+    app.use('/api/v1/preview', previewRouter);
 
     server.listen(PORT, () => {
-      console.log(`\n🚀 workshopsAI CMS Server is running on port ${PORT}`);
-      console.log(`📖 API Documentation: http://localhost:${PORT}/api/docs`);
-      console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
-      console.log(`🌍 Environment: ${NODE_ENV}`);
-      console.log(`🔗 CORS Origin: ${CORS_ORIGIN}`);
-      console.log(`⏰ Started at: ${new Date().toISOString()}\n`);
+      console.log(`🚀 Server running on port ${PORT} in ${NODE_ENV} mode`);
+      console.log(`📊 Health check: http://localhost:${PORT}/health`);
+      console.log(`🔗 API base URL: http://localhost:${PORT}/api`);
+      console.log('🔌 WebSocket service initialized');
+      console.log('👁️ Preview service initialized');
+      console.log('📱 Real-time preview functionality available');
     });
   } catch (error) {
-    console.error("Failed to start server:", error);
+    console.error('Failed to start server:', error);
     process.exit(1);
   }
 };
 
-// Start the server
 startServer();
 
-export default app;
+export { app, server };

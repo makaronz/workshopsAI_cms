@@ -1,0 +1,86 @@
+<h1>{{#if language 'pl'}}Przypomnienie o sesji warsztatowej{{else}}Workshop Session Reminder{{/if}}</h1>
+
+<p>{{#if language 'pl'}}
+Przypominamy, że jutro o {{#formatDate session.startTime 'HH:mm'}} odbędzie się sesja warsztatowa:
+{{else}}
+This is a reminder that you have a workshop session tomorrow at {{#formatDate session.startTime 'HH:mm'}}:
+{{/if}}</p>
+
+<div class="workshop-card">
+    <h3>{{session.title}}</h3>
+
+    <div class="workshop-detail">
+        <div class="workshop-detail-content">
+            <span class="workshop-detail-label">{{#if language 'pl'}}Warsztat{{else}}Workshop{{/if}}:</span>
+            {{workshop.title}}
+        </div>
+    </div>
+
+    <div class="workshop-detail">
+        <div class="workshop-detail-content">
+            <span class="workshop-detail-label">{{#if language 'pl'}}Data i godzina{{else}}Date & Time{{/if}}:</span>
+            {{#formatDate session.startDate workshop.language 'LLLL'}} ({{#formatDate session.startTime 'HH:mm'}} - {{#formatDate session.endTime 'HH:mm'}})
+        </div>
+    </div>
+
+    {% if session.location %}
+    <div class="workshop-detail">
+        <div class="workshop-detail-content">
+            <span class="workshop-detail-label">{{#if language 'pl'}}Lokalizacja{{else}}Location{{/if}}:</span>
+            {{session.location}}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if session.duration %}
+    <div class="workshop-detail">
+        <div class="workshop-detail-content">
+            <span class="workshop-detail-label">{{#if language 'pl'}}Czas trwania{{else}}Duration{{/if}}:</span>
+            {{session.duration}} {{#if language 'pl'}}minut{{else}}minutes{{/if}}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if session.description %}
+<h2>{{#if language 'pl'}}O tej sesji{{else}}About this session{{/if}}</h2>
+<p>{{session.description}}</p>
+{% endif %}
+
+{% if session.materials && session.materials.length > 0 %}
+<h2>{{#if language 'pl'}}Materiały do przygotowania{{else}}Materials to Prepare{{/if}}</h2>
+<ul>
+    {% for material in session.materials %}
+    <li>
+        <a href="{{material.url}}" target="_blank">{{material.name}}</a>
+        {% if material.type %}({{material.type}}){% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if session.isRequired %}
+<div class="alert alert-warning">
+    {{#if language 'pl'}}
+        <strong>Uwaga:</strong> Ta sesja jest obowiązkowa dla wszystkich uczestników warsztatu.
+    {{else}}
+        <strong>Important:</strong> This session is mandatory for all workshop participants.
+    {{/if}}
+</div>
+{% endif %}
+
+<div style="text-align: center;">
+    <a href="{{baseUrl}}/workshops/{{workshop.slug}}/sessions" class="btn">
+        {{#if language 'pl'}}Zobacz szczegóły sesji{{else}}View Session Details{{/if}}
+    </a>
+</div>
+
+<p style="text-align: center; margin-top: 15px;">
+    <small>
+        {{#if language 'pl'}}
+            Jeśli nie możesz uczestniczyć w tej sesji, prosimy o poinformowanie nas jak najszybciej.
+        {{else}}
+            If you cannot attend this session, please let us know as soon as possible.
+        {{/if}}
+    </small>
+</p>

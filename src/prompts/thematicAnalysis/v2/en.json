@@ -1,0 +1,91 @@
+{
+  "templateId": "thematic_analysis_v2_en",
+  "version": "2.0",
+  "language": "en",
+  "category": "thematic",
+  "metadata": {
+    "name": "Advanced Thematic Analysis (EN)",
+    "description": "Sophisticated thematic analysis with English cultural context",
+    "author": "Prompt Engineering Team",
+    "createdAt": "2025-01-13T10:00:00Z",
+    "updatedAt": "2025-01-13T10:00:00Z",
+    "tags": ["thematic", "analysis", "english", "cultural", "advanced"]
+  },
+  "systemPrompt": "You are an advanced sociological analysis system specializing in English cultural context. You possess deep knowledge of English society, its values, cultural norms, and communication specificity. Your analyses are insightful, culturally sensitive, and always maintain the highest ethical standards and GDPR compliance.",
+  "userPromptTemplate": "# TASK: Advanced Thematic Analysis\n\nConduct a deep thematic analysis of questionnaire responses about community, considering English cultural and socio-historical context.\n\n# ANALYSIS CONTEXT\n- **Questionnaire Type**: {{questionnaireType}}\n- **Response Count**: {{responseCount}}\n- **Main Topic**: {{topic}}\n- **Analysis Language**: English\n- **Community Type**: {{communityType || 'undefined'}}\n- **Demographic Context**: {{demographicContext || 'no data'}}\n\n# METHODOLOGY\n\n## Step 1: Theme Identification\n1. **Reading and Understanding**: Analyze each response individually, paying attention to:\n   - Linguistic nuances and English idioms\n   - Cultural and historical context\n   - Emotional tone and subtexts\n   - Hidden meanings and implications\n\n2. **Grouping**: Group similar responses, looking for common motifs and patterns\n\n## Step 2: Cultural Context Analysis\nConsider in your analysis:\n- **English Values**: individualism, fairness, privacy, tradition, class consciousness\n- **Historical Context**: British Empire legacy, post-war changes, EU membership/Brexit, multiculturalism\n- **Social Norms**: social trust, authority-citizen relations, secularism vs religion\n- **English Realities**: economic situation, immigration, demographics, regional differences\n\n## Step 3: Theme Extraction\nFor each identified theme provide:\n\n### Basic Information\n- **Theme Name** (concise, descriptive, max 60 characters)\n- **Frequency** (count and percentage of responses)\n- **Theme Weight** (scale 1-5, where 5 = most important)\n\n### Cultural Context\n- **English Adaptation**: How English values influence this theme\n- **Historical References**: Whether the theme references English experiences\n- **Local Specificity**: Unique aspects for English context\n\n### Examples and Quotes\n- **Representative Examples** (2-3 quotes, no personal data)\n- **Quote Context** (brief explanation of each quote's context)\n- **Perspective Diversity** (different viewpoints within the theme)\n\n### Sentiment Analysis\n- **Sentiment** (-1 to +1, with justification)\n- **Dominant Emotions** (hope, concern, frustration, pride, etc.)\n- **Emotional Variability** (whether responses are emotionally consistent)\n\n### Keywords\n- **Keywords** (5-10 most important terms in English)\n- **Synonyms and Variants** (English synonyms and regional variations)\n- **Semantic Connections** (related concepts in English mentality)\n\n## Step 4: Pattern Analysis\nIdentify and describe:\n\n### Major Value Conflicts\n- **Tradition vs Modernity** (conflicts between traditional and modern values)\n- **Individualism vs Community** (tensions between individual and group needs)\n- **Liberalism vs Conservatism** (disputes over liberal and conservative values)\n\n### Common Aspirations and Concerns\n- **Economic Aspirations** (material status, stability, development)\n- **Social Concerns** (immigration, climate change, economic inequality)\n- **Cultural Desires** (identity, autonomy, belonging)\n\n### Social Context Influence\n- **Role of Religion** (influence on values and norms)\n- **Family Significance** (family as institution and value)\n- **Attitude to Authority** (trust, criticism, expectations)\n\n### Unique English Perspectives\n- **Class Consciousness** (awareness and impact of social class)\n- **Regional Identities** (strong regional variations in values)\n- **Multicultural Integration** (impact of diverse communities)\n\n# INPUT DATA\n{{responses}}\n\n# DETAILED INSTRUCTIONS\n\n## Quality Standards\n1. **Accuracy**: Base analysis solely on provided data\n2. **Objectivity**: Avoid personal interpretations and judgments\n3. **Cultural Sensitivity**: Respect English specificity and avoid stereotypes\n4. **Confidentiality**: Maintain complete respondent anonymity\n\n## Response Formatting\n1. **JSON Structure**: Use exactly the provided structure\n2. **English Language**: All descriptions and comments in English\n3. **Precision**: Use precise English language, avoid colloquialisms\n4. **Completeness**: Fill all required fields\n\n# OUTPUT FORMAT - JSON\n\n```json\n{\n  \"analysisMetadata\": {\n    \"templateVersion\": \"2.0\",\n    \"analysisType\": \"thematic_analysis\",\n    \"language\": \"en\",\n    \"culturalContext\": \"English socio-cultural context\",\n    \"totalResponses\": {{responseCount}},\n    \"analysisDate\": \"{{currentDate}}\",\n    \"confidenceScore\": 0.85\n  },\n  \"analysisSummary\": {\n    \"totalResponses\": {{responseCount}},\n    \"identifiedThemes\": 5,\n    \"culturalContext\": \"English socio-cultural context\",\n    \"keyInsights\": [\n      \"key insight 1\",\n      \"key insight 2\",\n      \"key insight 3\"\n    ],\n    \"dominantValues\": [\n      \"dominant value 1\",\n      \"dominant value 2\"\n    ],\n    \"culturalSpecificity\": \"high\"\n  },\n  \"themes\": [\n    {\n      \"id\": \"theme_1\",\n      \"name\": \"Theme Name\",\n      \"frequency\": {\n        \"count\": 25,\n        \"percentage\": 45.5,\n        \"importance\": 4\n      },\n      \"culturalContext\": {\n        \"englishAdaptation\": \"Description of English values' influence on this theme\",\n        \"historicalReferences\": \"References to English historical experiences\",\n        \"localSpecificity\": \"Unique aspects for English context\",\n        \"culturalDrivers\": [\"cultural driver 1\", \"cultural driver 2\"]\n      },\n      \"examples\": [\n        {\n          \"quote\": \"quote without personal data\",\n          \"context\": \"brief quote context\",\n          \"perspective\": \"viewpoint\",\n          \"culturalNote\": \"cultural note\"\n        }\n      ],\n      \"sentiment\": {\n        \"score\": 0.6,\n        \"explanation\": \"Sentiment score justification\",\n        \"dominantEmotions\": [\"hope\", \"concern\"],\n        \"emotionalVariability\": \"medium\"\n      },\n      \"keywords\": {\n        \"primary\": [\"word1\", \"word2\", \"word3\"],\n        \"synonyms\": [\"synonym1\", \"synonym2\"],\n        \"semanticConnections\": [\"connection1\", \"connection2\"]\n      },\n      \"relatedThemes\": [\"theme_2\", \"theme_3\"],\n      \"englishSpecifics\": {\n        \"culturalMarkers\": [\"marker1\", \"marker2\"],\n        \"historicalContext\": \"historical context\",\n        \"socialImplications\": \"social implications\"\n      }\n    }\n  ],\n  \"culturalPatterns\": [\n    {\n      \"pattern\": \"Cultural Pattern\",\n      \"description\": \"Pattern description in English context\",\n      \"frequency\": 0.7,\n      \"impact\": \"medium\",\n      \"englishSpecificity\": \"English specificity\",\n      \"examples\": [\"example 1\", \"example 2\"]\n    }\n  ],\n  \"valueConflicts\": [\n    {\n      \"conflict\": \"Value Conflict\",\n      \"description\": \"Conflict description in English context\",\n      \"traditionalView\": \"traditional perspective\",\n      \"modernView\": \"modern perspective\",\n      \"examples\": [\"example 1\", \"example 2\"],\n      \"resolutionPotential\": \"resolution possibility\"\n    }\n  ],\n  \"socialContextAnalysis\": {\n    \"institutions\": {\n      \"religiousInfluence\": \"low\",\n      \"familyRole\": \"high\",\n      \"authorityRelation\": \"mixed\"\n    },\n    \"historicalInfluences\": [\n      \"historical influence 1\",\n      \"historical influence 2\"\n    ],\n    \"contemporaryFactors\": [\n      \"contemporary factor 1\",\n      \"contemporary factor 2\"\n    ]\n  },\n  \"qualityMetrics\": {\n    \"confidence\": 0.85,\n    \"completeness\": 0.9,\n    \"culturalAdaptation\": 0.95,\n    \"dataCoverage\": 0.88,\n    \"analysisDepth\": 0.82\n  },\n  \"recommendations\": [\n    {\n      \"type\": \"cultural\",\n      \"description\": \"Cultural context recommendation\",\n      \"rationale\": \"Recommendation rationale\",\n      \"priority\": \"medium\"\n    }\n  ]\n}\n```\n\n# IMPORTANT ETHICAL AND COMPLIANCE RULES\n\n## GDPR Principles\n- **Anonymity**: Remove all personal data and identifiers\n- **Minimization**: Process only necessary data\n- **Confidentiality**: Do not disclose identity-revealing information\n\n## Ethical Standards\n- **Objectivity**: Present facts without personal judgments\n- **Equality**: Treat all perspectives with equal respect\n- **Sensitivity**: Avoid language that may be harmful or discriminatory\n- **Transparency**: Clearly define analysis boundaries\n\n## English Context\n- **Avoid Stereotypes**: Do not generalize about \"the English\" or \"English character\"\n- **Detail**: Recognize complexity and diversity of English society\n- **Historical Context**: Understand history's impact on contemporary attitudes\n- **Local Values**: Acknowledge regional differences in values and norms\n\n# VALIDATION PROCEDURE\n\nAfter generating the analysis, check:\n1. **JSON Structure**: Are all fields properly filled?\n2. **Anonymity**: Have all personal data been removed?\n3. **Cultural Context**: Has English specificity been considered?\n4. **Quality**: Is the analysis insightful and balanced?\n5. **Completeness**: Are all sections completely filled?",
+  "requiredVariables": [
+    "responses",
+    "responseCount",
+    "questionnaireType",
+    "topic",
+    "currentDate"
+  ],
+  "optionalVariables": [
+    "communityType",
+    "demographicContext",
+    "minThemeFrequency",
+    "maxThemes",
+    "includeCulturalContext",
+    "sentimentAnalysis"
+  ],
+  "examples": [
+    {
+      "input": {
+        "responses": "[{\"answer\": \"I want a place where people help each other and feel safe\"}, {\"answer\": \"Community feeling and mutual respect are important to me\"}]",
+        "responseCount": 25,
+        "questionnaireType": "residential community",
+        "topic": "vision of ideal community",
+        "currentDate": "2025-01-13"
+      },
+      "output": {
+        "analysisSummary": {
+          "totalResponses": 25,
+          "identifiedThemes": 3,
+          "culturalContext": "English socio-cultural context",
+          "keyInsights": ["strong need for safety", "community as key value"],
+          "dominantValues": ["safety", "community"],
+          "culturalSpecificity": "high"
+        },
+        "themes": [
+          {
+            "id": "theme_1",
+            "name": "Safety and Trust",
+            "frequency": {
+              "count": 18,
+              "percentage": 72.0,
+              "importance": 5
+            },
+            "culturalContext": {
+              "englishAdaptation": "Safety need stems from contemporary social concerns",
+              "historicalReferences": "Post-war social changes influenced safety expectations",
+              "localSpecificity": "In English context, safety connects with social stability",
+              "culturalDrivers": ["social uncertainty", "stability value"]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "constraints": {
+    "maxInputLength": 50000,
+    "maxOutputLength": 4000,
+    "temperature": 0.3,
+    "maxTokens": 3000,
+    "topP": 0.9,
+    "frequencyPenalty": 0.1,
+    "presencePenalty": 0.1
+  },
+  "validationRules": [
+    "validate_json_structure",
+    "check_pii_absence",
+    "verify_cultural_adaptation",
+    "ensure_english_language",
+    "validate_theme_extraction"
+  ],
+  "performanceMetrics": {
+    "expectedConfidence": 0.85,
+    "expectedProcessingTime": 2500,
+    "expectedTokenUsage": 2000,
+    "qualityThreshold": 0.8
+  }
+}

@@ -1,5 +1,6 @@
-/** @type {import('jest').Config} */
-export default {
+import type { Config } from 'jest';
+
+const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src', '<rootDir>/tests'],
@@ -38,11 +39,13 @@ export default {
   testEnvironmentOptions: {
     NODE_ENV: 'test'
   },
-  // Mock patterns
-  moduleNameMapping: {
+  // Fixed: moduleNameMapping -> moduleNameMapping
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
   // Global test setup
   globalSetup: '<rootDir>/tests/globalSetup.ts',
   globalTeardown: '<rootDir>/tests/globalTeardown.ts'
 };
+
+export default config;

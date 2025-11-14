@@ -1,0 +1,124 @@
+<h1>{{#if language 'pl'}}Zaproszenie na warsztat{{else}}Workshop Invitation{{/if}}</h1>
+
+<p>{{#if language 'pl'}}
+Miło nam poinformować, że zostałeś zaproszony na warsztat:
+{{else}}
+We're pleased to invite you to the following workshop:
+{{/if}}</p>
+
+<div class="workshop-card">
+    <h3>{{workshop.title}}</h3>
+    {% if workshop.subtitle %}
+    <p><em>{{workshop.subtitle}}</em></p>
+    {% endif %}
+
+    <div class="workshop-detail">
+        <div class="workshop-detail-content">
+            <span class="workshop-detail-label">{{#if language 'pl'}}Prowadzący{{else}}Facilitator(s){{/if}}:</span>
+            {% for facilitator in workshop.facilitators %}
+                {{facilitator.name}}{% if !loop.last %}, {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="workshop-detail">
+        <div class="workshop-detail-content">
+            <span class="workshop-detail-label">{{#if language 'pl'}}Termin{{else}}Date{{/if}}:</span>
+            {% if workshop.startDate %}
+                {{#formatDate workshop.startDate workshop.language 'LLLL'}}{% if workshop.endDate %} - {{#formatDate workshop.endDate workshop.language 'LLLL'}}{% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    {% if workshop.location %}
+    <div class="workshop-detail">
+        <div class="workshop-detail-content">
+            <span class="workshop-detail-label">{{#if language 'pl'}}Lokalizacja{{else}}Location{{/if}}:</span>
+            {{workshop.location.name}}, {{workshop.location.address}}, {{workshop.location.city}}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if workshop.price && workshop.price > 0 %}
+    <div class="workshop-detail">
+        <div class="workshop-detail-content">
+            <span class="workshop-detail-label">{{#if language 'pl'}}Cena{{else}}Price{{/if}}:</span>
+            {{workshop.price}} {{workshop.currency}}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if workshop.description %}
+<h2>{{#if language 'pl'}}Opis warsztatu{{else}}Workshop Description{{/if}}</h2>
+<p>{{workshop.description}}</p>
+{% endif %}
+
+{% if workshop.objectives && workshop.objectives.length > 0 %}
+<h2>{{#if language 'pl'}}Cele warsztatu{{else}}Workshop Objectives{{/if}}</h2>
+<ul>
+    {% for objective in workshop.objectives %}
+    <li>{{objective}}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if workshop.requirements && workshop.requirements.length > 0 %}
+<h2>{{#if language 'pl'}}Wymagania{{else}}Requirements{{/if}}</h2>
+<ul>
+    {% for requirement in workshop.requirements %}
+    <li>{{requirement}}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if workshop.sessions && workshop.sessions.length > 0 %}
+<h2>{{#if language 'pl'}}Program warsztatu{{else}}Workshop Schedule{{/if}}</h2>
+{% for session in workshop.sessions %}
+<div class="session-item">
+    <div class="session-time">{{#formatDate session.startTime workshop.language 'HH:mm'}} - {{#formatDate session.endTime workshop.language 'HH:mm'}}</div>
+    <div class="session-title">{{session.title}}</div>
+    {% if session.description %}
+    <p>{{session.description}}</p>
+    {% endif %}
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="alert alert-info">
+    {{#if language 'pl'}}
+        <strong>Liczba miejsc ograniczona!</strong> Potwierdź swoje uczestnictwo jak najszybciej, aby zagwarantować sobie miejsce.
+    {{else}}
+        <strong>Limited seats available!</strong> Confirm your participation as soon as possible to secure your spot.
+    {{/if}}
+</div>
+
+<div style="text-align: center;">
+    <a href="{{baseUrl}}/workshops/{{workshop.slug}}/enroll" class="btn">
+        {{#if language 'pl'}}Zapisz się na warsztat{{else}}Enroll in Workshop{{/if}}
+    </a>
+</div>
+
+{% if workshop.enrollmentDeadline %}
+<p style="text-align: center; margin-top: 15px;">
+    <small>
+        {{#if language 'pl'}}
+            Termin zapisów: {{#formatDate workshop.enrollmentDeadline workshop.language 'LLLL'}}
+        {{else}}
+            Registration deadline: {{#formatDate workshop.enrollmentDeadline workshop.language 'LLLL'}}
+        {{/if}}
+    </small>
+</p>
+{% endif %}
+
+{% if workshop.enableWaitingList %}
+<p style="text-align: center; margin-top: 10px;">
+    <small>
+        {{#if language 'pl'}}
+            Jeśli wszystkie miejsca będą zajęte, możesz zapisać się na listę rezerwową.
+        {{else}}
+            If all seats are taken, you can join the waiting list.
+        {{/if}}
+    </small>
+</p>
+{% endif %}

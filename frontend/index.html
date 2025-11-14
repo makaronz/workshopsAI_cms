@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Primary Meta Tags -->
+  <title>WorkshopsAI CMS</title>
+  <meta name="title" content="WorkshopsAI CMS - Sociological Workshop Management" />
+  <meta name="description" content="A no-code CMS for sociologists to create, manage, and analyze workshop questionnaires with AI-powered insights." />
+  <meta name="author" content="WorkshopsAI" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://workshopsai.example.com/" />
+  <meta property="og:title" content="WorkshopsAI CMS - Sociological Workshop Management" />
+  <meta property="og:description" content="A no-code CMS for sociologists to create, manage, and analyze workshop questionnaires with AI-powered insights." />
+  <meta property="og:image" content="/og-image.png" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://workshopsai.example.com/" />
+  <meta property="twitter:title" content="WorkshopsAI CMS - Sociological Workshop Management" />
+  <meta property="twitter:description" content="A no-code CMS for sociologists to create, manage, and analyze workshop questionnaires with AI-powered insights." />
+  <meta property="twitter:image" content="/og-image.png" />
+
+  <!-- Theme & Accessibility -->
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="msapplication-TileColor" content="#2563eb" />
+
+  <!-- Progressive Enhancement -->
+  <script type="module" src="/src/main.ts" defer></script>
+  <script nomodule>
+    // Fallback for browsers without ES modules support
+    console.warn('Your browser does not support modern JavaScript. Please upgrade to a modern browser.');
+  </script>
+
+  <!-- Preload Critical Resources -->
+  <link rel="preload" href="/src/styles/global.css" as="style" />
+  <link rel="stylesheet" href="/src/styles/global.css" />
+
+  <!-- PWA Icons -->
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#2563eb" />
+
+  <!-- Fonts (Google Fonts - Performance Optimized) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Base Styles (CSS Reset + Modern Normalize) -->
+  <style>
+    /* Critical CSS for immediate rendering */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      line-height: 1.15;
+      -webkit-text-size-adjust: 100%;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.5;
+      color: #1f2937;
+      background-color: #ffffff;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Loading state */
+    #app-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Accessibility: Focus styles */
+    :focus {
+      outline: 2px solid #2563eb;
+      outline-offset: 2px;
+    }
+
+    /* High contrast mode support */
+    @media (prefers-contrast: high) {
+      :focus {
+        outline-width: 3px;
+      }
+    }
+
+    /* Reduced motion support */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Progressive Enhancement: App loading state -->
+  <div id="app-loading">
+    <div class="loading-spinner"></div>
+    <div>
+      <h1 style="margin: 0 0 8px 0; font-size: 1.5rem; font-weight: 600;">WorkshopsAI CMS</h1>
+      <p style="margin: 0; opacity: 0.9;">Loading your workshop management system...</p>
+    </div>
+  </div>
+
+  <!-- Main Application Container -->
+  <main id="app" style="display: none;">
+    <!-- Web Components will be rendered here -->
+    <noscript>
+      <div style="padding: 2rem; text-align: center; max-width: 500px; margin: 4rem auto;">
+        <h2>JavaScript Required</h2>
+        <p>This application requires JavaScript to function. Please enable JavaScript in your browser settings to continue.</p>
+        <p>If you have concerns about using JavaScript, please contact our support team for alternative access methods.</p>
+      </div>
+    </noscript>
+  </main>
+
+  <!-- Service Worker Registration (PWA) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then((registration) => {
+            console.log('SW registered: ', registration);
+          })
+          .catch((registrationError) => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
+  </script>
+</body>
+</html>

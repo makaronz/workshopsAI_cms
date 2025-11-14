@@ -1,0 +1,388 @@
+{
+  "version": "2.0",
+  "metadata": {
+    "lastUpdated": "2025-01-13T10:00:00Z",
+    "description": "Advanced prompt template configuration for LLM analysis system",
+    "supportedLanguages": ["pl", "en"],
+    "supportedCategories": ["thematic", "clustering", "contradictions", "insights", "recommendations"]
+  },
+  "globalSettings": {
+    "defaultLanguage": "pl",
+    "fallbackLanguage": "en",
+    "cacheEnabled": true,
+    "cacheTimeout": 3600000,
+    "performanceTracking": true,
+    "abTestingEnabled": true,
+    "qualityThresholds": {
+      "minConfidence": 0.7,
+      "minCompleteness": 0.8,
+      "maxTokenLimit": 8000,
+      "minCulturalAdaptation": 0.6
+    }
+  },
+  "templates": {
+    "thematic": {
+      "pl": {
+        "activeVersion": "thematic_analysis_v2_pl",
+        "versions": {
+          "thematic_analysis_v1_pl": {
+            "id": "thematic_analysis_v1_pl",
+            "name": "Podstawowa Analiza Tematyczna (PL)",
+            "description": "Basic thematic analysis for Polish responses",
+            "filePath": "src/prompts/thematicAnalysis/v1/pl.json",
+            "isActive": false,
+            "deprecationDate": "2024-12-31T23:59:59Z"
+          },
+          "thematic_analysis_v2_pl": {
+            "id": "thematic_analysis_v2_pl",
+            "name": "Zaawansowana Analiza Tematyczna (PL)",
+            "description": "Advanced thematic analysis with Polish cultural context",
+            "filePath": "src/prompts/thematicAnalysis/v2/pl.json",
+            "isActive": true,
+            "features": [
+              "cultural_context_awareness",
+              "advanced_sentiment_analysis",
+              "pattern_recognition",
+              "value_conflict_detection"
+            ]
+          }
+        },
+        "defaultOptions": {
+          "minThemeFrequency": 2,
+          "maxThemes": 10,
+          "includeCulturalContext": true,
+          "sentimentAnalysis": true
+        }
+      },
+      "en": {
+        "activeVersion": "thematic_analysis_v2_en",
+        "versions": {
+          "thematic_analysis_v1_en": {
+            "id": "thematic_analysis_v1_en",
+            "name": "Basic Thematic Analysis (EN)",
+            "description": "Basic thematic analysis for English responses",
+            "filePath": "src/prompts/thematicAnalysis/v1/en.json",
+            "isActive": false,
+            "deprecationDate": "2024-12-31T23:59:59Z"
+          },
+          "thematic_analysis_v2_en": {
+            "id": "thematic_analysis_v2_en",
+            "name": "Advanced Thematic Analysis (EN)",
+            "description": "Advanced thematic analysis with English cultural context",
+            "filePath": "src/prompts/thematicAnalysis/v2/en.json",
+            "isActive": true,
+            "features": [
+              "cultural_context_awareness",
+              "advanced_sentiment_analysis",
+              "pattern_recognition",
+              "value_conflict_detection"
+            ]
+          }
+        },
+        "defaultOptions": {
+          "minThemeFrequency": 2,
+          "maxThemes": 10,
+          "includeCulturalContext": true,
+          "sentimentAnalysis": true
+        }
+      }
+    },
+    "clustering": {
+      "activeVersion": "hierarchical_clustering_v2",
+      "versions": {
+        "hierarchical_clustering_v1": {
+          "id": "hierarchical_clustering_v1",
+          "name": "Basic Hierarchical Clustering",
+          "description": "Basic clustering analysis",
+          "filePath": "src/prompts/clusteringAnalysis/v1/clustering.json",
+          "isActive": false,
+          "deprecationDate": "2024-12-31T23:59:59Z"
+        },
+        "hierarchical_clustering_v2": {
+          "id": "hierarchical_clustering_v2",
+          "name": "Advanced Hierarchical Clustering",
+          "description": "Enhanced clustering with semantic similarity and cultural context",
+          "filePath": "src/prompts/clusteringAnalysis/v2/clustering.json",
+          "isActive": true,
+          "supportedLanguages": ["pl", "en"],
+          "features": [
+            "semantic_similarity_analysis",
+            "cultural_context_adaptation",
+            "multiple_clustering_methods",
+            "quality_metrics"
+          ]
+        }
+      },
+      "defaultOptions": {
+        "minClusterSize": 3,
+        "maxClusters": 10,
+        "clusteringMethod": "hierarchical",
+        "linkageMethod": "ward",
+        "includeCulturalContext": true,
+        "qualityMetrics": true
+      }
+    },
+    "contradictions": {
+      "activeVersion": "contradiction_detection_v2",
+      "versions": {
+        "contradiction_detection_v1": {
+          "id": "contradiction_detection_v1",
+          "name": "Basic Contradiction Detection",
+          "description": "Basic contradiction detection",
+          "filePath": "src/prompts/contradictionAnalysis/v1/contradictions.json",
+          "isActive": false,
+          "deprecationDate": "2024-12-31T23:59:59Z"
+        },
+        "contradiction_detection_v2": {
+          "id": "contradiction_detection_v2",
+          "name": "Advanced Contradiction Detection",
+          "description": "Enhanced contradiction detection with context awareness",
+          "filePath": "src/prompts/contradictionAnalysis/v2/contradictions.json",
+          "isActive": true,
+          "supportedLanguages": ["pl", "en"],
+          "features": [
+            "context_aware_analysis",
+            "multiple_contradiction_types",
+            "severity_assessment",
+            "resolution_suggestions"
+          ]
+        }
+      },
+      "defaultOptions": {
+        "contradictionTypes": ["logical", "values", "practical", "temporal"],
+        "minSeverity": "medium",
+        "includeResolutionSuggestions": true,
+        "contextAwareness": true
+      }
+    },
+    "insights": {
+      "activeVersion": "insights_generation_v2",
+      "versions": {
+        "insights_generation_v1": {
+          "id": "insights_generation_v1",
+          "name": "Basic Insights Generation",
+          "description": "Basic insights extraction",
+          "filePath": "src/prompts/insightsGeneration/v1/insights.json",
+          "isActive": false,
+          "deprecationDate": "2024-12-31T23:59:59Z"
+        },
+        "insights_generation_v2": {
+          "id": "insights_generation_v2",
+          "name": "Advanced Insights Generation",
+          "description": "Cross-question insights with pattern recognition",
+          "filePath": "src/prompts/insightsGeneration/v2/insights.json",
+          "isActive": true,
+          "supportedLanguages": ["pl", "en"],
+          "features": [
+            "cross_section_analysis",
+            "hidden_needs_detection",
+            "cultural_pattern_recognition",
+            "trend_prediction",
+            "actionability_assessment"
+          ]
+        }
+      },
+      "defaultOptions": {
+        "minConfidence": 0.7,
+        "crossSectionAnalysis": true,
+        "includeTrends": true,
+        "actionabilityFilter": true,
+        "culturalContext": true
+      }
+    },
+    "recommendations": {
+      "activeVersion": "recommendations_engine_v2",
+      "versions": {
+        "recommendations_engine_v1": {
+          "id": "recommendations_engine_v1",
+          "name": "Basic Recommendations Engine",
+          "description": "Basic recommendation generation",
+          "filePath": "src/prompts/recommendationsEngine/v1/recommendations.json",
+          "isActive": false,
+          "deprecationDate": "2024-12-31T23:59:59Z"
+        },
+        "recommendations_engine_v2": {
+          "id": "recommendations_engine_v2",
+          "name": "SMART Recommendations Engine",
+          "description": "Intelligent recommendations with impact assessment",
+          "filePath": "src/prompts/recommendationsEngine/v2/recommendations.json",
+          "isActive": true,
+          "supportedLanguages": ["pl", "en"],
+          "features": [
+            "smart_methodology",
+            "impact_assessment",
+            "cost_estimation",
+            "implementation_planning",
+            "success_metrics"
+          ]
+        }
+      },
+      "defaultOptions": {
+        "methodology": "SMART",
+        "includeCostEstimation": true,
+        "impactAssessment": true,
+        "implementationPlan": true,
+        "prioritization": true
+      }
+    }
+  },
+  "qualityMetrics": {
+    "weights": {
+      "clarity": 0.2,
+      "completeness": 0.2,
+      "specificity": 0.2,
+      "culturalAdaptation": 0.2,
+      "tokenEfficiency": 0.1,
+      "compliance": 0.1
+    },
+    "thresholds": {
+      "excellent": 90,
+      "good": 75,
+      "acceptable": 60,
+      "needsImprovement": 40
+    }
+  },
+  "abTesting": {
+    "enabled": true,
+    "trafficSplit": {
+      "control": 70,
+      "variant": 30
+    },
+    "testConfigs": [
+      {
+        "templateId": "thematic_analysis_v2_pl",
+        "variantB": "thematic_analysis_v2_enhanced_pl",
+        "successMetric": "confidence_score",
+        "minSampleSize": 100,
+        "significanceLevel": 0.05
+      }
+    ]
+  },
+  "performanceTracking": {
+    "enabled": true,
+    "metrics": [
+      "confidence_score",
+      "processing_time",
+      "token_usage",
+      "success_rate",
+      "quality_score",
+      "user_satisfaction"
+    ],
+    "retentionPeriod": 90,
+    "aggregation": {
+      "daily": true,
+      "weekly": true,
+      "monthly": true
+    }
+  },
+  "culturalContext": {
+    "pl": {
+      "culturalMarkers": [
+        "wspólnota", "solidarność", "tradycja", "rodzina", "praca",
+        "niezależność", "historia", "religia", "edukacja", "patriotyzm"
+      ],
+      "communicationStyle": {
+        "formality": "medium",
+        "directness": "medium",
+        "contextDependency": "high"
+      },
+      "values": [
+        "family_importance", "community_bonds", "historical_awareness",
+        "education_value", "work_ethic", "national_identity"
+      ]
+    },
+    "en": {
+      "culturalMarkers": [
+        "community", "collaboration", "innovation", "diversity", "inclusion",
+        "sustainability", "wellbeing", "creativity", "autonomy", "growth"
+      ],
+      "communicationStyle": {
+        "formality": "low",
+        "directness": "high",
+        "contextDependency": "medium"
+      },
+      "values": [
+        "individual_autonomy", "diversity_inclusion", "innovation_growth",
+        "work_life_balance", "environmental_consciousness", "continuous_learning"
+      ]
+    }
+  },
+  "validation": {
+    "requiredFields": {
+      "system_prompt": true,
+      "user_prompt": true,
+      "output_format": true,
+      "constraints": true,
+      "examples": false
+    },
+    "formatValidation": {
+      "json_structure": true,
+      "required_properties": true,
+      "property_types": true,
+      "enum_values": true
+    },
+    "contentValidation": {
+      "pii_detection": true,
+      "bias_checking": true,
+      "cultural_sensitivity": true,
+      "compliance_checking": true
+    }
+  },
+  "integration": {
+    "llmProviders": {
+      "openai": {
+        "supported": true,
+        "preferredModels": ["gpt-4-turbo-preview", "gpt-4", "gpt-3.5-turbo"],
+        "maxTokens": 128000,
+        "features": ["json_mode", "function_calling", "streaming"]
+      },
+      "anthropic": {
+        "supported": true,
+        "preferredModels": ["claude-3-opus-20240229", "claude-3-sonnet-20240229"],
+        "maxTokens": 200000,
+        "features": ["long_context", "multilingual", "analysis"]
+      }
+    },
+    "vectorStores": {
+      "pinecone": {
+        "supported": true,
+        "features": ["semantic_search", "metadata_filtering", "hybrid_search"]
+      },
+      "qdrant": {
+        "supported": true,
+        "features": ["semantic_search", "payload_filtering", "quantization"]
+      }
+    },
+    "caching": {
+      "redis": {
+        "supported": true,
+        "ttl": 3600,
+        "compression": true
+      }
+    }
+  },
+  "monitoring": {
+    "alerts": {
+      "low_quality_scores": {
+        "enabled": true,
+        "threshold": 60,
+        "channels": ["email", "slack"]
+      },
+      "high_processing_time": {
+        "enabled": true,
+        "threshold": 10000,
+        "channels": ["email"]
+      },
+      "template_errors": {
+        "enabled": true,
+        "channels": ["email", "slack", "pagerduty"]
+      }
+    },
+    "dashboards": {
+      "performance": true,
+      "quality": true,
+      "usage": true,
+      "costs": true
+    }
+  }
+}
