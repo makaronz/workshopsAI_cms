@@ -1,0 +1,648 @@
+name: Repository Health Monitoring & Metrics
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    types: [opened, synchronize, reopened]
+  schedule:
+    # Daily health check at 4 AM UTC
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+    inputs:
+      check_type:
+        description: 'Type of health check to run'
+        required: true
+        default: 'comprehensive'
+        type: choice
+        options:
+        - comprehensive
+        - quick
+        - performance
+        - security
+        - code-quality
+        - dependencies
+
+env:
+  METRICS_RETENTION_DAYS: '30'
+  HEALTH_SCORE_THRESHOLD: '75'
+  ALERT_ON_CRITICAL: 'true'
+
+jobs:
+  # Comprehensive Repository Health Analysis
+  comprehensive-health:
+    name: Comprehensive Health Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event.inputs.check_type == 'comprehensive' || github.event.inputs.check_type == '' || github.event_name == 'schedule'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Code Quality Metrics
+      - name: Analyze code quality
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          const glob = require('glob');
+
+          const qualityMetrics = {
+            timestamp: new Date().toISOString(),
+            files: {
+              total: 0,
+              typescript: 0,
+              test: 0,
+              config: 0,
+              documentation: 0
+            },
+            linesOfCode: {
+              total: 0,
+              source: 0,
+              test: 0,
+              comments: 0
+            },
+            complexity: {
+              averageComplexity: 0,
+              highComplexityFiles: 0,
+              maxComplexity: 0
+            },
+            testCoverage: {
+              percentage: 0,
+              coveredFiles: 0,
+              totalFiles: 0
+            },
+            dependencies: {
+              total: 0,
+              outdated: 0,
+              vulnerabilities: 0
+            },
+            recommendations: []
+          };
+
+          // Analyze file structure
+          const allFiles = glob.sync('**/*', { ignore: ['node_modules/**', '.git/**', 'dist/**'] });
+          qualityMetrics.files.total = allFiles.length;
+          qualityMetrics.files.typescript = glob.sync('**/*.{ts,tsx}').length;
+          qualityMetrics.files.test = glob.sync('**/*.{test,spec}.{ts,tsx,js}').length;
+          qualityMetrics.files.config = glob.sync('**/*.{json,yml,yaml,toml}').length;
+          qualityMetrics.files.documentation = glob.sync('**/*.{md,txt}').length;
+
+          // Calculate lines of code
+          const tsFiles = glob.sync('src/**/*.{ts,tsx}');
+          tsFiles.forEach(file => {
+            const content = fs.readFileSync(file, 'utf8');
+            const lines = content.split('\\n');
+
+            qualityMetrics.linesOfCode.total += lines.length;
+
+            // Count comments
+            const commentLines = lines.filter(line =>
+              line.trim().startsWith('//') ||
+              line.trim().startsWith('/*') ||
+              line.trim().startsWith('*')
+            );
+            qualityMetrics.linesOfCode.comments += commentLines.length;
+          });
+
+          const testFiles = glob.sync('tests/**/*.{ts,tsx}');
+          testFiles.forEach(file => {
+            const content = fs.readFileSync(file, 'utf8');
+            qualityMetrics.linesOfCode.test += content.split('\\n').length;
+          });
+
+          qualityMetrics.linesOfCode.source = qualityMetrics.linesOfCode.total - qualityMetrics.linesOfCode.test;
+
+          // Dependency analysis
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          qualityMetrics.dependencies.total = Object.keys({...pkg.dependencies, ...pkg.devDependencies}).length;
+
+          // Generate recommendations
+          const testRatio = (qualityMetrics.files.test / Math.max(qualityMetrics.files.typescript, 1)) * 100;
+          if (testRatio < 50) {
+            qualityMetrics.recommendations.push(\`⚠️ Test coverage is low (\${testRatio.toFixed(1)}%). Aim for at least 1 test file per 2 source files.\`);
+          }
+
+          if (qualityMetrics.files.documentation < 10) {
+            qualityMetrics.recommendations.push('📚 Consider adding more documentation files');
+          }
+
+          const commentRatio = (qualityMetrics.linesOfCode.comments / Math.max(qualityMetrics.linesOfCode.total, 1)) * 100;
+          if (commentRatio < 10) {
+            qualityMetrics.recommendations.push(\`💬 Add more code comments (current: \${commentRatio.toFixed(1)}%)\`);
+          }
+
+          // Calculate overall health score
+          const testScore = Math.min(testRatio, 100);
+          const docScore = Math.min((qualityMetrics.files.documentation / 20) * 100, 100);
+          const commentScore = Math.min(commentRatio * 5, 100);
+
+          qualityMetrics.healthScore = Math.round((testScore + docScore + commentScore) / 3);
+
+          fs.writeFileSync('health-metrics.json', JSON.stringify(qualityMetrics, null, 2));
+          console.log(\`Repository health score: \${qualityMetrics.healthScore}/100\`);
+          console.log(\`Files analyzed: \${qualityMetrics.files.total}\`);
+          console.log(\`Lines of code: \${qualityMetrics.linesOfCode.total}\`);
+          "
+
+      - name: Test coverage analysis
+        run: |
+          echo "Running test coverage analysis..."
+          npm run test:coverage || true
+
+          # Extract coverage information
+          if [[ -f "coverage/coverage-summary.json" ]]; then
+            node -e "
+            const fs = require('fs');
+            const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+
+            const coverageReport = {
+              lines: coverage.total.lines.pct,
+              functions: coverage.total.functions.pct,
+              branches: coverage.total.branches.pct,
+              statements: coverage.total.statements.pct,
+              average: (coverage.total.lines.pct + coverage.total.functions.pct + coverage.total.branches.pct + coverage.total.statements.pct) / 4
+            };
+
+            fs.writeFileSync('test-coverage-report.json', JSON.stringify(coverageReport, null, 2));
+            console.log(\`Average test coverage: \${coverageReport.average.toFixed(1)}%\`);
+            "
+          fi
+
+      - name: Dependency vulnerability scan
+        run: |
+          echo "Scanning dependencies for vulnerabilities..."
+          npm audit --json > dependency-audit.json || true
+
+          node -e "
+          const fs = require('fs');
+
+          let vulnerabilities = { high: 0, moderate: 0, low: 0, total: 0 };
+
+          try {
+            const audit = JSON.parse(fs.readFileSync('dependency-audit.json', 'utf8'));
+            const vulns = audit.vulnerabilities || {};
+
+            Object.values(vulns).forEach(vuln => {
+              if (vuln.severity === 'high' || vuln.severity === 'critical') vulnerabilities.high++;
+              else if (vuln.severity === 'moderate') vulnerabilities.moderate++;
+              else if (vuln.severity === 'low') vulnerabilities.low++;
+            });
+
+            vulnerabilities.total = vulnerabilities.high + vulnerabilities.moderate + vulnerabilities.low;
+          } catch (e) {
+            console.log('Could not parse dependency audit results');
+          }
+
+          fs.writeFileSync('dependency-vulnerabilities.json', JSON.stringify(vulnerabilities, null, 2));
+          console.log(\`Dependency vulnerabilities: \${vulnerabilities.total} total (\${vulnerabilities.high} high)\`);
+          "
+
+      - name: Performance metrics
+        run: |
+          echo "Collecting performance metrics..."
+
+          # Bundle size analysis
+          npm run build || true
+          if [[ -d "dist" ]]; then
+            node -e "
+            const fs = require('fs');
+            const path = require('path');
+
+            let totalSize = 0;
+            let fileCount = 0;
+            let largestFile = { name: '', size: 0 };
+
+            function scanDirectory(dir, prefix = '') {
+              const items = fs.readdirSync(dir, { withFileTypes: true });
+
+              items.forEach(item => {
+                const fullPath = path.join(dir, item.name);
+                const relativePath = prefix + item.name;
+
+                if (item.isDirectory()) {
+                  scanDirectory(fullPath, relativePath + '/');
+                } else {
+                  const size = fs.statSync(fullPath).size;
+                  totalSize += size;
+                  fileCount++;
+
+                  if (size > largestFile.size) {
+                    largestFile = { name: relativePath, size };
+                  }
+                }
+              });
+            }
+
+            if (fs.existsSync('dist')) {
+              scanDirectory('dist');
+            }
+
+            const performanceMetrics = {
+              totalSize: totalSize,
+              fileCount: fileCount,
+              averageFileSize: fileCount > 0 ? totalSize / fileCount : 0,
+              largestFile: largestFile,
+              sizeKB: Math.round(totalSize / 1024),
+              sizeMB: Math.round(totalSize / 1024 / 1024 * 100) / 100
+            };
+
+            fs.writeFileSync('performance-metrics.json', JSON.stringify(performanceMetrics, null, 2));
+            console.log(\`Bundle size: \${performanceMetrics.sizeMB} MB across \${fileCount} files\`);
+            "
+          fi
+
+      - name: Code churn analysis
+        run: |
+          echo "Analyzing code churn..."
+
+          # Get commit statistics for the last 30 days
+          node -e "
+          const { execSync } = require('child_process');
+
+          try {
+            const commits = execSync('git log --since=\"30 days ago\" --format=\"%H|%an|%ad\" --date=iso', { encoding: 'utf8' }).trim().split('\\n');
+            const commitStats = execSync('git log --since=\"30 days ago\" --stat --format=\"%H\"', { encoding: 'utf8' }).trim().split('\\n');
+
+            const authors = {};
+            const dailyCommits = {};
+
+            commits.forEach(commit => {
+              if (commit.trim()) {
+                const [hash, author, date] = commit.split('|');
+                const day = date.split(' ')[0];
+
+                authors[author] = (authors[author] || 0) + 1;
+                dailyCommits[day] = (dailyCommits[day] || 0) + 1;
+              }
+            });
+
+            // Calculate file changes
+            let totalAdditions = 0;
+            let totalDeletions = 0;
+            let fileChanges = 0;
+
+            commitStats.forEach(line => {
+              if (line.includes('files changed')) {
+                const match = line.match(/(\\d+) files? changed(?:, (\\d+) insertions?\\(\\+\\))?(?:, (\\d+) deletions?\\(-\\))?/);
+                if (match) {
+                  fileChanges += parseInt(match[1]) || 0;
+                  totalAdditions += parseInt(match[2]) || 0;
+                  totalDeletions += parseInt(match[3]) || 0;
+                }
+              }
+            });
+
+            const churnMetrics = {
+              period: '30 days',
+              totalCommits: commits.length,
+              activeAuthors: Object.keys(authors).length,
+              fileChanges: fileChanges,
+              totalAdditions: totalAdditions,
+              totalDeletions: totalDeletions,
+              averageCommitsPerDay: commits.length / 30,
+              authorActivity: authors,
+              dailyActivity: dailyCommits
+            };
+
+            fs.writeFileSync('code-churn-metrics.json', JSON.stringify(churnMetrics, null, 2));
+            console.log(\`Code churn: \${churnMetrics.totalCommits} commits by \${churnMetrics.activeAuthors} authors\`);
+          } catch (e) {
+            console.log('Could not analyze code churn');
+          }
+          "
+
+      - name: Generate health dashboard
+        run: |
+          node -e "
+          const fs = require('fs');
+
+          const healthMetrics = JSON.parse(fs.readFileSync('health-metrics.json', 'utf8'));
+          const vulnerabilityReport = JSON.parse(fs.readFileSync('dependency-vulnerabilities.json', 'utf8'));
+          let performanceMetrics = {};
+          let churnMetrics = {};
+          let coverageReport = {};
+
+          try {
+            performanceMetrics = JSON.parse(fs.readFileSync('performance-metrics.json', 'utf8'));
+          } catch (e) {}
+
+          try {
+            churnMetrics = JSON.parse(fs.readFileSync('code-churn-metrics.json', 'utf8'));
+          } catch (e) {}
+
+          try {
+            coverageReport = JSON.parse(fs.readFileSync('test-coverage-report.json', 'utf8'));
+          } catch (e) {}
+
+          // Generate health dashboard
+          const healthDashboard = {
+            timestamp: new Date().toISOString(),
+            overall: {
+              score: healthMetrics.healthScore,
+              status: healthMetrics.healthScore >= 80 ? 'Excellent' :
+                     healthMetrics.healthScore >= 60 ? 'Good' :
+                     healthMetrics.healthScore >= 40 ? 'Fair' : 'Needs Attention'
+            },
+            codeQuality: {
+              files: healthMetrics.files,
+              linesOfCode: healthMetrics.linesOfCode,
+              score: Math.min(healthMetrics.healthScore + 10, 100)
+            },
+            testing: {
+              coverage: coverageReport.average || 0,
+              testFiles: healthMetrics.files.test,
+              score: coverageReport.average || 0
+            },
+            security: {
+              vulnerabilities: vulnerabilityReport,
+              score: vulnerabilityReport.high > 0 ? 20 :
+                     vulnerabilityReport.moderate > 5 ? 60 : 90
+            },
+            performance: {
+              bundleSize: performanceMetrics.sizeKB || 0,
+              fileCount: performanceMetrics.fileCount || 0,
+              score: performanceMetrics.sizeMB < 5 ? 90 :
+                     performanceMetrics.sizeMB < 20 ? 70 : 40
+            },
+            activity: {
+              commits30d: churnMetrics.totalCommits || 0,
+              activeAuthors: churnMetrics.activeAuthors || 0,
+              score: churnMetrics.totalCommits > 20 ? 100 :
+                     churnMetrics.totalCommits > 10 ? 70 : 40
+            },
+            recommendations: healthMetrics.recommendations
+          };
+
+          fs.writeFileSync('health-dashboard.json', JSON.stringify(healthDashboard, null, 2));
+          console.log(\`Overall repository health score: \${healthDashboard.overall.score}/100 (\${healthDashboard.overall.status})\`);
+          "
+
+      - name: Create health report
+        run: |
+          node -e "
+          const healthDashboard = JSON.parse(fs.readFileSync('health-dashboard.json', 'utf8'));
+
+          const report = \`# Repository Health Report
+
+          ## Overall Health Score: \${healthDashboard.overall.score}/100 - \${healthDashboard.overall.status}
+
+          **Generated on:** \${healthDashboard.timestamp}
+
+          ## 📊 Key Metrics
+
+          ### 📝 Code Quality
+          - **Files:** \${healthDashboard.codeQuality.files.total} total (\${healthDashboard.codeQuality.files.typescript} TypeScript, \${healthDashboard.codeQuality.files.test} tests)
+          - **Lines of Code:** \${healthDashboard.codeQuality.linesOfCode.total.toLocaleString()}
+          - **Quality Score:** \${healthDashboard.codeQuality.score}/100
+
+          ### 🧪 Testing
+          - **Test Coverage:** \${healthDashboard.testing.coverage.toFixed(1)}%
+          - **Test Files:** \${healthDashboard.testing.testFiles}
+          - **Testing Score:** \${healthDashboard.testing.score}/100
+
+          ### 🔒 Security
+          - **High Vulnerabilities:** \${healthDashboard.security.vulnerabilities.high}
+          - **Moderate Vulnerabilities:** \${healthDashboard.security.vulnerabilities.moderate}
+          - **Security Score:** \${healthDashboard.security.score}/100
+
+          ### ⚡ Performance
+          - **Bundle Size:** \${healthDashboard.performance.bundleSize} KB
+          - **File Count:** \${healthDashboard.performance.fileCount}
+          - **Performance Score:** \${healthDashboard.performance.score}/100
+
+          ### 📈 Activity
+          - **30-Day Commits:** \${healthDashboard.activity.commits30d}
+          - **Active Authors:** \${healthDashboard.activity.activeAuthors}
+          - **Activity Score:** \${healthDashboard.activity.score}/100
+
+          ## 💡 Recommendations
+          ${healthDashboard.recommendations.map(rec => `- ${rec}`).join('\\n')}
+
+          ## 🎯 Action Items
+          ${healthDashboard.overall.score < 50 ?
+            '### 🔴 High Priority Actions\\n- Address critical issues immediately\\n- Improve test coverage\\n- Fix security vulnerabilities\\n- Review code quality practices' :
+            healthDashboard.overall.score < 75 ?
+            '### 🟡 Medium Priority Actions\\n- Continue improving test coverage\\n- Update outdated dependencies\\n- Enhance documentation' :
+            '### 🟢 Maintenance Actions\\n- Maintain current standards\\n- Monitor performance metrics\\n- Continue regular updates'
+          }
+
+          ---
+          *This report was generated automatically by the repository health monitoring workflow.*
+          \`;
+
+          fs.writeFileSync('health-report.md', report);
+          "
+
+      - name: Check health threshold
+        id: health-check
+        run: |
+          HEALTH_SCORE=$(cat health-dashboard.json | jq '.overall.score')
+          echo "health_score=$HEALTH_SCORE" >> $GITHUB_OUTPUT
+          echo "Repository health score: $HEALTH_SCORE/100"
+
+          if (( $(echo "$HEALTH_SCORE < ${{ env.HEALTH_SCORE_THRESHOLD }}" | bc -l) )); then
+            echo "health_below_threshold=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Health score below threshold (${{ env.HEALTH_SCORE_THRESHOLD }})"
+          else
+            echo "health_below_threshold=false" >> $GITHUB_OUTPUT
+            echo "✅ Health score acceptable"
+          fi
+
+      - name: Create health alert if needed
+        if: steps.health-check.outputs.health_below_threshold == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const healthDashboard = JSON.parse(fs.readFileSync('health-dashboard.json', 'utf8'));
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '⚠️ Repository Health Alert - Score Below Threshold',
+              body: `
+              **Repository Health Score:** ${healthDashboard.overall.score}/100 - ${healthDashboard.overall.status}
+
+              The repository health score has fallen below the acceptable threshold of ${{ env.HEALTH_SCORE_THRESHOLD }}%.
+
+              ### Health Breakdown:
+              - **Code Quality:** ${healthDashboard.codeQuality.score}/100
+              - **Testing:** ${healthDashboard.testing.score}/100
+              - **Security:** ${healthDashboard.security.score}/100
+              - **Performance:** ${healthDashboard.performance.score}/100
+              - **Activity:** ${healthDashboard.activity.score}/100
+
+              ### Critical Issues:
+              ${healthDashboard.security.vulnerabilities.high > 0 ? `- 🚨 ${healthDashboard.security.vulnerabilities.high} high-severity security vulnerabilities\\n` : ''}
+              ${healthDashboard.testing.coverage < 70 ? `- 🧪 Test coverage is only ${healthDashboard.testing.coverage.toFixed(1)}%\\n` : ''}
+
+              ### Recommendations:
+              ${healthDashboard.recommendations.slice(0, 5).map(rec => `- ${rec}`).join('\\n')}
+
+              **Action Required:** Please address these issues to improve repository health.
+
+              ---
+              *This alert was generated automatically by the repository health monitoring workflow.*
+              `,
+              labels: ['health', 'maintenance', 'automated']
+            });
+
+      - name: Upload health artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: repository-health-report
+          path: |
+            health-metrics.json
+            health-dashboard.json
+            health-report.md
+            dependency-vulnerabilities.json
+            performance-metrics.json
+            code-churn-metrics.json
+            test-coverage-report.json
+
+  # Quick Health Check
+  quick-health:
+    name: Quick Health Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event.inputs.check_type == 'quick'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Quick health assessment
+        run: |
+          echo "Running quick health check..."
+
+          # Basic file structure check
+          echo "Checking project structure..."
+          REQUIRED_FILES=("package.json" "README.md" ".gitignore")
+          for file in "${REQUIRED_FILES[@]}"; do
+            if [[ -f "$file" ]]; then
+              echo "✅ $file exists"
+            else
+              echo "❌ $file missing"
+            fi
+          done
+
+          # Basic dependency check
+          if [[ -f "package.json" ]]; then
+            echo "Checking dependencies..."
+            node -e "
+            const fs = require('fs');
+            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+            console.log(\`✅ Dependencies: \${Object.keys(pkg.dependencies || {}).length}\`);
+            console.log(\`✅ Dev Dependencies: \${Object.keys(pkg.devDependencies || {}).length}\`);
+            "
+          fi
+
+          # Test file count
+          TEST_COUNT=$(find . -name "*.test.*" -o -name "*.spec.*" | wc -l | tr -d ' ')
+          echo "🧪 Test files: $TEST_COUNT"
+
+          # Documentation files
+          DOC_COUNT=$(find . -name "*.md" | wc -l | tr -d ' ')
+          echo "📚 Documentation files: $DOC_COUNT"
+
+  # Performance Monitoring
+  performance-monitor:
+    name: Performance Monitoring
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event.inputs.check_type == 'performance'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Performance analysis
+        run: |
+          echo "Running performance analysis..."
+
+          # Build time measurement
+          BUILD_START=$(date +%s)
+          npm run build || true
+          BUILD_END=$(date +%s)
+          BUILD_TIME=$((BUILD_END - BUILD_START))
+          echo "Build time: ${BUILD_TIME}s"
+
+          # Bundle analysis
+          if [[ -d "dist" ]]; then
+            du -sh dist/
+            find dist -name "*.js" | xargs du -h | sort -hr
+          fi
+
+      - name: Lighthouse performance audit
+        run: |
+          echo "Running Lighthouse performance audit..."
+          # Note: This would require the application to be running
+          # Placeholder for Lighthouse CI integration
+
+  # Health Metrics Update
+  update-metrics:
+    name: Update Health Metrics
+    runs-on: ubuntu-latest
+    needs: [comprehensive-health, quick-health]
+    if: always() && (needs.comprehensive-health.result == 'success' || needs.quick-health.result == 'success')
+
+    steps:
+      - name: Update repository health status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const healthScore = ${{ needs.comprehensive-health.result == 'success' && steps.health-check.outputs.health_score || '0' }};
+            const status = healthScore >= 80 ? 'success' :
+                          healthScore >= 60 ? 'pending' : 'failure';
+
+            // Update commit status
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: status,
+              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.run_id}`,
+              description: `Health Score: ${healthScore}/100`,
+              context: 'repository-health'
+            });
+
+            console.log(`Updated repository health status: ${healthScore}/100 (${status})`);
+
+      - name: Store health metrics in repository
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "Storing health metrics..."
+
+          # Create health metrics directory
+          mkdir -p .github/health-metrics
+
+          # Store current health data
+          if [[ -f "health-dashboard.json" ]]; then
+            cp health-dashboard.json ".github/health-metrics/$(date +%Y-%m-%d).json"
+            echo "Health metrics stored for $(date +%Y-%m-%d)"
+
+            # Keep only last 30 days of metrics
+            find .github/health-metrics -name "*.json" -mtime +30 -delete
+          fi

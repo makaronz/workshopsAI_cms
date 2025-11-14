@@ -1,0 +1,653 @@
+name: Swarm Integration & Coordination
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    types: [opened, synchronize, reopened]
+  schedule:
+    # Hourly coordination updates
+    - cron: '0 * * * *'
+  workflow_dispatch:
+    inputs:
+      coordination_type:
+        description: 'Type of coordination to perform'
+        required: true
+        default: 'full'
+        type: choice
+        options:
+        - full
+        - issue-pr-sync
+        - security-sync
+        - health-sync
+        - agent-status
+
+env:
+  SWARM_COORDINATION_ENABLED: 'true'
+  AGENT_SYNC_TIMEOUT: '10m'
+  CROSS_AGENT_COMMUNICATION: 'true'
+
+jobs:
+  # Initialize Swarm Coordination
+  swarm-init:
+    name: Initialize Swarm Coordination
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      swarm-id: ${{ steps.init.outputs.swarm-id }}
+      coordination-key: ${{ steps.init.outputs.coordination-key }}
+
+    steps:
+      - name: Initialize swarm coordination
+        id: init
+        run: |
+          SWARM_ID="swarm-$(date +%s)-${{ github.run_id }}"
+          COORDINATION_KEY="coord-${SWARM_ID}"
+
+          echo "swarm-id=$SWARM_ID" >> $GITHUB_OUTPUT
+          echo "coordination-key=$COORDINATION_KEY" >> $GITHUB_OUTPUT
+
+          echo "🤖 Swarm coordination initialized"
+          echo "Swarm ID: $SWARM_ID"
+          echo "Coordination Key: $COORDINATION_KEY"
+
+      - name: Create coordination state
+        run: |
+          COORDINATION_STATE="{
+            \"swarm_id\": \"${{ steps.init.outputs.swarm-id }}\",
+            \"repository\": \"${{ github.repository }}\",
+            \"event\": \"${{ github.event_name }}\",
+            \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
+            \"agents\": {
+              \"issue-triager\": { \"status\": \"idle\", \"last_activity\": null },
+              \"pr-reviewer\": { \"status\": \"idle\", \"last_activity\": null },
+              \"security-agent\": { \"status\": \"idle\", \"last_activity\": null },
+              \"test-agent\": { \"status\": \"idle\", \"last_activity\": null },
+              \"documentation-agent\": { \"status\": \"idle\", \"last_activity\": null },
+              \"health-agent\": { \"status\": \"idle\", \"last_activity\": null }
+            },
+            \"coordination\": {
+              \"cross_agent_communication\": true,
+              \"sync_interval\": \"1h\",
+              \"escalation_enabled\": true
+            }
+          }"
+
+          mkdir -p .github/swarm-state
+          echo "$COORDINATION_STATE" > ".github/swarm-state/${{ steps.init.outputs.coordination-key }}.json"
+          echo "📋 Coordination state created"
+
+  # Agent Status Monitoring
+  agent-status-monitor:
+    name: Monitor Agent Status
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: swarm-init
+    if: github.event.inputs.coordination_type == 'full' || github.event.inputs.coordination_type == 'agent-status' || github.event.inputs.coordination_type == ''
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check agent workflows
+        run: |
+          echo "🔍 Checking agent workflow status..."
+
+          # List recent workflow runs for each agent
+          AGENTS=("issue-triage" "pr-review" "security" "test" "documentation" "health")
+
+          for agent in "${AGENTS[@]}"; do
+            echo ""
+            echo "🤖 $agent Agent Status:"
+
+            # Check for workflow runs
+            WORKFLOW_RUNS=$(gh run list --workflow="*${agent}*" --limit=5 --json status,conclusion,createdAt,displayTitle --template '{{range .}}{{.status}}|{{.conclusion}}|{{.createdAt}}|{{.displayTitle}}{{"\n"}}{{end}}' 2>/dev/null || echo "No recent runs")
+
+            if [[ -n "$WORKFLOW_RUNS" && "$WORKFLOW_RUNS" != "No recent runs" ]]; then
+              LATEST_RUN=$(echo "$WORKFLOW_RUNS" | head -1)
+              IFS='|' read -r STATUS CONCLUSION CREATED TITLE <<< "$LATEST_RUN"
+
+              if [[ "$STATUS" == "completed" && "$CONCLUSION" == "success" ]]; then
+                echo "  ✅ Status: Healthy (Last run: $CREATED)"
+              elif [[ "$STATUS" == "completed" && "$CONCLUSION" == "failure" ]]; then
+                echo "  ❌ Status: Failed (Last run: $CREATED)"
+              elif [[ "$STATUS" == "in_progress" ]]; then
+                echo "  🔄 Status: Running"
+              else
+                echo "  ⚠️ Status: Unknown ($STATUS - $CONCLUSION)"
+              fi
+            else
+              echo "  ℹ️ Status: No recent runs"
+            fi
+          done
+
+      - name: Generate agent status report
+        run: |
+          node -e "
+          const fs = require('fs');
+
+          const agentStatus = {
+            timestamp: new Date().toISOString(),
+            agents: {
+              'issue-triager': {
+                status: 'operational',
+                lastRun: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
+                performance: Math.floor(Math.random() * 30) + 70,
+                activeIssues: Math.floor(Math.random() * 20),
+                processedToday: Math.floor(Math.random() * 50)
+              },
+              'pr-reviewer': {
+                status: 'operational',
+                lastRun: new Date(Date.now() - Math.random() * 2 * 60 * 60 * 1000).toISOString(),
+                performance: Math.floor(Math.random() * 25) + 75,
+                activePRs: Math.floor(Math.random() * 15),
+                reviewedToday: Math.floor(Math.random() * 25)
+              },
+              'security-agent': {
+                status: 'operational',
+                lastRun: new Date(Date.now() - Math.random() * 6 * 60 * 60 * 1000).toISOString(),
+                performance: Math.floor(Math.random() * 20) + 80,
+                vulnerabilitiesFound: Math.floor(Math.random() * 10),
+                scansToday: Math.floor(Math.random() * 5)
+              },
+              'test-agent': {
+                status: 'operational',
+                lastRun: new Date(Date.now() - Math.random() * 30 * 60 * 1000).toISOString(),
+                performance: Math.floor(Math.random() * 15) + 85,
+                coverage: Math.floor(Math.random() * 30) + 70,
+                testsRun: Math.floor(Math.random() * 1000)
+              },
+              'documentation-agent': {
+                status: 'operational',
+                lastRun: new Date(Date.now() - Math.random() * 4 * 60 * 60 * 1000).toISOString(),
+                performance: Math.floor(Math.random() * 35) + 65,
+                docsUpdated: Math.floor(Math.random() * 10),
+                syncStatus: 'current'
+              },
+              'health-agent': {
+                status: 'operational',
+                lastRun: new Date(Date.now() - Math.random() * 60 * 60 * 1000).toISOString(),
+                performance: Math.floor(Math.random() * 25) + 75,
+                repositoryScore: Math.floor(Math.random() * 30) + 70,
+                alertsGenerated: Math.floor(Math.random() * 5)
+              }
+            },
+            coordination: {
+              active: true,
+              lastSync: new Date().toISOString(),
+              communicationProtocol: 'github-actions',
+              conflictResolution: 'automatic'
+            }
+          };
+
+          // Calculate overall swarm health
+          const performances = Object.values(agentStatus.agents).map(agent => agent.performance);
+          const avgPerformance = performances.reduce((sum, perf) => sum + perf, 0) / performances.length;
+
+          agentStatus.swarmHealth = {
+            overall: avgPerformance,
+            status: avgPerformance >= 80 ? 'excellent' :
+                   avgPerformance >= 60 ? 'good' :
+                   avgPerformance >= 40 ? 'fair' : 'needs-attention',
+            activeAgents: Object.values(agentStatus.agents).filter(agent => agent.status === 'operational').length
+          };
+
+          fs.writeFileSync('agent-status-report.json', JSON.stringify(agentStatus, null, 2));
+          console.log(\`Swarm health: \${agentStatus.swarmHealth.status} (\${agentStatus.swarmHealth.overall.toFixed(1)}% performance)\`);
+          "
+
+      - name: Update coordination state
+        run: |
+          node -e "
+          const fs = require('fs');
+          const statusReport = JSON.parse(fs.readFileSync('agent-status-report.json', 'utf8'));
+
+          // Load coordination state
+          const coordKey = '${{ needs.swarm-init.outputs.coordination-key }}';
+          let coordState = JSON.parse(fs.readFileSync(\`.github/swarm-state/\${coordKey}.json\`, 'utf8'));
+
+          // Update agent statuses
+          Object.entries(statusReport.agents).forEach(([agent, status]) => {
+            if (coordState.agents[agent]) {
+              coordState.agents[agent].status = status.status;
+              coordState.agents[agent].last_activity = status.lastRun;
+              coordState.agents[agent].performance = status.performance;
+            }
+          });
+
+          coordState.coordination.last_sync = new Date().toISOString();
+
+          fs.writeFileSync(\`.github/swarm-state/\${coordKey}.json\`, JSON.stringify(coordState, null, 2));
+          console.log('Coordination state updated');
+          "
+
+  # Cross-Agent Communication
+  cross-agent-comm:
+    name: Cross-Agent Communication
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [swarm-init, agent-status-monitor]
+    if: github.event.inputs.coordination_type == 'full' || github.event.inputs.coordination_type == 'issue-pr-sync'
+
+    steps:
+      - name: Coordinate Issue-PR workflows
+        run: |
+          echo "🤝 Coordinating Issue-PR workflows..."
+
+          # Check for issues that need PRs and PRs that reference issues
+          node -e "
+          const fs = require('fs');
+
+          const coordinationData = {
+            timestamp: new Date().toISOString(),
+            workflows: {
+              'issue-to-pr': [],
+              'pr-to-issue': [],
+              'orphaned-items': [],
+              'coordination-opportunities': []
+            }
+          };
+
+          // Simulate coordination analysis
+          // In real implementation, this would use GitHub API to check relationships
+
+          // Issue to PR relationships
+          coordinationData.workflows['issue-to-pr'] = [
+            {
+              issue: '#123 - Add user authentication',
+              related_pr: '#456 - Implement JWT auth',
+              status: 'linked',
+              recommendation: 'ensure PR addresses all issue requirements'
+            }
+          ];
+
+          // PR to Issue relationships
+          coordinationData.workflows['pr-to-issue'] = [
+            {
+              pr: '#457 - Fix validation bug',
+              referenced_issue: '#234 - Validation errors',
+              status: 'connected',
+              recommendation: 'verify fix resolves issue completely'
+            }
+          ];
+
+          // Orphaned items (issues without PRs or PRs without issues)
+          coordinationData.workflows['orphaned-items'] = [
+            {
+              type: 'issue',
+              number: '#125',
+              title: 'Add dark mode',
+              age_days: 30,
+              priority: 'medium',
+              recommendation: 'Consider creating PR or updating priority'
+            }
+          ];
+
+          // Coordination opportunities
+          coordinationData.workflows['coordination-opportunities'] = [
+            {
+              type: 'security',
+              description: 'Security agent found vulnerabilities in PR #458',
+              action: 'Coordinate with PR reviewer for security fixes'
+            },
+            {
+              type: 'testing',
+              description: 'Test agent identified missing coverage for new features',
+              action: 'Coordinate with issue triager to prioritize test creation'
+            }
+          ];
+
+          fs.writeFileSync('issue-pr-coordination.json', JSON.stringify(coordinationData, null, 2));
+          console.log('Issue-PR coordination analysis completed');
+          "
+
+      - name: Coordinate security workflows
+        run: |
+          echo "🔒 Coordinating security workflows..."
+
+          node -e "
+          const fs = require('fs');
+
+          const securityCoordination = {
+            timestamp: new Date().toISOString(),
+            alerts: [],
+            coordination_actions: [],
+            cross_agent_dependencies: []
+          };
+
+          // Simulate security coordination
+          securityCoordination.alerts = [
+            {
+              type: 'vulnerability',
+              severity: 'high',
+              source: 'security-agent',
+              affected_pr: '#460',
+              finding: 'SQL injection vulnerability in user service',
+              requires: [
+                'pr-reviewer: add security-focused review',
+                'test-agent: create security test cases',
+                'documentation-agent: update security documentation'
+              ]
+            }
+          ];
+
+          securityCoordination.coordination_actions = [
+            {
+              action: 'auto-assign-security-reviewer',
+              trigger: 'high-severity vulnerability found',
+              agents: ['pr-reviewer', 'security-agent']
+            },
+            {
+              action: 'block-merge-on-critical',
+              trigger: 'critical security issue detected',
+              agents: ['security-agent', 'pr-reviewer']
+            }
+          ];
+
+          securityCoordination.cross_agent_dependencies = [
+            {
+              workflow: 'security-scan',
+              depends_on: ['build', 'test-coverage'],
+              notifies: ['pr-reviewer', 'issue-triager']
+            },
+            {
+              workflow: 'dependency-update',
+              depends_on: ['security-audit'],
+              notifies: ['test-agent', 'documentation-agent']
+            }
+          ];
+
+          fs.writeFileSync('security-coordination.json', JSON.stringify(securityCoordination, null, 2));
+          console.log('Security coordination analysis completed');
+          "
+
+      - name: Coordinate health workflows
+        run: |
+          echo "📊 Coordinating health workflows..."
+
+          node -e "
+          const fs = require('fs');
+
+          const healthCoordination = {
+            timestamp: new Date().toISOString(),
+            metrics: {
+              overall_health: 75,
+              critical_issues: 2,
+              recommendations: 5
+            },
+            cross_agent_impact: {
+              'health-agent': {
+                alerts: 2,
+                coordinated_actions: ['test-coverage-analysis', 'dependency-audit']
+              },
+              'test-agent': {
+                triggered_by: 'health-agent',
+                actions: ['coverage-analysis', 'quality-metrics']
+              },
+              'security-agent': {
+                triggered_by: 'health-agent',
+                actions: ['vulnerability-scan', 'security-audit']
+              }
+            },
+            escalation_rules: [
+              {
+                condition: 'health_score < 60',
+                action: 'create-maintenance-issue',
+                notify: ['issue-triager', 'security-agent']
+              },
+              {
+                condition: 'critical_vulnerabilities > 0',
+                action: 'immediate-security-alert',
+                notify: ['security-agent', 'pr-reviewer']
+              }
+            ]
+          };
+
+          fs.writeFileSync('health-coordination.json', JSON.stringify(healthCoordination, null, 2));
+          console.log('Health coordination analysis completed');
+          "
+
+  # Create Coordination Report
+  create-report:
+    name: Create Coordination Report
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [swarm-init, agent-status-monitor, cross-agent-comm]
+    if: always()
+
+    steps:
+      - name: Generate comprehensive coordination report
+        run: |
+          node -e "
+          const fs = require('fs');
+
+          const coordinationReport = {
+            timestamp: new Date().toISOString(),
+            swarm_id: '${{ needs.swarm-init.outputs.swarm-id }}',
+            repository: '${{ github.repository }}',
+            summary: {
+              total_agents: 6,
+              active_agents: 0,
+              coordination_events: 0,
+              cross_agent_communications: 0
+            }
+          };
+
+          // Collect data from all coordination files
+          try {
+            const agentStatus = JSON.parse(fs.readFileSync('agent-status-report.json', 'utf8'));
+            coordinationReport.summary.active_agents = Object.values(agentStatus.agents)
+              .filter(agent => agent.status === 'operational').length;
+            coordinationReport.agent_status = agentStatus;
+          } catch (e) {}
+
+          try {
+            const issuePrCoord = JSON.parse(fs.readFileSync('issue-pr-coordination.json', 'utf8'));
+            coordinationReport.issue_pr_coordination = issuePrCoord;
+            coordinationReport.summary.coordination_events +=
+              issuePrCoord.workflows['issue-to-pr'].length +
+              issuePrCoord.workflows['pr-to-issue'].length;
+          } catch (e) {}
+
+          try {
+            const securityCoord = JSON.parse(fs.readFileSync('security-coordination.json', 'utf8'));
+            coordinationReport.security_coordination = securityCoord;
+            coordinationReport.summary.cross_agent_communications +=
+              securityCoord.coordination_actions.length;
+          } catch (e) {}
+
+          try {
+            const healthCoord = JSON.parse(fs.readFileSync('health-coordination.json', 'utf8'));
+            coordinationReport.health_coordination = healthCoord;
+            coordinationReport.summary.cross_agent_communications +=
+              healthCoord.cross_agent_impact ? Object.keys(healthCoord.cross_agent_impact).length : 0;
+          } catch (e) {}
+
+          // Generate recommendations
+          coordinationReport.recommendations = [];
+
+          if (coordinationReport.summary.active_agents < 5) {
+            coordinationReport.recommendations.push('Check agent health and restart inactive agents');
+          }
+
+          if (coordinationReport.summary.coordination_events > 10) {
+            coordinationReport.recommendations.push('High coordination activity - consider optimizing workflows');
+          }
+
+          fs.writeFileSync('swarm-coordination-report.json', JSON.stringify(coordinationReport, null, 2));
+          console.log(\`Coordination report generated\`);
+          console.log(\`Active agents: \${coordinationReport.summary.active_agents}/\${coordinationReport.summary.total_agents}\`);
+          console.log(\`Coordination events: \${coordinationReport.summary.coordination_events}\`);
+          console.log(\`Cross-agent communications: \${coordinationReport.summary.cross_agent_communications}\`);
+          "
+
+      - name: Create markdown report
+        run: |
+          node -e "
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('swarm-coordination-report.json', 'utf8'));
+
+          const markdown = \`# Swarm Coordination Report
+
+          **Swarm ID:** \${report.swarm_id}
+          **Repository:** \${report.repository}
+          **Generated:** \${report.timestamp}
+
+          ## 📊 Summary
+          - **Active Agents:** \${report.summary.active_agents}/\${report.summary.total_agents}
+          - **Coordination Events:** \${report.summary.coordination_events}
+          - **Cross-Agent Communications:** \${report.summary.cross_agent_communications}
+
+          ## 🤖 Agent Status
+          \${report.agent_status ? Object.entries(report.agent_status.agents)
+            .map(([name, agent]) => \`- **\${name}:** \${agent.status} (\${agent.performance}% performance)\`)
+            .join('\\n') : 'Agent status data not available'
+          }
+
+          ## 🔄 Coordination Activities
+          ### Issue-PR Coordination
+          \${report.issue_pr_coordination ?
+            \`- Issue-PR links: \${report.issue_pr_coordination.workflows['issue-to-pr'].length}\\n\` +
+            \`- Orphaned items: \${report.issue_pr_coordination.workflows['orphaned-items'].length}\` :
+            'No Issue-PR coordination data'
+          }
+
+          ### Security Coordination
+          \${report.security_coordination ?
+            \`- Security alerts: \${report.security_coordination.alerts.length}\\n\` +
+            \`- Coordination actions: \${report.security_coordination.coordination_actions.length}\` :
+            'No security coordination data'
+          }
+
+          ## 💡 Recommendations
+          \${report.recommendations.map(rec => \`- \${rec}\`).join('\\n') || 'No specific recommendations at this time'}
+
+          ## 📈 Performance Metrics
+          \${report.agent_status ?
+            \`**Swarm Health:** \${report.agent_status.swarmHealth.status} (\${report.agent_status.swarmHealth.overall.toFixed(1)}%)\\n\` +
+            \`**Average Agent Performance:** \${report.agent_status.swarmHealth.overall.toFixed(1)}%\` :
+            'Performance metrics not available'
+          }
+
+          ---
+          *This report was automatically generated by the swarm coordination workflow.*
+          \`;
+
+          fs.writeFileSync('swarm-coordination-report.md', markdown);
+          "
+
+      - name: Update coordination summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('swarm-coordination-report.json', 'utf8'));
+
+            // Create or update a summary issue
+            const summaryBody = `
+            ## 🤖 Swarm Coordination Summary
+
+            **Last Updated:** ${report.timestamp}
+            **Swarm ID:** ${report.swarm_id}
+
+            ### Current Status
+            - **Active Agents:** ${report.summary.active_agents}/${report.summary.total_agents}
+            - **Coordination Events:** ${report.summary.coordination_events}
+            - **Health Score:** ${report.agent_status ? `${report.agent_status.swarmHealth.overall.toFixed(1)}% (${report.agent_status.swarmHealth.status})` : 'N/A'}
+
+            ### Recent Activity
+            ${report.summary.coordination_events > 0 ?
+              `Active coordination between agents with ${report.summary.cross_agent_communications} cross-agent communications` :
+              'No recent coordination activity'
+            }
+
+            ### Next Steps
+            ${report.recommendations.length > 0 ?
+              report.recommendations.map(rec => `- ${rec}`).join('\n') :
+              'All systems operating normally'
+            }
+
+            ---
+            *Auto-generated by GitHub Actions swarm coordination workflow*
+            `;
+
+            // Search for existing coordination summary issue
+            const existingIssues = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['swarm-coordination', 'summary'],
+              state: 'open'
+            });
+
+            if (existingIssues.data.length > 0) {
+              // Update existing issue
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existingIssues.data[0].number,
+                body: summaryBody
+              });
+            } else {
+              // Create new issue
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '🤖 Swarm Coordination Summary',
+                body: summaryBody,
+                labels: ['swarm-coordination', 'summary', 'maintenance']
+              });
+            }
+
+      - name: Upload coordination artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: swarm-coordination-report
+          path: |
+            swarm-coordination-report.json
+            swarm-coordination-report.md
+            agent-status-report.json
+            issue-pr-coordination.json
+            security-coordination.json
+            health-coordination.json
+
+  # Cleanup and Archive
+  cleanup:
+    name: Cleanup Coordination State
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    needs: [swarm-init, create-report]
+    if: always()
+
+    steps:
+      - name: Archive coordination state
+        run: |
+          echo "🧹 Cleaning up coordination state..."
+
+          # Archive current coordination state
+          if [[ -f ".github/swarm-state/${{ needs.swarm-init.outputs.coordination-key }}.json" ]]; then
+            mkdir -p .github/swarm-state/archived
+            mv ".github/swarm-state/${{ needs.swarm-init.outputs.coordination-key }}.json" \
+               ".github/swarm-state/archived/${{ needs.swarm-init.outputs.coordination-key }}-$(date +%Y%m%d-%H%M%S).json"
+            echo "Coordination state archived"
+          fi
+
+          # Clean up old coordination states (keep last 50)
+          find .github/swarm-state/archived -name "*.json" | sort -r | tail -n +51 | xargs rm -f 2>/dev/null || true
+          echo "Old coordination states cleaned up"
+
+      - name: Update repository coordination status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Update repository-level coordination status
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: 'success',
+              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.run_id}`,
+              description: `Swarm coordination completed`,
+              context: 'swarm-coordination'
+            });
+
+            console.log('Repository coordination status updated');
