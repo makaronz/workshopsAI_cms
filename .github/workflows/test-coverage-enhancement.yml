@@ -208,12 +208,16 @@ jobs:
             - [ ] Verify test quality and meaningful assertions
             `;
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
+            if (context.eventName !== 'pull_request') {
+              console.log(`Skipping pull request comment for event: ${context.eventName}`);
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
 
       - name: Upload coverage artifacts
         uses: actions/upload-artifact@v3
@@ -340,12 +344,16 @@ jobs:
             - [ ] Error case testing
             `;
 
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: comment
-            });
+            if (context.eventName !== 'pull_request') {
+              console.log(`Skipping pull request comment for event: ${context.eventName}`);
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
 
   # Mutation Testing
   mutation-testing:

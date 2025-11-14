@@ -35,6 +35,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     if: github.event.inputs.check_type == 'comprehensive' || github.event.inputs.check_type == '' || github.event_name == 'schedule'
+    outputs:
+      health_score: ${{ steps.health-check.outputs.health_score }}
 
     steps:
       - name: Checkout code
@@ -611,9 +613,11 @@ jobs:
     steps:
       - name: Update repository health status
         uses: actions/github-script@v7
+        env:
+          HEALTH_SCORE: ${{ needs.comprehensive-health.result == 'success' && needs.comprehensive-health.outputs.health_score || '0' }}
         with:
           script: |
-            const healthScore = ${{ needs.comprehensive-health.result == 'success' && steps.health-check.outputs.health_score || '0' }};
+            const healthScore = Number(process.env.HEALTH_SCORE || 0);
             const status = healthScore >= 80 ? 'success' :
                           healthScore >= 60 ? 'pending' : 'failure';
 

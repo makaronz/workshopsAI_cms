@@ -45,6 +45,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     if: github.event.inputs.doc_type == 'all' || github.event.inputs.doc_type == 'api' || !github.event.inputs.doc_type
+    outputs:
+      docs_changed: ${{ steps.check-docs.outputs.docs_changed }}
 
     steps:
       - name: Checkout code
@@ -274,6 +276,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: github.event.inputs.doc_type == 'all' || github.event.inputs.doc_type == 'readme' || !github.event.inputs.doc_type
+    outputs:
+      readme_changed: ${{ steps.check-readme.outputs.readme_changed }}
 
     steps:
       - name: Checkout code
@@ -403,6 +407,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     if: github.event.inputs.doc_type == 'all' || github.event.inputs.doc_type == 'architecture' || !github.event.inputs.doc_type
+    outputs:
+      architecture_changed: ${{ steps.check-architecture.outputs.architecture_changed }}
 
     steps:
       - name: Checkout code
@@ -705,9 +711,13 @@ jobs:
               labels: ['documentation', 'maintenance', 'automated']
             });
 
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '📚 Documentation has been automatically updated to reflect the latest changes.'
-            });
+            if (context.eventName === 'pull_request') {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '📚 Documentation has been automatically updated to reflect the latest changes.'
+              });
+            } else {
+              console.log(`Skipping pull request comment for event: ${context.eventName}`);
+            }
