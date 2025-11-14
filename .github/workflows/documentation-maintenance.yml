@@ -44,7 +44,7 @@ jobs:
     name: API Documentation Generation
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: github.event.inputs.doc_type == 'all' || github.event.inputs.doc_type == 'api' || github.event.inputs.doc_type == ''
+    if: github.event.inputs.doc_type == 'all' || github.event.inputs.doc_type == 'api' || !github.event.inputs.doc_type
 
     steps:
       - name: Checkout code
@@ -273,7 +273,7 @@ jobs:
     name: README Maintenance
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    if: github.event.inputs.doc_type == 'all' || github.event.inputs.doc_type == 'readme' || github.event.inputs.doc_type == ''
+    if: github.event.inputs.doc_type == 'all' || github.event.inputs.doc_type == 'readme' || !github.event.inputs.doc_type
 
     steps:
       - name: Checkout code
@@ -402,7 +402,7 @@ jobs:
     name: Architecture Documentation
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: github.event.inputs.doc_type == 'all' || github.event.inputs.doc_type == 'architecture'
+    if: github.event.inputs.doc_type == 'all' || github.event.inputs.doc_type == 'architecture' || !github.event.inputs.doc_type
 
     steps:
       - name: Checkout code
