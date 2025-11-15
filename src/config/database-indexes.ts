@@ -567,7 +567,7 @@ export class EnhancedDatabaseIndexes {
 
       const distinctResult = await client`
         SELECT COUNT(DISTINCT ${indexColumns[0]}) as distinct_count
-        FROM ${index.sqlIdentifier(tableName)}
+        FROM ${sql.identifier(tableName)}
       `;
 
       const distinctCount = distinctResult[0]?.distinct_count || 1;
@@ -590,7 +590,7 @@ export class EnhancedDatabaseIndexes {
         SELECT
           COUNT(*) as total_rows,
           COUNT(DISTINCT (${indexColumns.join(', ')})) as distinct_rows
-        FROM ${sqlIdentifier(tableName)}
+        FROM ${sql.identifier(tableName)}
       `;
 
       const { total_rows, distinct_rows } = result[0];
@@ -903,7 +903,7 @@ export class EnhancedDatabaseIndexes {
    */
   private async getIndexBloat(indexName: string): Promise<number> {
     try {
-      const result = await client.query(sql`
+      const result = await client`
         SELECT
           pg_relation_size(indexrelid) as actual_size,
           pg_total_relation_size(indexrelid) as total_size
@@ -911,7 +911,7 @@ export class EnhancedDatabaseIndexes {
         WHERE indexrelid = (
           SELECT oid FROM pg_class WHERE relname = ${indexName}
         )
-      `);
+      `;
 
       if (result.length === 0) return 0;
 

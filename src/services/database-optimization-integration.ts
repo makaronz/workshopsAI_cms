@@ -134,6 +134,13 @@ export class DatabaseOptimizationIntegration extends EventEmitter {
   }
 
   /**
+   * Public initialize method for external initialization
+   */
+  async initialize(): Promise<void> {
+    await this.initializeIntegration();
+  }
+
+  /**
    * Initialize the integration service
    */
   private async initializeIntegration(): Promise<void> {

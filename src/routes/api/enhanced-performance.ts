@@ -3,7 +3,7 @@ import { enhancedPerformanceMonitoringService, DetailedMetrics, PerformanceAlert
 import { enhancedCachingService, CacheAnalytics } from '../../services/enhanced-caching-service';
 import { optimizedRedisService } from '../../config/optimized-redis';
 import { performanceMiddleware } from '../../middleware/performanceMiddleware';
-import { logger } from '../utils/logger';
+import { logger } from '../../utils/logger';
 
 const router = Router();
 
