@@ -17,7 +17,7 @@ export class TestController {
   public async authenticateUser(token: string): Promise<User | null> {
     try {
       // This should trigger security scanning
-      const decoded = jwt.verify(token, process.env.JWT_SECRET\!) as any;
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
       return await User.findById(decoded.userId);
     } catch (error) {
       console.error('Authentication failed:', error);
