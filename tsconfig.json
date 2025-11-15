@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2020", "DOM"],
+    "lib": ["ES2022", "DOM"],
     "module": "commonjs",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "strict": true,
@@ -14,7 +14,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "removeComments": true,
+    "removeComments": false,
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
@@ -31,7 +31,12 @@
     "emitDecoratorMetadata": true,
     "isolatedModules": true,
     "incremental": true,
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
     "jsx": "react-jsx",
+    "allowImportingTsExtensions": false,
+    "verbatimModuleSyntax": false,
+    "useDefineForClassFields": true,
+    "noErrorTruncation": false,
     "baseUrl": "./src",
     "paths": {
       "@/*": ["./*"],
@@ -42,15 +47,27 @@
       "@/routes/*": ["./routes/*"],
       "@/utils/*": ["./utils/*"],
       "@/config/*": ["./config/*"],
-      "@/types/*": ["./types/*"]
+      "@/types/*": ["./types/*"],
+      "@/components/*": ["./components/*"],
+      "@/i18n/*": ["./i18n/*"]
     }
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "types/**/*"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    "tests"
-  ]
+    "dist-secure",
+    "coverage",
+    "test-results",
+    "playwright-report",
+    ".eslintcache",
+    "scripts",
+    "frontend"
+  ],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  }
 }
