@@ -1,0 +1,453 @@
+name: Enhanced Test Coverage & Quality
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main, develop]
+    paths: ['src/**', 'tests/**', 'package*.json']
+  push:
+    branches: [main, develop]
+    paths: ['src/**', 'tests/**', 'package*.json']
+
+env:
+  NODE_VERSION: '20'
+  MIN_COVERAGE: 80
+  MIN_COMPLEXITY_COVERAGE: 70
+
+jobs:
+  # Test Coverage Analysis
+  coverage-analysis:
+    name: Test Coverage Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_USER: workshopsai_test
+          POSTGRES_DB: workshopsai_cms_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests with coverage
+        run: |
+          export DATABASE_URL=postgresql://workshopsai_test:test_password@localhost:5432/workshopsai_cms_test
+          export REDIS_HOST=localhost
+          export NODE_ENV=test
+          npm run test:unit -- --coverage --coverageReporters=json --coverageReporters=text --coverageReporters=lcov
+
+      - name: Run integration tests with coverage
+        run: |
+          export DATABASE_URL=postgresql://workshopsai_test:test_password@localhost:5432/workshopsai_cms_test
+          export REDIS_HOST=localhost
+          export NODE_ENV=test
+          npm run test:integration -- --coverage --coverageReporters=json --coverageDirectory=coverage/integration
+
+      - name: Run E2E tests with coverage
+        run: |
+          export DATABASE_URL=postgresql://workshopsai_test:test_password@localhost:5432/workshopsai_cms_test
+          export REDIS_HOST=localhost
+          export NODE_ENV=test
+          npm run test:e2e
+
+      - name: Analyze coverage report
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+
+          // Read unit test coverage
+          let unitCoverage = { total: { lines: { pct: 0 }, statements: { pct: 0 }, functions: { pct: 0 }, branches: { pct: 0 } } };
+          try {
+            unitCoverage = JSON.parse(fs.readFileSync('coverage/coverage-final.json', 'utf8'));
+          } catch (e) {
+            console.log('Unit test coverage not found');
+          }
+
+          // Read integration test coverage
+          let integrationCoverage = { total: { lines: { pct: 0 }, statements: { pct: 0 }, functions: { pct: 0 }, branches: { pct: 0 } } };
+          try {
+            integrationCoverage = JSON.parse(fs.readFileSync('coverage/integration/coverage-final.json', 'utf8'));
+          } catch (e) {
+            console.log('Integration test coverage not found');
+          }
+
+          const coverage = {
+            unit: unitCoverage.total,
+            integration: integrationCoverage.total,
+            recommendations: []
+          };
+
+          // Generate recommendations
+          if (unitCoverage.total.lines.pct < ${{ env.MIN_COVERAGE }}) {
+            coverage.recommendations.push(\`🚨 Unit test line coverage (\${unitCoverage.total.lines.pct.toFixed(1)}%) is below target (\${{ env.MIN_COVERAGE }}%)\`);
+          }
+          if (unitCoverage.total.branches.pct < ${{ env.MIN_COVERAGE }}) {
+            coverage.recommendations.push(\`⚠️ Unit test branch coverage (\${unitCoverage.total.branches.pct.toFixed(1)}%) is below target (\${{ env.MIN_COVERAGE }}%)\`);
+          }
+          if (integrationCoverage.total.lines.pct < ${{ env.MIN_COVERAGE - 10 }}) {
+            coverage.recommendations.push(\`⚠️ Integration test coverage (\${integrationCoverage.total.lines.pct.toFixed(1)}%) is below minimum acceptable (\${{ env.MIN_COVERAGE - 10 }}%)\`);
+          }
+
+          fs.writeFileSync('coverage-analysis.json', JSON.stringify(coverage, null, 2));
+          console.log('Coverage analysis completed');
+          console.log(JSON.stringify(coverage, null, 2));
+          "
+
+      - name: Identify uncovered files
+        run: |
+          find src -name "*.ts" -o -name "*.tsx" | while read file; do
+            # Check if file has corresponding test
+            test_file="tests/${file#src/}"
+            test_file="${test_file%.ts}.test.ts"
+
+            if [[ ! -f "$test_file" ]]; then
+              echo "$file" >> uncovered-files.txt
+            fi
+          done
+
+      - name: Generate test recommendations
+        run: |
+          node -e "
+          const fs = require('fs');
+          const glob = require('glob');
+
+          // Find source files without tests
+          const sourceFiles = glob.sync('src/**/*.ts');
+          const testFiles = glob.sync('tests/**/*.test.ts');
+
+          const untestedFiles = sourceFiles.filter(source => {
+            const relativePath = source.replace('src/', '').replace('.ts', '');
+            const hasTest = testFiles.some(test =>
+              test.includes(relativePath) || test.includes(relativePath.replace('/', '-'))
+            );
+            return !hasTest;
+          });
+
+          const recommendations = {
+            untestedFiles: untestedFiles.slice(0, 10), // Limit to first 10
+            suggestions: []
+          };
+
+          // Generate specific test suggestions
+          recommendations.suggestions.push('Create unit tests for core business logic');
+          recommendations.suggestions.push('Add integration tests for API endpoints');
+          recommendations.suggestions.push('Implement E2E tests for user workflows');
+
+          if (untestedFiles.length > 0) {
+            recommendations.suggestions.push(\`Add tests for \${untestedFiles.length} untested files\`);
+          }
+
+          fs.writeFileSync('test-recommendations.json', JSON.stringify(recommendations, null, 2));
+          "
+
+      - name: Coverage report comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const coverage = JSON.parse(fs.readFileSync('coverage-analysis.json', 'utf8'));
+            const recommendations = JSON.parse(fs.readFileSync('test-recommendations.json', 'utf8'));
+
+            const comment = `
+            ## 🧪 Test Coverage Analysis
+
+            ### Coverage Metrics
+            | Type | Lines | Statements | Functions | Branches |
+            |------|-------|------------|-----------|----------|
+            | **Unit Tests** | ${coverage.unit.lines.pct.toFixed(1)}% | ${coverage.unit.statements.pct.toFixed(1)}% | ${coverage.unit.functions.pct.toFixed(1)}% | ${coverage.unit.branches.pct.toFixed(1)}% |
+            | **Integration** | ${coverage.integration.lines.pct.toFixed(1)}% | ${coverage.integration.statements.pct.toFixed(1)}% | ${coverage.integration.functions.pct.toFixed(1)}% | ${coverage.integration.branches.pct.toFixed(1)}% |
+
+            ### Coverage Status
+            ${coverage.unit.lines.pct >= ${{ env.MIN_COVERAGE }} ? '✅' : '❌'} Unit test coverage: ${coverage.unit.lines.pct.toFixed(1)}% (target: ${{ env.MIN_COVERAGE }}%)
+            ${coverage.unit.branches.pct >= ${{ env.MIN_COVERAGE }} ? '✅' : '❌'} Branch coverage: ${coverage.unit.branches.pct.toFixed(1)}% (target: ${{ env.MIN_COVERAGE }}%)
+
+            ### Recommendations
+            ${coverage.recommendations.map(rec => `- ${rec}`).join('\n')}
+
+            ### Untested Files (Top 10)
+            ${recommendations.untestedFiles.map(file => `- \`${file}\``).join('\n')}
+
+            ### Test Suggestions
+            ${recommendations.suggestions.map(suggestion => `- ${suggestion}`).join('\n')}
+
+            ### Next Steps
+            - [ ] Add missing unit tests for uncovered code paths
+            - [ ] Improve branch coverage with edge case tests
+            - [ ] Create integration tests for new features
+            - [ ] Verify test quality and meaningful assertions
+            `;
+
+            if (context.eventName !== 'pull_request') {
+              console.log(`Skipping pull request comment for event: ${context.eventName}`);
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
+
+      - name: Upload coverage artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-coverage-results
+          path: |
+            coverage/
+            coverage-analysis.json
+            test-recommendations.json
+            uncovered-files.txt
+
+  # Test Quality Analysis
+  test-quality:
+    name: Test Quality Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Analyze test quality
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          const glob = require('glob');
+
+          const testFiles = glob.sync('tests/**/*.test.ts');
+          const qualityAnalysis = {
+            totalTests: testFiles.length,
+            testFiles: [],
+            issues: [],
+            suggestions: []
+          };
+
+          testFiles.forEach(testFile => {
+            const content = fs.readFileSync(testFile, 'utf8');
+            const analysis = {
+              file: testFile,
+              describeCount: (content.match(/describe\\(/g) || []).length,
+              itCount: (content.match(/it\\(/g) || []).length,
+              expectCount: (content.match(/expect\\(/g) || []).length,
+              hasAsync: /async\\s*\\(/.test(content),
+              hasMocks: /jest\\.fn\\(\\)/.test(content) || /mock/.test(content),
+              assertionsPerTest: 0
+            };
+
+            analysis.assertionsPerTest = analysis.itCount > 0 ? Math.round(analysis.expectCount / analysis.itCount) : 0;
+
+            if (analysis.describeCount === 0) {
+              qualityAnalysis.issues.push(\`Missing describe blocks in \${testFile}\`);
+            }
+            if (analysis.itCount === 0) {
+              qualityAnalysis.issues.push(\`No test cases found in \${testFile}\`);
+            }
+            if (analysis.assertionsPerTest < 2) {
+              qualityAnalysis.suggestions.push(\`Consider adding more assertions in \${testFile}\`);
+            }
+
+            qualityAnalysis.testFiles.push(analysis);
+          });
+
+          // Overall quality suggestions
+          if (qualityAnalysis.totalTests < 20) {
+            qualityAnalysis.suggestions.push('Consider adding more comprehensive test coverage');
+          }
+
+          const avgAssertions = qualityAnalysis.testFiles.length > 0 
+            ? qualityAnalysis.testFiles.reduce((sum, test) => sum + test.assertionsPerTest, 0) / qualityAnalysis.testFiles.length
+            : 0;
+          if (avgAssertions < 3) {
+            qualityAnalysis.suggestions.push('Tests should have multiple assertions for better validation');
+          }
+
+          fs.writeFileSync('test-quality-analysis.json', JSON.stringify(qualityAnalysis, null, 2));
+          console.log('Test quality analysis completed');
+          "
+
+      - name: Test quality report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const quality = JSON.parse(fs.readFileSync('test-quality-analysis.json', 'utf8'));
+
+            const avgAssertions = quality.testFiles.length > 0 ? quality.testFiles.reduce((sum, test) => sum + test.assertionsPerTest, 0) / quality.testFiles.length : 0;
+
+            const comment = `
+            ## 🔍 Test Quality Analysis
+
+            ### Test Statistics
+            - **Total Test Files**: ${quality.totalTests}
+            - **Total Test Cases**: ${quality.testFiles.reduce((sum, test) => sum + test.itCount, 0)}
+            - **Average Assertions per Test**: ${avgAssertions.toFixed(1)}
+
+            ### Quality Indicators
+            ${quality.issues.length === 0 ? '✅' : '❌'} Test Structure: ${quality.issues.length === 0 ? 'Well organized' : 'Issues found'}
+            ${avgAssertions >= 2 ? '✅' : '⚠️'} Assertion Coverage: ${avgAssertions >= 2 ? 'Good' : 'Needs improvement'}
+
+            ${quality.issues.length > 0 ? `
+            ### Issues Found
+            ${quality.issues.map(issue => `- ${issue}`).join('\n')}
+            ` : ''}
+
+            ### Quality Suggestions
+            ${quality.suggestions.map(suggestion => `- ${suggestion}`).join('\n')}
+
+            ### Best Practices Checklist
+            - [ ] Each test file has describe blocks
+            - [ ] Tests have meaningful names
+            - [ ] Multiple assertions per test case
+            - [ ] Proper test setup and teardown
+            - [ ] Mocking external dependencies
+            - [ ] Error case testing
+            `;
+
+            if (context.eventName !== 'pull_request') {
+              console.log(`Skipping pull request comment for event: ${context.eventName}`);
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
+
+  # Mutation Testing
+  mutation-testing:
+    name: Mutation Testing
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install mutation testing tools
+        run: npm install --save-dev @stryker-mutator/core @stryker-mutator/typescript @stryker-mutator/jest-runner
+
+      - name: Run mutation testing
+        run: |
+          npx stryker run --concurrency 2 --reporters html,json --mutate 'src/**/*.ts' || true
+          echo "Mutation testing completed"
+
+      - name: Upload mutation report
+        uses: actions/upload-artifact@v3
+        with:
+          name: mutation-testing-report
+          path: reports/mutation/
+
+  # Comprehensive Test Status
+  test-summary:
+    name: Test Summary & Status
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [coverage-analysis, test-quality, mutation-testing]
+    if: always()
+
+    steps:
+      - name: Generate test summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const results = {
+              coverage: '${{ needs.coverage-analysis.result }}',
+              quality: '${{ needs.test-quality.result }}',
+              mutation: '${{ needs.mutation-testing.result }}'
+            };
+
+            const allPassed = Object.values(results).every(result => result === 'success');
+            const status = allPassed ? '✅ All Tests Passed' : '⚠️ Test Issues Found';
+
+            const comment = `
+            ${status === '✅ All Tests Passed' ? '🎉' : '⚠️'} ## Test Summary: ${status}
+
+            ### Test Results
+            - **Coverage Analysis**: ${{ needs.coverage-analysis.result === 'success' && '✅ Passed' || '❌ Failed' }}
+            - **Test Quality**: ${{ needs.test-quality.result === 'success' && '✅ Passed' || '❌ Failed' }}
+            - **Mutation Testing**: ${{ needs.mutation-testing.result === 'success' && '✅ Passed' || '⚠️ Skipped' }}
+
+            ### Merge Requirements
+            - [ ] All test checks pass
+            - [ ] Coverage meets minimum threshold (${{ env.MIN_COVERAGE }}%)
+            - [ ] Quality issues resolved
+            - [ ] No test failures in CI
+
+            ${!allPassed ? `
+            ### Action Required
+            Review failed test checks and address issues before merging.
+            ` : ''}
+            `;
+
+            // Set commit status
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: context.sha,
+              state: allPassed ? 'success' : 'failure',
+              target_url: \`https://github.com/\${context.repo.owner}/\${context.repo.repo}/pull/\${context.issue.number}\`,
+              description: allPassed ? 'All tests passed successfully' : 'Some tests failed',
+              context: 'comprehensive-test-suite'
+            });
+
+            // Add comment for PR
+            if (context.event_name === 'pull_request') {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }

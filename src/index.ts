@@ -18,6 +18,7 @@ import responseRoutes from './routes/responses';
 import publicRoutes from './routes/public';
 import authRoutes from './routes/auth';
 import fileRoutes from './routes/api/files';
+import { initializePreviewRoutes } from './routes/api/preview';
 import fileSignedRoutes from './routes/api/files-signed';
 
 // Import configuration
@@ -35,6 +36,11 @@ import { embeddingsService } from './services/embeddings';
 import { WebSocketService } from './services/websocketService';
 import { PreviewService } from './services/previewService';
 
+// Import Performance Optimization Services
+import { initializePerformanceSystem } from './config/performance-integration';
+import { DatabaseOptimizationIntegration } from './services/database-optimization-integration';
+import { StreamingLLMAnalysisWorker } from './services/streaming-llm-worker';
+
 // Load environment variables
 config();
 
@@ -44,6 +50,11 @@ const server = createServer(app);
 // Initialize services
 let webSocketService: WebSocketService;
 let previewService: PreviewService;
+
+// Initialize Performance Optimization Services
+let performanceSystem: any;
+let dbOptimization: DatabaseOptimizationIntegration;
+let streamingWorker: StreamingLLMAnalysisWorker;
 
 // Environment variables - Fix index signature access
 const PORT = process.env['PORT'] || 3001;
@@ -170,6 +181,7 @@ async function checkLLMServicesHealth() {
   try {
     const health = await embeddingsService.healthCheck();
     const queueStats = await llmAnalysisWorker.getQueueStats();
+    const streamingStats = streamingWorker ? await streamingWorker.getStats() : { status: 'initializing' };
 
     return {
       embeddings: health,
@@ -177,11 +189,17 @@ async function checkLLMServicesHealth() {
         status: 'active',
         queue: queueStats,
       },
+      streamingWorker: streamingStats,
+      performanceSystem: performanceSystem ? { status: 'active' } : { status: 'initializing' },
+      dbOptimization: dbOptimization ? { status: 'active' } : { status: 'initializing' },
     };
   } catch (error) {
     return {
       embeddings: { status: 'error', error: error.message },
       analysisWorker: { status: 'error', error: error.message },
+      streamingWorker: { status: 'error', error: error.message },
+      performanceSystem: { status: 'error', error: error.message },
+      dbOptimization: { status: 'error', error: error.message },
     };
   }
 }
@@ -195,6 +213,8 @@ app.use('/api/v1/responses', responseRoutes);
 app.use('/api/v1/files', fileRoutes);
 app.use('/api/v1/files/signed', fileSignedRoutes);
 app.use('/api/v1/public', publicRoutes);
+
+// Performance monitoring routes (will be initialized after services are set up)
 
 // Preview routes will be initialized dynamically after services are set up
 
@@ -237,10 +257,23 @@ app.use(
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully');
   server.close(async () => {
+    console.log('🔄 Shutting down optimization services...');
+
+    // Shutdown performance optimization services
+    if (performanceSystem) {
+      await performanceSystem.shutdown();
+    }
+    if (dbOptimization) {
+      await dbOptimization.shutdown();
+    }
+    if (streamingWorker) {
+      await streamingWorker.shutdown();
+    }
+
     await llmAnalysisWorker.shutdown();
     await redisService.disconnect();
     await closeDatabaseConnection();
-    console.log('Process terminated');
+    console.log('✅ All services terminated gracefully');
     process.exit(0);
   });
 });
@@ -248,10 +281,23 @@ process.on('SIGTERM', async () => {
 process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down gracefully');
   server.close(async () => {
+    console.log('🔄 Shutting down optimization services...');
+
+    // Shutdown performance optimization services
+    if (performanceSystem) {
+      await performanceSystem.shutdown();
+    }
+    if (dbOptimization) {
+      await dbOptimization.shutdown();
+    }
+    if (streamingWorker) {
+      await streamingWorker.shutdown();
+    }
+
     await llmAnalysisWorker.shutdown();
     await redisService.disconnect();
     await closeDatabaseConnection();
-    console.log('Process terminated');
+    console.log('✅ All services terminated gracefully');
     process.exit(0);
   });
 });
@@ -259,6 +305,18 @@ process.on('SIGINT', async () => {
 // Start server
 const startServer = async () => {
   try {
+    // Initialize Performance Optimization Services
+    console.log('⚡ Initializing Performance Optimization System...');
+    performanceSystem = initializePerformanceSystem(app, server);
+
+    console.log('🗄️ Initializing Database Optimization System...');
+    dbOptimization = new DatabaseOptimizationIntegration();
+    await dbOptimization.initialize();
+
+    console.log('🚀 Initializing Streaming LLM Worker...');
+    streamingWorker = new StreamingLLMAnalysisWorker();
+    await streamingWorker.initialize();
+
     // Initialize WebSocket service
     console.log('🔌 Initializing WebSocket service...');
     webSocketService = new WebSocketService(server);
@@ -269,17 +327,25 @@ const startServer = async () => {
 
     // Initialize preview routes
     console.log('🛣️ Initializing Preview routes...');
-    const { initializePreviewRoutes } = require('./routes/api/preview');
     const previewRouter = initializePreviewRoutes(previewService);
     app.use('/api/v1/preview', previewRouter);
+
+    // Initialize performance monitoring routes
+    console.log('📊 Initializing Performance Monitoring routes...');
+    const performanceRouter = performanceSystem.getRoutes();
+    app.use('/api/v1/performance', performanceRouter);
 
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT} in ${NODE_ENV} mode`);
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
       console.log(`🔗 API base URL: http://localhost:${PORT}/api`);
+      console.log('⚡ Performance Optimization System initialized');
+      console.log('🗄️ Database Optimization System initialized');
+      console.log('🚀 Streaming LLM Worker initialized');
       console.log('🔌 WebSocket service initialized');
       console.log('👁️ Preview service initialized');
       console.log('📱 Real-time preview functionality available');
+      console.log('📈 Performance monitoring available at /api/v1/performance');
     });
   } catch (error) {
     console.error('Failed to start server:', error);

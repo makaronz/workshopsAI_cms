@@ -347,9 +347,9 @@ export const embeddings = pgTable(
     questionId: varchar('questionId', { length: 36 })
       .notNull()
       .references(() => questions.id),
-    vectorIndex: int('vectorIndex').notNull(), // Index in external vector DB
+    vectorIndex: integer('vectorIndex').notNull(), // Index in external vector DB
     model: varchar('model', { length: 100 }).notNull(), // "text-embedding-3-small", etc.
-    dimensions: int('dimensions').notNull(), // 1536, 384, etc.
+    dimensions: integer('dimensions').notNull(), // 1536, 384, etc.
     provider: varchar('provider', { length: 50 }).notNull().default('openai'), // openai, anthropic, local
     checksum: varchar('checksum', { length: 64 }), // For content integrity verification
     createdAt: timestamp('createdAt').defaultNow().notNull(),
@@ -383,9 +383,9 @@ export const analysisJobs = pgTable(
     priority: analysisJobPriorityEnum('priority')
       .default('medium')
       .notNull(),
-    progress: int('progress').default(0), // 0-100 percentage
-    totalSteps: int('totalSteps').notNull().default(1),
-    completedSteps: int('completedSteps').default(0),
+    progress: integer('progress').default(0), // 0-100 percentage
+    totalSteps: integer('totalSteps').notNull().default(1),
+    completedSteps: integer('completedSteps').default(0),
     options: json('options').$type<{
       minClusterSize?: number;
       minThemeFrequency?: number;
@@ -401,8 +401,8 @@ export const analysisJobs = pgTable(
         retryable: boolean;
       }>
     >(),
-    estimatedDuration: int('estimatedDuration'), // in seconds
-    actualDuration: int('actualDuration'), // in seconds
+    estimatedDuration: integer('estimatedDuration'), // in seconds
+    actualDuration: integer('actualDuration'), // in seconds
     workerId: varchar('workerId', { length: 100 }),
     scheduledAt: timestamp('scheduledAt'),
     startedAt: timestamp('startedAt'),

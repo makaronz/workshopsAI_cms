@@ -1,6 +1,6 @@
 import { logger } from '../utils/logger';
 import { optimizedRedisService } from '../config/optimized-redis';
-import { performanceMiddleware } from '../middleware/performanceMiddleware';
+import { performanceMiddleware, PerformanceMetrics } from '../middleware/performanceMiddleware';
 import { checkDatabaseHealth } from '../config/postgresql-database';
 
 interface HealthCheck {

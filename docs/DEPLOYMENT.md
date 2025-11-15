@@ -187,16 +187,16 @@ The Dockerfile uses multi-stage builds for optimized production images:
 
 ```bash
 # Development image
-docker build --target development -t workshopsai/cms:dev .
+docker build --target development -t workshopsai-cms:dev .
 
 # Production image
-docker build --target production -t workshopsai/cms:latest .
+docker build --target production -t workshopsai-cms:latest .
 
 # Security scan image
-docker build --target security -t workshopsai/cms:security .
+docker build --target security -t workshopsai-cms:security .
 
 # Test image
-docker build --target test -t workshopsai/cms:test .
+docker build --target test -t workshopsai-cms:test .
 ```
 
 ### Docker Compose
@@ -535,10 +535,10 @@ tar -xzf latest.tar.gz
 
 ```bash
 # Scan Docker image for vulnerabilities
-docker scan workshopsai/cms:latest
+docker scan workshopsai-cms:latest
 
 # Use Trivy for comprehensive scanning
-trivy image workshopsai/cms:latest
+trivy image workshopsai-cms:latest
 ```
 
 #### Runtime Security
@@ -699,7 +699,7 @@ kubectl patch deployment workshopsai-cms -p '{"spec":{"template":{"spec":{"conta
 
 ```bash
 # Perform rolling update
-kubectl set image deployment/workshopsai-cms app=workshopsai/cms:v2.0.0
+kubectl set image deployment/workshopsai-cms app=workshopsai-cms:v2.0.0
 
 # Monitor update progress
 kubectl rollout status deployment/workshopsai-cms

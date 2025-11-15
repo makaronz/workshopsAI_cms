@@ -765,4 +765,3 @@ router.post(
 );
 
 export default router;
-export { initializePreviewRoutes };

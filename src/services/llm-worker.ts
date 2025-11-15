@@ -87,7 +87,7 @@ export class LLMAnalysisWorker {
   private queue: Queue;
   private queueEvents: QueueEvents;
   private worker: Worker;
-  private openai: OpenAI;
+  private openai: OpenAI | null;
   private config: LLMWorkerConfig;
 
   constructor(config: LLMWorkerConfig) {
@@ -106,15 +106,18 @@ export class LLMAnalysisWorker {
       password: config.redis.password,
       db: config.redis.db || 0,
       retryDelayOnFailover: 100,
-      maxRetriesPerRequest: 3,
+      maxRetriesPerRequest: null,
     });
 
-    // Initialize OpenAI client
-    this.openai = new OpenAI({
-      apiKey: config.openai?.apiKey || process.env.OPENAI_API_KEY,
-      baseURL: config.openai?.baseURL,
-      timeout: config.openai?.timeout || 60000,
-    });
+    // Initialize OpenAI client only if API key is provided
+    const apiKey = config.openai?.apiKey || process.env.OPENAI_API_KEY;
+    this.openai = apiKey
+      ? new OpenAI({
+          apiKey,
+          baseURL: config.openai?.baseURL,
+          timeout: config.openai?.timeout || 60000,
+        })
+      : null;
 
     // Initialize queue and worker
     this.queue = new Queue('llm-analysis', {
@@ -409,6 +412,11 @@ export class LLMAnalysisWorker {
       throw new Error(`Unknown analysis type: ${analysisType}`);
     }
 
+    // Check if OpenAI client is available
+    if (!this.openai) {
+      throw new Error('OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.');
+    }
+
     // Call OpenAI API
     const response = await this.openai.chat.completions.create({
       model,
@@ -618,19 +626,35 @@ export class LLMAnalysisWorker {
   }
 }
 
-// Create and export worker instance
-export const llmAnalysisWorker = new LLMAnalysisWorker({
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD,
-    db: parseInt(process.env.REDIS_DB || '0'),
+// Create and export worker instance with lazy initialization
+let workerInstance: LLMAnalysisWorker | null = null;
+
+export function getLLMAnalysisWorker(): LLMAnalysisWorker {
+  if (!workerInstance) {
+    workerInstance = new LLMAnalysisWorker({
+      redis: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD,
+        db: parseInt(process.env.REDIS_DB || '0'),
+      },
+      openai: process.env.OPENAI_API_KEY
+        ? {
+            apiKey: process.env.OPENAI_API_KEY,
+          }
+        : undefined,
+      concurrency: 3,
+      maxRetries: 3,
+      retryDelay: 2000,
+      jobTimeout: 300000,
+    });
+  }
+  return workerInstance;
+}
+
+// For backward compatibility
+export const llmAnalysisWorker = {
+  get instance() {
+    return getLLMAnalysisWorker();
   },
-  openai: {
-    apiKey: process.env.OPENAI_API_KEY,
-  },
-  concurrency: 3,
-  maxRetries: 3,
-  retryDelay: 2000,
-  jobTimeout: 300000,
-});
+};
