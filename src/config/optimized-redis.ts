@@ -279,6 +279,11 @@ export class OptimizedRedisService {
     });
   }
 
+  // Get underlying Redis client for advanced operations
+  getClient(): Redis {
+    return this.client;
+  }
+
   // Get cache statistics
   getStats(): CacheStats {
     return { ...this.stats };

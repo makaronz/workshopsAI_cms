@@ -15,6 +15,7 @@
 
 import { db, client } from './postgresql-database';
 import { databaseQueryOptimizationService } from '../services/database-optimization-service';
+import { sql } from 'postgres';
 
 /**
  * Index definition interface
@@ -350,7 +351,7 @@ export class EnhancedDatabaseIndexes {
    */
   async createIndex(index: IndexDefinition): Promise<void> {
     const sql = this.buildCreateIndexSQL(index);
-    await client.query(sql);
+    await client.unsafe(sql);
   }
 
   /**
@@ -412,7 +413,7 @@ export class EnhancedDatabaseIndexes {
     sql += ` WITH (lists = ${config.lists || 100})`;
 
     try {
-      await client.query(sql);
+      await client.unsafe(sql);
       console.log(`✓ Created vector index: ${indexName}`);
     } catch (error) {
       console.error(`✗ Failed to create vector index ${indexName}:`, error);
@@ -532,13 +533,13 @@ export class EnhancedDatabaseIndexes {
    */
   private async getLastUsedDate(indexName: string): Promise<Date | undefined> {
     try {
-      const result = await client.query(`
+      const result = await client`
         SELECT last_use
         FROM pg_stat_user_indexes
         WHERE indexrelid = (
-          SELECT oid FROM pg_class WHERE relname = $1
+          SELECT oid FROM pg_class WHERE relname = ${indexName}
         )
-      `, [indexName]);
+      `;
 
       return result[0]?.last_use ? new Date(result[0].last_use) : undefined;
     } catch (error) {
@@ -552,11 +553,11 @@ export class EnhancedDatabaseIndexes {
   private async calculateSelectivity(indexName: string, tableName: string): Promise<number> {
     try {
       // Get total rows in table
-      const tableResult = await client.query(`
+      const tableResult = await client`
         SELECT n_tup_ins + n_tup_upd + n_tup_del as total_rows
         FROM pg_stat_user_tables
-        WHERE relname = $1
-      `, [tableName]);
+        WHERE relname = ${tableName}
+      `;
 
       const totalRows = tableResult[0]?.total_rows || 1;
 
@@ -564,10 +565,10 @@ export class EnhancedDatabaseIndexes {
       const indexColumns = await this.getIndexColumns(indexName);
       if (indexColumns.length === 0) return 1;
 
-      const distinctResult = await client.query(`
+      const distinctResult = await client`
         SELECT COUNT(DISTINCT ${indexColumns[0]}) as distinct_count
-        FROM ${tableName}
-      `);
+        FROM ${index.sqlIdentifier(tableName)}
+      `;
 
       const distinctCount = distinctResult[0]?.distinct_count || 1;
 
@@ -585,12 +586,12 @@ export class EnhancedDatabaseIndexes {
       const indexColumns = await this.getIndexColumns(indexName);
       if (indexColumns.length === 0) return 0;
 
-      const result = await client.query(`
+      const result = await client`
         SELECT
           COUNT(*) as total_rows,
           COUNT(DISTINCT (${indexColumns.join(', ')})) as distinct_rows
-        FROM ${tableName}
-      `);
+        FROM ${sqlIdentifier(tableName)}
+      `;
 
       const { total_rows, distinct_rows } = result[0];
 
@@ -605,14 +606,14 @@ export class EnhancedDatabaseIndexes {
    */
   private async getIndexColumns(indexName: string): Promise<string[]> {
     try {
-      const result = await client.query(`
+      const result = await client`
         SELECT a.attname
         FROM pg_attribute a
         JOIN pg_index i ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
         JOIN pg_class c ON c.oid = i.indexrelid
-        WHERE c.relname = $1
+        WHERE c.relname = ${indexName}
         ORDER BY a.attnum
-      `, [indexName]);
+      `;
 
       return result.map(row => row.attname);
     } catch (error) {
@@ -631,13 +632,13 @@ export class EnhancedDatabaseIndexes {
       const indexColumns = await this.getIndexColumns(indexName);
 
       // Get other indexes on the same table
-      const otherIndexes = await client.query(`
+      const otherIndexes = await client`
         SELECT c.relname as index_name
         FROM pg_class c
         JOIN pg_index i ON c.oid = i.indexrelid
         JOIN pg_class t ON i.indrelid = t.oid
-        WHERE t.relname = $1 AND c.relname != $2
-      `, [tableName, indexName]);
+        WHERE t.relname = ${tableName} AND c.relname != ${indexName}
+      `;
 
       for (const otherIndex of otherIndexes) {
         const otherColumns = await this.getIndexColumns(otherIndex.index_name);
@@ -760,7 +761,7 @@ export class EnhancedDatabaseIndexes {
 
     try {
       // Get table statistics
-      const tableStats = await client.query(`
+      const tableStats = await client`
         SELECT
           schemaname,
           tablename,
@@ -774,7 +775,7 @@ export class EnhancedDatabaseIndexes {
           n_dead_tup
         FROM pg_stat_user_tables
         ORDER BY seq_scan DESC
-      `);
+      `;
 
       for (const table of tableStats) {
         // High sequential scans with low index scans suggests missing indexes
@@ -859,7 +860,7 @@ export class EnhancedDatabaseIndexes {
             !result.indexName.includes('pkey') &&
             !result.indexName.includes('unique')) {
 
-          await client.query(`DROP INDEX CONCURRENTLY IF EXISTS ${result.indexName}`);
+          await client.unsafe(`DROP INDEX CONCURRENTLY IF EXISTS ${result.indexName}`);
           droppedIndexes.push(result.indexName);
           console.log(`Dropped unused index: ${result.indexName}`);
         }
@@ -885,7 +886,7 @@ export class EnhancedDatabaseIndexes {
         const bloat = await this.getIndexBloat(result.indexName);
 
         if (bloat > 0.3 || result.efficiency.cacheHitRatio < 0.5) {
-          await client.query(`REINDEX INDEX CONCURRENTLY ${result.indexName}`);
+          await client.unsafe(`REINDEX INDEX CONCURRENTLY ${result.indexName}`);
           rebuiltIndexes.push(result.indexName);
           console.log(`Rebuilt index: ${result.indexName}`);
         }
@@ -902,15 +903,15 @@ export class EnhancedDatabaseIndexes {
    */
   private async getIndexBloat(indexName: string): Promise<number> {
     try {
-      const result = await client.query(`
+      const result = await client.query(sql`
         SELECT
           pg_relation_size(indexrelid) as actual_size,
           pg_total_relation_size(indexrelid) as total_size
         FROM pg_stat_user_indexes
         WHERE indexrelid = (
-          SELECT oid FROM pg_class WHERE relname = $1
+          SELECT oid FROM pg_class WHERE relname = ${indexName}
         )
-      `, [indexName]);
+      `);
 
       if (result.length === 0) return 0;
 

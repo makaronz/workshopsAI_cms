@@ -2,7 +2,7 @@ import { Server } from 'http';
 import express from 'express';
 import { enhancedPerformanceMonitoringService } from '../services/enhanced-performance-monitoring-service';
 import { enhancedCachingService } from '../services/enhanced-caching-service';
-import { enhancedPerformanceMiddleware, enhancedRequestTiming, adaptiveRateLimit, enhancedMemoryMonitor, intelligentCache } from '../middleware/enhanced-performance-middleware';
+import { enhancedPerformanceMiddleware, enhancedRequestTiming, adaptiveRateLimit, enhancedMemoryMonitor, intelligentCache, profileRequests } from '../middleware/enhanced-performance-middleware';
 import { logger } from '../utils/logger';
 
 /**
