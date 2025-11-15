@@ -122,6 +122,15 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
   }
 
   /**
+   * Public initialize method for external initialization
+   */
+  async initialize(): Promise<void> {
+    // Already initialized in constructor
+    // This method exists for API compatibility
+    console.log('Streaming LLM Worker initialized');
+  }
+
+  /**
    * Initialize queue and worker with optimized settings
    */
   private initializeQueueAndWorker(): void {

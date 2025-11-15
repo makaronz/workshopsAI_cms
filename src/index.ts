@@ -1,3 +1,7 @@
+// Load environment variables FIRST before any other imports
+import { config } from 'dotenv';
+config();
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -8,7 +12,6 @@ import hpp from 'hpp';
 import mongoSanitize from 'express-mongo-sanitize';
 import xss from 'xss';
 import { createServer } from 'http';
-import { config } from 'dotenv';
 
 // Import routes
 import workshopRoutes from './routes/workshops';
@@ -40,9 +43,6 @@ import { PreviewService } from './services/previewService';
 import { initializePerformanceSystem } from './config/performance-integration';
 import { DatabaseOptimizationIntegration } from './services/database-optimization-integration';
 import { StreamingLLMAnalysisWorker } from './services/streaming-llm-worker';
-
-// Load environment variables
-config();
 
 const app = express();
 const server = createServer(app);
@@ -260,9 +260,8 @@ process.on('SIGTERM', async () => {
     console.log('🔄 Shutting down optimization services...');
 
     // Shutdown performance optimization services
-    if (performanceSystem) {
-      await performanceSystem.shutdown();
-    }
+    // Performance system shutdown is handled by setupGracefulShutdown() in performance-integration.ts
+    
     if (dbOptimization) {
       await dbOptimization.shutdown();
     }
@@ -283,10 +282,9 @@ process.on('SIGINT', async () => {
   server.close(async () => {
     console.log('🔄 Shutting down optimization services...');
 
-    // Shutdown performance optimization services
-    if (performanceSystem) {
-      await performanceSystem.shutdown();
-    }
+    // Shutdown performance optimization services  
+    // Performance system shutdown is handled by setupGracefulShutdown() in performance-integration.ts
+    
     if (dbOptimization) {
       await dbOptimization.shutdown();
     }
@@ -307,7 +305,7 @@ const startServer = async () => {
   try {
     // Initialize Performance Optimization Services
     console.log('⚡ Initializing Performance Optimization System...');
-    performanceSystem = initializePerformanceSystem(app, server);
+    performanceSystem = await initializePerformanceSystem(app, server);
 
     console.log('🗄️ Initializing Database Optimization System...');
     dbOptimization = new DatabaseOptimizationIntegration();
@@ -330,10 +328,8 @@ const startServer = async () => {
     const previewRouter = initializePreviewRoutes(previewService);
     app.use('/api/v1/preview', previewRouter);
 
-    // Initialize performance monitoring routes
-    console.log('📊 Initializing Performance Monitoring routes...');
-    const performanceRouter = performanceSystem.getRoutes();
-    app.use('/api/v1/performance', performanceRouter);
+    // Performance monitoring routes are already initialized in initializePerformanceSystem()
+    console.log('📊 Performance monitoring routes initialized');
 
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT} in ${NODE_ENV} mode`);
