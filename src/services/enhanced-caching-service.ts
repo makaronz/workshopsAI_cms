@@ -942,6 +942,18 @@ export class EnhancedCachingService extends EventEmitter {
     logger.info('Started automatic enhanced cache warming');
   }
 
+  /**
+   * Stop cache warming
+   */
+  public stopWarming(): void {
+    if (this.warmingInterval) {
+      clearInterval(this.warmingInterval);
+      this.warmingInterval = null;
+      this.isWarming = false;
+      logger.info('Stopped automatic enhanced cache warming');
+    }
+  }
+
   private startAnalytics(): void {
     if (this.analyticsInterval) {
       clearInterval(this.analyticsInterval);

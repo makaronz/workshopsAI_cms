@@ -16,7 +16,7 @@ export class DatabaseMigrationService {
   constructor() {
     const pgConnectionString =
       process.env.POSTGRES_MIGRATION_URL ||
-      `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:5432/${process.env.DB_NAME}_migration`;
+      `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:5433/${process.env.DB_NAME}_migration`;
 
     this.postgresClient = postgres(pgConnectionString, {
       max: 10,

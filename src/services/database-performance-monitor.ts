@@ -336,7 +336,7 @@ export class DatabasePerformanceMonitor extends EventEmitter {
    */
   private async collectConnectionMetrics(): Promise<PerformanceSnapshot['connections']> {
     try {
-      const result = await client.query(`
+      const result = await client`
         SELECT
           COUNT(*) FILTER (WHERE state = 'active') as active,
           COUNT(*) FILTER (WHERE state = 'idle') as idle,
@@ -345,7 +345,7 @@ export class DatabasePerformanceMonitor extends EventEmitter {
           (SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active') as max_used
         FROM pg_stat_activity
         WHERE datname = current_database()
-      `);
+      `;
 
       const stats = result[0];
       return {
@@ -366,7 +366,7 @@ export class DatabasePerformanceMonitor extends EventEmitter {
    */
   private async collectQueryMetrics(): Promise<PerformanceSnapshot['queries']> {
     try {
-      const result = await client.query(`
+      const result = await client`
         SELECT
           calls as total_queries,
           total_time / 1000 as total_time_ms,
@@ -376,13 +376,13 @@ export class DatabasePerformanceMonitor extends EventEmitter {
         FROM pg_stat_statements
         ORDER BY total_time DESC
         LIMIT 1
-      `);
+      `;
 
-      const slowQueriesResult = await client.query(`
+      const slowQueriesResult = await client`
         SELECT COUNT(*) as slow_queries
         FROM pg_stat_statements
-        WHERE mean_time > $1
-      `, [this.config.thresholds.queries.maxExecutionTime]);
+        WHERE mean_time > ${this.config.thresholds.queries.maxExecutionTime}
+      `;
 
       if (result.length === 0) {
         return {
@@ -419,14 +419,14 @@ export class DatabasePerformanceMonitor extends EventEmitter {
    */
   private async collectCacheMetrics(): Promise<PerformanceSnapshot['cache']> {
     try {
-      const result = await client.query(`
+      const result = await client`
         SELECT
           sum(heap_blks_hit) / (sum(heap_blks_hit) + sum(heap_blks_read)) as table_hit_ratio,
           sum(idx_blks_hit) / (sum(idx_blks_hit) + sum(idx_blks_read)) as index_hit_ratio,
           (sum(heap_blks_hit) + sum(idx_blks_hit)) /
           (sum(heap_blks_hit) + sum(heap_blks_read) + sum(idx_blks_hit) + sum(idx_blks_read)) as overall_hit_ratio
         FROM pg_statio_user_tables
-      `);
+      `;
 
       const stats = result[0];
       return {
@@ -445,19 +445,19 @@ export class DatabasePerformanceMonitor extends EventEmitter {
    */
   private async collectLockMetrics(): Promise<PerformanceSnapshot['locks']> {
     try {
-      const result = await client.query(`
+      const result = await client`
         SELECT
           COUNT(*) FILTER (WHERE NOT granted) as waiting_locks,
           COUNT(*) FILTER (WHERE granted) as granted_locks
         FROM pg_locks
         WHERE database = (SELECT oid FROM pg_database WHERE datname = current_database())
-      `);
+      `;
 
-      const deadlockResult = await client.query(`
+      const deadlockResult = await client`
         SELECT deadlocks
         FROM pg_stat_database
         WHERE datname = current_database()
-      `);
+      `;
 
       const stats = result[0];
       return {
@@ -477,7 +477,7 @@ export class DatabasePerformanceMonitor extends EventEmitter {
    */
   private async collectIOMetrics(): Promise<PerformanceSnapshot['io']> {
     try {
-      const result = await client.query(`
+      const result = await client`
         SELECT
           sum(seq_scan) as sequential_scans,
           sum(idx_scan) as index_scans,
@@ -486,7 +486,7 @@ export class DatabasePerformanceMonitor extends EventEmitter {
           sum(heap_blks_read) as disk_reads,
           sum(heap_blks_hit) as buffer_hits
         FROM pg_stat_user_tables
-      `);
+      `;
 
       const stats = result[0];
       return {
@@ -515,19 +515,19 @@ export class DatabasePerformanceMonitor extends EventEmitter {
    */
   private async collectTransactionMetrics(): Promise<PerformanceSnapshot['transactions']> {
     try {
-      const result = await client.query(`
+      const result = await client`
         SELECT
           xact_commit as committed,
           xact_rollback as rolled_back
         FROM pg_stat_database
         WHERE datname = current_database()
-      `);
+      `;
 
-      const activeResult = await client.query(`
+      const activeResult = await client`
         SELECT COUNT(*) as active
         FROM pg_stat_activity
         WHERE state = 'active' AND datname = current_database()
-      `);
+      `;
 
       const stats = result[0];
       return {
@@ -546,7 +546,7 @@ export class DatabasePerformanceMonitor extends EventEmitter {
    */
   private async collectVacuumMetrics(): Promise<PerformanceSnapshot['vacuum']> {
     try {
-      const result = await client.query(`
+      const result = await client`
         SELECT
           sum(n_tup_ins) + sum(n_tup_upd) + sum(n_tup_del) as total_activity,
           sum(n_live_tup) as live_tuples,
@@ -554,7 +554,7 @@ export class DatabasePerformanceMonitor extends EventEmitter {
           sum(vacuum_count) as auto_vacuum_runs,
           sum(autovacuum_count) as manual_vacuum_runs
         FROM pg_stat_user_tables
-      `);
+      `;
 
       const stats = result[0];
       return {
@@ -723,30 +723,53 @@ export class DatabasePerformanceMonitor extends EventEmitter {
    */
   async getTablePerformanceStats(tableName?: string): Promise<TablePerformanceStats[]> {
     try {
-      const whereClause = tableName ? `WHERE tablename = '${tableName}'` : '';
-
-      const result = await client.query(`
-        SELECT
-          schemaname,
-          tablename,
-          pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size_pretty,
-          pg_total_relation_size(schemaname||'.'||tablename) as size_bytes,
-          n_live_tup as rows,
-          n_dead_tup as dead_rows,
-          n_tup_ins as inserts,
-          n_tup_upd as updates,
-          n_tup_del as deletes,
-          seq_scan,
-          idx_scan,
-          seq_tup_read,
-          idx_tup_fetch,
-          last_vacuum,
-          last_analyze,
-          last_autoanalyze
-        FROM pg_stat_user_tables
-        ${whereClause}
-        ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC
-      `);
+      let result;
+      if (tableName) {
+        result = await client`
+          SELECT
+            schemaname,
+            tablename,
+            pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size_pretty,
+            pg_total_relation_size(schemaname||'.'||tablename) as size_bytes,
+            n_live_tup as rows,
+            n_dead_tup as dead_rows,
+            n_tup_ins as inserts,
+            n_tup_upd as updates,
+            n_tup_del as deletes,
+            seq_scan,
+            idx_scan,
+            seq_tup_read,
+            idx_tup_fetch,
+            last_vacuum,
+            last_analyze,
+            last_autoanalyze
+          FROM pg_stat_user_tables
+          WHERE tablename = ${tableName}
+          ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC
+        `;
+      } else {
+        result = await client`
+          SELECT
+            schemaname,
+            tablename,
+            pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size_pretty,
+            pg_total_relation_size(schemaname||'.'||tablename) as size_bytes,
+            n_live_tup as rows,
+            n_dead_tup as dead_rows,
+            n_tup_ins as inserts,
+            n_tup_upd as updates,
+            n_tup_del as deletes,
+            seq_scan,
+            idx_scan,
+            seq_tup_read,
+            idx_tup_fetch,
+            last_vacuum,
+            last_analyze,
+            last_autoanalyze
+          FROM pg_stat_user_tables
+          ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC
+        `;
+      }
 
       return result.map(row => ({
         tableName: `${row.schemaname}.${row.tablename}`,
@@ -805,10 +828,14 @@ export class DatabasePerformanceMonitor extends EventEmitter {
         'WITHSCORES'
       );
 
-      const data = result.map(([value, score]) => ({
-        timestamp: new Date(parseInt(score)),
-        value: JSON.parse(value).value,
-      }));
+      // zrangebyscore with WITHSCORES returns array of [value, score, value, score, ...]
+      const data = [];
+      for (let i = 0; i < result.length; i += 2) {
+        data.push({
+          timestamp: new Date(parseInt(result[i + 1])),
+          value: JSON.parse(result[i]).value,
+        });
+      }
 
       if (data.length < 2) return null;
 

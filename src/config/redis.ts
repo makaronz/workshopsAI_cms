@@ -17,8 +17,6 @@ class RedisClient {
         lazyConnect: true,
         // Enable offline queue for resilience
         enableOfflineQueue: true,
-        // Default key expiration
-        defaultExpiration: parseInt(REDIS_TTL),
       });
 
       RedisClient.instance.on('error', err => {

@@ -4,7 +4,7 @@ import * as schema from '../../src/models/llm-schema';
 import { eq } from 'drizzle-orm';
 
 // Test database configuration
-const TEST_DB_URL = process.env.TEST_DATABASE_URL || 'postgresql://test:test@localhost:5432/test_db';
+const TEST_DB_URL = process.env.TEST_DATABASE_URL || 'postgresql://test:test@localhost:5433/test_db';
 
 class TestDatabase {
   private client: postgres.Sql | null = null;

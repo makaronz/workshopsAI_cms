@@ -1,5 +1,4 @@
-import { Pool, PoolClient } from 'pg';
-import { db } from '../../config/database';
+import { client, db } from '../../config/postgresql-database';
 import { eq, and, inArray, sql, lte, gte, desc, asc } from 'drizzle-orm';
 import {
   document_embeddings,
@@ -79,43 +78,30 @@ export interface BatchOptions {
  * Vector database manager with pgvector integration
  */
 export class VectorDatabaseManager {
-  private pool: Pool;
   private defaultMetric: SimilarityMetric = 'cosine';
 
   constructor() {
-    this.pool = new Pool({
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      max: 20,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
-    });
+    // postgres-js client is already configured in postgresql-database.ts
   }
 
   /**
    * Initialize vector database extensions and schema
    */
   async initialize(): Promise<void> {
-    const client = await this.pool.connect();
     try {
       // Enable pgvector extension
-      await client.query('CREATE EXTENSION IF NOT EXISTS vector;');
+      await client`CREATE EXTENSION IF NOT EXISTS vector;`;
 
       // Create document_embeddings table if not exists
-      await this.ensureTableExists(client);
+      await this.ensureTableExists();
 
       // Create vector indexes for performance
-      await this.ensureIndexesExist(client);
+      await this.ensureIndexesExist();
 
       logger.info('Vector database initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize vector database:', error);
       throw error;
-    } finally {
-      client.release();
     }
   }
 
@@ -151,79 +137,46 @@ export class VectorDatabaseManager {
 
       while (retryCount <= maxRetries) {
         try {
-          const client = await this.pool.connect();
-
-          try {
-            await client.query('BEGIN');
-
+          await client.begin(async (sqlClient) => {
             for (const embedding of batch) {
               const vectorString = `[${embedding.embedding.join(',')}]`;
 
               // Check if embedding already exists
               if (skipExisting) {
-                const existing = await client.query(
-                  'SELECT id FROM document_embeddings WHERE document_id = $1 AND document_type = $2',
-                  [embedding.documentId, embedding.documentType],
-                );
+                const existing = await sqlClient`
+                  SELECT id FROM document_embeddings
+                  WHERE document_id = ${embedding.documentId} AND document_type = ${embedding.documentType}
+                `;
 
-                if (existing.rows.length > 0) {
+                if (existing.length > 0) {
                   // Update existing embedding
-                  await client.query(
-                    `
+                  await sqlClient`
                     UPDATE document_embeddings
-                    SET content = $1, embedding = $2, language = $3,
-                        embedding_model = $4, metadata = $5, updated_at = NOW()
-                    WHERE document_id = $6 AND document_type = $7
-                  `,
-                    [
-                      embedding.content,
-                      vectorString,
-                      embedding.language || 'en',
-                      embedding.embeddingModel || 'text-embedding-3-small',
-                      JSON.stringify(embedding.metadata || {}),
-                      embedding.documentId,
-                      embedding.documentType,
-                    ],
-                  );
+                    SET content = ${embedding.content},
+                        embedding = ${vectorString},
+                        language = ${embedding.language || 'en'},
+                        embedding_model = ${embedding.embeddingModel || 'text-embedding-3-small'},
+                        metadata = ${JSON.stringify(embedding.metadata || {})},
+                        updated_at = NOW()
+                    WHERE document_id = ${embedding.documentId} AND document_type = ${embedding.documentType}
+                  `;
                 } else {
                   // Insert new embedding
-                  await client.query(
-                    `
+                  await sqlClient`
                     INSERT INTO document_embeddings
                     (document_id, document_type, content, embedding, language,
                      embedding_model, metadata)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7)
-                  `,
-                    [
-                      embedding.documentId,
-                      embedding.documentType,
-                      embedding.content,
-                      vectorString,
-                      embedding.language || 'en',
-                      embedding.embeddingModel || 'text-embedding-3-small',
-                      JSON.stringify(embedding.metadata || {}),
-                    ],
-                  );
+                    VALUES (${embedding.documentId}, ${embedding.documentType}, ${embedding.content}, ${vectorString}, ${embedding.language || 'en'}, ${embedding.embeddingModel || 'text-embedding-3-small'}, ${JSON.stringify(embedding.metadata || {})})
+                  `;
                 }
               } else {
                 // Force insert new embedding
-                await client.query(
-                  `
+                await sqlClient`
                   INSERT INTO document_embeddings
                   (document_id, document_type, content, embedding, language,
                    embedding_model, metadata)
-                  VALUES ($1, $2, $3, $4, $5, $6, $7)
-                `,
-                  [
-                    embedding.documentId,
-                    embedding.documentType,
-                    embedding.content,
-                    vectorString,
-                    embedding.language || 'en',
-                    embedding.embeddingModel || 'text-embedding-3-small',
-                    JSON.stringify(embedding.metadata || {}),
-                  ],
-                );
+                  VALUES (${embedding.documentId}, ${embedding.documentType}, ${embedding.content}, ${vectorString}, ${embedding.language || 'en'}, ${embedding.embeddingModel || 'text-embedding-3-small'}, ${JSON.stringify(embedding.metadata || {})})
+                `;
               }
 
               completed++;
@@ -231,14 +184,7 @@ export class VectorDatabaseManager {
                 onProgress(completed, embeddings.length);
               }
             }
-
-            await client.query('COMMIT');
-          } catch (error) {
-            await client.query('ROLLBACK');
-            throw error;
-          } finally {
-            client.release();
-          }
+          });
 
           break; // Success, exit retry loop
         } catch (error) {
@@ -277,75 +223,76 @@ export class VectorDatabaseManager {
       pagination = {},
     } = options;
 
-    const client = await this.pool.connect();
     try {
-      let query = `
+      let query = client`
         SELECT
           id, document_id, document_type, content, language,
-          embedding_model, created_at, updated_at,
-          ${this.getSimilarityFunction(metric)} as similarity
+          embedding_model, created_at, updated_at
       `;
 
       if (includeMetadata) {
-        query += ', metadata';
+        query = client`
+          SELECT
+            id, document_id, document_type, content, language,
+            embedding_model, created_at, updated_at, metadata
+        `;
       }
 
-      query += `
+      const vectorString = `[${queryEmbedding.join(',')}]`;
+
+      // Build query based on metric
+      let similarityFunction;
+      switch (metric) {
+        case 'cosine':
+          similarityFunction = client`1 - (embedding <=> ${client(vectorString)})`;
+          break;
+        case 'l2':
+          similarityFunction = client`embedding <-> ${client(vectorString)}`;
+          break;
+        case 'inner_product':
+          similarityFunction = client`(embedding <#> ${client(vectorString)})`;
+          break;
+        default:
+          similarityFunction = client`1 - (embedding <=> ${client(vectorString)})`;
+      }
+
+      let finalQuery = query`
         FROM document_embeddings
         WHERE 1=1
       `;
 
-      const queryParams: any[] = [];
-      let paramIndex = 1;
-
-      // Add vector similarity condition
-      query += ` AND ${this.getSimilarityFunction(metric)} >= $${paramIndex++}`;
-      queryParams.push(threshold);
-
       // Add filters
       if (filters.documentType?.length) {
-        query += ` AND document_type = ANY($${paramIndex++})`;
-        queryParams.push(filters.documentType);
+        finalQuery = finalQuery`AND document_type = ANY(${filters.documentType})`;
       }
 
       if (filters.language?.length) {
-        query += ` AND language = ANY($${paramIndex++})`;
-        queryParams.push(filters.language);
+        finalQuery = finalQuery`AND language = ANY(${filters.language})`;
       }
 
       if (filters.embeddingModel?.length) {
-        query += ` AND embedding_model = ANY($${paramIndex++})`;
-        queryParams.push(filters.embeddingModel);
+        finalQuery = finalQuery`AND embedding_model = ANY(${filters.embeddingModel})`;
       }
 
       if (filters.createdAfter) {
-        query += ` AND created_at >= $${paramIndex++}`;
-        queryParams.push(filters.createdAfter);
+        finalQuery = finalQuery`AND created_at >= ${filters.createdAfter}`;
       }
 
       if (filters.createdBefore) {
-        query += ` AND created_at <= $${paramIndex++}`;
-        queryParams.push(filters.createdBefore);
+        finalQuery = finalQuery`AND created_at <= ${filters.createdBefore}`;
       }
 
-      // Add ordering and limit
-      query += ' ORDER BY similarity DESC';
-      query += ` LIMIT $${paramIndex++}`;
-      queryParams.push(limit);
+      // Add similarity threshold condition
+      finalQuery = finalQuery`AND ${similarityFunction} >= ${threshold}`;
 
-      // Add query vector parameter
-      const vectorString = `[${queryEmbedding.join(',')}]`;
-      queryParams.push(vectorString);
+      // Complete the query
+      const result = await client`
+        ${finalQuery}
+        ORDER BY ${similarityFunction} DESC
+        LIMIT ${limit}
+      `;
 
-      // Replace similarity function placeholder with actual function call
-      query = query.replace(
-        new RegExp(this.getSimilarityFunction(metric), 'g'),
-        this.getSimilarityExpression(metric, `$${paramIndex}`),
-      );
-
-      const result = await client.query(query, queryParams);
-
-      return result.rows.map((row: any) => ({
+      return result.map((row: any) => ({
         id: row.id,
         documentId: row.document_id,
         documentType: row.document_type,
@@ -357,8 +304,9 @@ export class VectorDatabaseManager {
         createdAt: row.created_at,
         confidence: row.metadata?.confidenceScore,
       }));
-    } finally {
-      client.release();
+    } catch (error) {
+      logger.error('Vector similarity search failed:', error);
+      throw error;
     }
   }
 
@@ -366,14 +314,14 @@ export class VectorDatabaseManager {
    * Delete embeddings by document IDs
    */
   async deleteEmbeddings(documentIds: string[]): Promise<void> {
-    const client = await this.pool.connect();
     try {
-      await client.query(
-        'DELETE FROM document_embeddings WHERE document_id = ANY($1)',
-        [documentIds],
-      );
-    } finally {
-      client.release();
+      await client`
+        DELETE FROM document_embeddings
+        WHERE document_id = ANY(${documentIds})
+      `;
+    } catch (error) {
+      logger.error('Failed to delete embeddings:', error);
+      throw error;
     }
   }
 
@@ -389,9 +337,8 @@ export class VectorDatabaseManager {
     oldestEmbedding?: Date;
     newestEmbedding?: Date;
   }> {
-    const client = await this.pool.connect();
     try {
-      const statsQuery = await client.query(`
+      const statsQuery = await client`
         SELECT
           COUNT(*) as total,
           document_type,
@@ -401,9 +348,9 @@ export class VectorDatabaseManager {
         FROM document_embeddings
         GROUP BY document_type, language, embedding_model, created_at
         ORDER BY created_at DESC
-      `);
+      `;
 
-      const totalEmbeddings = statsQuery.rows.reduce(
+      const totalEmbeddings = statsQuery.reduce(
         (sum, row) => sum + parseInt(row.total),
         0,
       );
@@ -412,7 +359,7 @@ export class VectorDatabaseManager {
       const embeddingsByLanguage: Record<string, number> = {};
       const embeddingsByModel: Record<string, number> = {};
 
-      statsQuery.rows.forEach(row => {
+      statsQuery.forEach(row => {
         embeddingsByType[row.document_type] =
           (embeddingsByType[row.document_type] || 0) + parseInt(row.total);
         embeddingsByLanguage[row.language] =
@@ -421,7 +368,7 @@ export class VectorDatabaseManager {
           (embeddingsByModel[row.embedding_model] || 0) + parseInt(row.total);
       });
 
-      const dates = statsQuery.rows.map(row => row.created_at).filter(Boolean);
+      const dates = statsQuery.map(row => row.created_at).filter(Boolean);
       const oldestEmbedding =
         dates.length > 0
           ? new Date(Math.min(...dates.map(d => new Date(d).getTime())))
@@ -432,14 +379,14 @@ export class VectorDatabaseManager {
           : undefined;
 
       // Get average embedding dimension
-      const dimensionQuery = await client.query(`
+      const dimensionQuery = await client`
         SELECT array_length(embedding, 1) as dim
         FROM document_embeddings
         WHERE embedding IS NOT NULL
         LIMIT 1000
-      `);
+      `;
 
-      const dimensions = dimensionQuery.rows
+      const dimensions = dimensionQuery
         .map(row => row.dim)
         .filter(Boolean);
       const averageEmbeddingDimension =
@@ -458,8 +405,9 @@ export class VectorDatabaseManager {
         oldestEmbedding,
         newestEmbedding,
       };
-    } finally {
-      client.release();
+    } catch (error) {
+      logger.error('Failed to get embedding statistics:', error);
+      throw error;
     }
   }
 
@@ -467,17 +415,16 @@ export class VectorDatabaseManager {
    * Create vector index for performance optimization
    */
   async createVectorIndex(config: VectorIndexConfig): Promise<void> {
-    const client = await this.pool.connect();
     try {
-      let indexQuery = `CREATE INDEX IF NOT EXISTS ${config.name} ON document_embeddings`;
+      let indexQuery;
 
       if (config.type === 'ivfflat') {
-        indexQuery += ` USING ivfflat (embedding ${config.metric}_ops)`;
+        indexQuery = `CREATE INDEX IF NOT EXISTS ${config.name} ON document_embeddings USING ivfflat (embedding ${config.metric}_ops)`;
         if (config.lists) {
           indexQuery += ` WITH (lists = ${config.lists})`;
         }
       } else if (config.type === 'hnsw') {
-        indexQuery += ` USING hnsw (embedding ${config.metric}_ops)`;
+        indexQuery = `CREATE INDEX IF NOT EXISTS ${config.name} ON document_embeddings USING hnsw (embedding ${config.metric}_ops)`;
         const hnswParams = [];
         if (config.m) hnswParams.push(`m = ${config.m}`);
         if (config.ef_construction)
@@ -485,12 +432,15 @@ export class VectorDatabaseManager {
         if (hnswParams.length > 0) {
           indexQuery += ` WITH (${hnswParams.join(', ')})`;
         }
+      } else {
+        indexQuery = `CREATE INDEX IF NOT EXISTS ${config.name} ON document_embeddings`;
       }
 
-      await client.query(indexQuery);
+      await client.unsafe(indexQuery);
       logger.info(`Created vector index: ${config.name}`);
-    } finally {
-      client.release();
+    } catch (error) {
+      logger.error('Failed to create vector index:', error);
+      throw error;
     }
   }
 
@@ -499,18 +449,13 @@ export class VectorDatabaseManager {
    */
   async healthCheck(): Promise<boolean> {
     try {
-      const client = await this.pool.connect();
-      try {
-        // Test pgvector extension
-        await client.query('SELECT 1::vector');
+      // Test pgvector extension
+      await client`SELECT 1::vector`;
 
-        // Test basic query
-        await client.query('SELECT COUNT(*) FROM document_embeddings LIMIT 1');
+      // Test basic query
+      await client`SELECT COUNT(*) FROM document_embeddings LIMIT 1`;
 
-        return true;
-      } finally {
-        client.release();
-      }
+      return true;
     } catch (error) {
       logger.error('Vector database health check failed:', error);
       return false;
@@ -521,13 +466,14 @@ export class VectorDatabaseManager {
    * Close database connections
    */
   async close(): Promise<void> {
-    await this.pool.end();
+    // postgres-js client is already managed by the main database configuration
+    logger.info('Vector database manager closed');
   }
 
   // Private helper methods
 
-  private async ensureTableExists(client: PoolClient): Promise<void> {
-    await client.query(`
+  private async ensureTableExists(): Promise<void> {
+    await client`
       CREATE TABLE IF NOT EXISTS document_embeddings (
         id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         document_type VARCHAR(50) NOT NULL,
@@ -540,42 +486,42 @@ export class VectorDatabaseManager {
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
-    `);
+    `;
 
     // Create unique constraint
-    await client.query(`
+    await client`
       CREATE UNIQUE INDEX IF NOT EXISTS idx_document_embeddings_unique
       ON document_embeddings (document_type, document_id);
-    `);
+    `;
   }
 
-  private async ensureIndexesExist(client: PoolClient): Promise<void> {
+  private async ensureIndexesExist(): Promise<void> {
     // Basic indexes for filtering
-    await client.query(`
+    await client`
       CREATE INDEX IF NOT EXISTS idx_document_embeddings_type
       ON document_embeddings (document_type);
-    `);
+    `;
 
-    await client.query(`
+    await client`
       CREATE INDEX IF NOT EXISTS idx_document_embeddings_language
       ON document_embeddings (language);
-    `);
+    `;
 
-    await client.query(`
+    await client`
       CREATE INDEX IF NOT EXISTS idx_document_embeddings_model
       ON document_embeddings (embedding_model);
-    `);
+    `;
 
-    await client.query(`
+    await client`
       CREATE INDEX IF NOT EXISTS idx_document_embeddings_created_at
       ON document_embeddings (created_at DESC);
-    `);
+    `;
 
     // Vector indexes for similarity search (create based on data size)
-    const countResult = await client.query(
-      'SELECT COUNT(*) as count FROM document_embeddings',
-    );
-    const count = parseInt(countResult.rows[0].count);
+    const countResult = await client`
+      SELECT COUNT(*) as count FROM document_embeddings
+    `;
+    const count = parseInt(countResult[0].count);
 
     if (count > 1000) {
       await this.createVectorIndex({

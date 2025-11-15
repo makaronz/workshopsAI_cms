@@ -36,8 +36,8 @@ check_env_vars() {
     fi
 
     if [ -z "$DB_PORT" ]; then
-        print_warning "DB_PORT not set, using default: 3306"
-        export DB_PORT=3306
+        print_warning "DB_PORT not set, using default: 5433"
+        export DB_PORT=5433
     fi
 
     if [ -z "$DB_USER" ]; then

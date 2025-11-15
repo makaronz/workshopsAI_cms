@@ -14,7 +14,7 @@ global.console = {
 // Mock environment variables for tests
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-jwt-secret-key';
-process.env.TEST_DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+process.env.TEST_DATABASE_URL = 'postgresql://test:test@localhost:5433/test_db';
 process.env.TEST_REDIS_URL = 'redis://localhost:6379/1';
 
 // Global test timeout for async operations

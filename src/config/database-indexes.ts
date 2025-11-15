@@ -15,7 +15,6 @@
 
 import { db, client } from './postgresql-database';
 import { databaseQueryOptimizationService } from '../services/database-optimization-service';
-import { sql } from 'postgres';
 
 /**
  * Index definition interface
@@ -351,6 +350,8 @@ export class EnhancedDatabaseIndexes {
    */
   async createIndex(index: IndexDefinition): Promise<void> {
     const sql = this.buildCreateIndexSQL(index);
+    console.log('🔍 Creating index using client:', typeof client);
+    console.log('🔍 Index SQL:', sql);
     await client.unsafe(sql);
   }
 
@@ -565,10 +566,11 @@ export class EnhancedDatabaseIndexes {
       const indexColumns = await this.getIndexColumns(indexName);
       if (indexColumns.length === 0) return 1;
 
-      const distinctResult = await client`
-        SELECT COUNT(DISTINCT ${indexColumns[0]}) as distinct_count
-        FROM ${sql.identifier(tableName)}
-      `;
+      // Use unsafe with quoted table identifier
+      const distinctResult = await client.unsafe(`
+        SELECT COUNT(DISTINCT "${indexColumns[0]}") as distinct_count
+        FROM "${tableName}"
+      `);
 
       const distinctCount = distinctResult[0]?.distinct_count || 1;
 
@@ -586,12 +588,13 @@ export class EnhancedDatabaseIndexes {
       const indexColumns = await this.getIndexColumns(indexName);
       if (indexColumns.length === 0) return 0;
 
-      const result = await client`
+      // Use unsafe with quoted table identifier
+      const result = await client.unsafe(`
         SELECT
           COUNT(*) as total_rows,
-          COUNT(DISTINCT (${indexColumns.join(', ')})) as distinct_rows
-        FROM ${sql.identifier(tableName)}
-      `;
+          COUNT(DISTINCT ("${indexColumns.join('", "')}")) as distinct_rows
+        FROM "${tableName}"
+      `);
 
       const { total_rows, distinct_rows } = result[0];
 

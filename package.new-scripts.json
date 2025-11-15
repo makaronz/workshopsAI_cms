@@ -1,0 +1,27 @@
+{
+  "newScripts": {
+    "test:enhanced": "node scripts/enhanced-test-runner.js",
+    "test:enhanced:parallel": "node scripts/enhanced-test-runner.js --max-workers 4",
+    "test:enhanced:sequential": "node scripts/enhanced-test-runner.js --no-parallel",
+    "test:quality": "node -r ts-node/register tests/monitoring/test-quality-monitor.ts",
+    "test:quality-report": "npm run test:quality && open test-results/test-quality-report.html",
+    "test:coverage-enhanced": "npm run test:enhanced && npm run test:quality",
+    "test:smart": "node scripts/enhanced-test-runner.js --max-workers $(nproc) --timeout 600000",
+    "test:performance-monitor": "npm run test:performance && node -r ts-node/register tests/monitoring/test-quality-monitor.ts",
+    "test:security-enhanced": "npm run test:security && npm run security:audit && npm run test:quality",
+    "test:full-suite": "npm run test:enhanced && npm run test:quality && npm run test:e2e && npm run test:performance && npm run test:security",
+    "test:ci-enhanced": "npm run test:smart && npm run test:quality && npm run lint && npm run typecheck",
+    "test:dev": "node scripts/enhanced-test-runner.js --no-coverage --max-workers 2",
+    "test:data:generate": "node -e \"const factory = require('./tests/factories/enhanced-test-data-factory.ts'); const data = factory.generateCompleteWorkshopEcosystem({ userCount: 50, workshopCount: 10 }); console.log(JSON.stringify(data, null, 2));\" > test-data.json",
+    "test:data:validate": "node -r ts-node/register -e \"const factory = require('./tests/factories/enhanced-test-data-factory.ts'); console.log('Test data factory working correctly');\""
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^10.1.0",
+    "@types/jest": "^29.5.8",
+    "@playwright/test": "^1.40.1",
+    "@vitest/coverage-v8": "^4.0.8",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "vitest": "^4.0.8"
+  }
+}

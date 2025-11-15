@@ -12,7 +12,7 @@ import type { Express } from 'express'
 // Test database configuration
 const TEST_DB_CONFIG = {
   host: process.env.TEST_DB_HOST || 'localhost',
-  port: parseInt(process.env.TEST_DB_PORT || '5432'),
+  port: parseInt(process.env.TEST_DB_PORT || '5433'),
   user: process.env.TEST_DB_USER || 'test_user',
   password: process.env.TEST_DB_PASSWORD || 'test_password',
   database: process.env.TEST_DB_NAME || 'workshopsai_cms_test',

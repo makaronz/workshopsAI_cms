@@ -189,6 +189,7 @@ export class DatabaseQueryOptimizationService {
    */
   private async enableQueryStatistics(): Promise<void> {
     try {
+      console.log('🔧 Enabling query statistics using client:', typeof client);
       await client`CREATE EXTENSION IF NOT EXISTS pg_stat_statements`;
       await client`CREATE EXTENSION IF NOT EXISTS pg_buffercache`;
     } catch (error) {
@@ -209,7 +210,7 @@ export class DatabaseQueryOptimizationService {
     try {
       // Get query execution plan
       const explainQuery = `EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${query}`;
-      const planResult = await client.query(explainQuery, params || []);
+      const planResult = await client.unsafe(explainQuery, params || []);
 
       const plan = planResult[0];
       const executionPlan = plan['QUERY PLAN'][0];
@@ -372,7 +373,7 @@ export class DatabaseQueryOptimizationService {
    */
   private async generateIndexRecommendation(query: string): Promise<string> {
     // Simple heuristic to extract potential index columns
-    const whereMatch = query.match(/where\s+(.+?)(?:\s+order\s+by|\s+group\s+by|\s+limit|$)/is);
+    const whereMatch = query.match(/where\s+(.+?)(?:\s+order\s+by|\s+group\s+by|\s+limit|$)/i);
     if (!whereMatch) return 'Analyze WHERE clause for index opportunities';
 
     const whereClause = whereMatch[1];

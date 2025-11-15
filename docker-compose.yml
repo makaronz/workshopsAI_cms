@@ -11,11 +11,11 @@ services:
       - NODE_ENV=production
       - PORT=3001
       - DB_HOST=postgres
-      - DB_PORT=5432
+      - DB_PORT=5433
       - DB_USER=workshopsai
       - DB_PASSWORD=secure_password_here
       - DB_NAME=workshopsai_cms
-      - DATABASE_URL=postgresql://workshopsai:secure_password_here@postgres:5432/workshopsai_cms
+      - DATABASE_URL=postgresql://workshopsai:secure_password_here@postgres:5433/workshopsai_cms
       - JWT_SECRET=your-super-secret-jwt-key-change-in-production-min-32-chars
       - JWT_EXPIRES_IN=7d
       - CORS_ORIGIN=http://localhost:3000
@@ -37,7 +37,7 @@ services:
       - POSTGRES_PASSWORD=secure_password_here
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations/001_initial_postgresql_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro

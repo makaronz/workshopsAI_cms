@@ -130,13 +130,18 @@ export class DatabaseOptimizationIntegration extends EventEmitter {
       ...config,
     };
 
-    this.initializeIntegration();
+    // Don't initialize in constructor - call initialize() explicitly
+    // this.initializeIntegration();
   }
 
   /**
    * Public initialize method for external initialization
    */
   async initialize(): Promise<void> {
+    if (this.isInitialized) {
+      console.log('Database Optimization Integration already initialized');
+      return;
+    }
     await this.initializeIntegration();
   }
 
@@ -283,7 +288,8 @@ export class DatabaseOptimizationIntegration extends EventEmitter {
     params: any[] = [],
     options: QueryEnhancementOptions = {}
   ): Promise<EnhancedQueryResult<T>> {
-    const queryBuilder = client.query(sql, params);
+    // Using postgres-js tagged template literal
+    const queryBuilder = client.unsafe(sql, params);
     return this.executeQuery<T>(queryBuilder, options);
   }
 
@@ -403,7 +409,8 @@ export class DatabaseOptimizationIntegration extends EventEmitter {
 
       for (const table of tablesNeedingVacuum.slice(0, 5)) { // Limit to 5 tables per run
         try {
-          await client.query(`VACUUM ANALYZE ${table.tableName}`);
+          // Use unsafe with quoted identifier for table name
+          await client.unsafe(`VACUUM ANALYZE "${table.tableName}"`);
           results.push(`VACUUM ANALYZE completed for ${table.tableName}`);
         } catch (error) {
           results.push(`VACUUM failed for ${table.tableName}: ${error instanceof Error ? error.message : String(error)}`);
@@ -428,7 +435,8 @@ export class DatabaseOptimizationIntegration extends EventEmitter {
 
       for (const table of tableStats.slice(0, 10)) { // Limit to 10 tables per run
         try {
-          await client.query(`ANALYZE ${table.tableName}`);
+          // Use unsafe with quoted identifier for table name
+          await client.unsafe(`ANALYZE "${table.tableName}"`);
         } catch (error) {
           console.warn(`Failed to analyze table ${table.tableName}:`, error);
         }

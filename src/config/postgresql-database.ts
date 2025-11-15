@@ -5,7 +5,7 @@ import * as schema from '../models/postgresql-schema';
 // PostgreSQL database configuration
 const pgConfig = {
   host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
+  port: parseInt(process.env.DB_PORT || '5433'),
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'workshopsai_cms',
@@ -20,6 +20,14 @@ const pgConfig = {
 
 // Create PostgreSQL connection pool
 const connectionString = `postgresql://${pgConfig.user}:${pgConfig.password}@${pgConfig.host}:${pgConfig.port}/${pgConfig.database}${pgConfig.ssl ? '?sslmode=require' : ''}`;
+
+// Debug: Log the connection string and environment variables
+console.log('🔗 Environment variables loaded:');
+console.log('  DB_HOST:', process.env.DB_HOST);
+console.log('  DB_PORT:', process.env.DB_PORT);
+console.log('  DB_USER:', process.env.DB_USER);
+console.log('  DB_NAME:', process.env.DB_NAME);
+console.log('🔗 PostgreSQL connection string:', connectionString.replace(/:[^:]*@/, ':***@')); // Hide password
 
 const client = postgres(connectionString, {
   max: pgConfig.max,
