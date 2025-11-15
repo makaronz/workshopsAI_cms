@@ -28,8 +28,8 @@ import './components/ui/notification';
 import './components/questionnaire';
 
 // Import services
-import { AuthService } from './services/auth';
-import { AccessibilityService } from './services/accessibility';
+import { authService } from './services/auth';
+import accessibilityService from './services/accessibility';
 
 // Define application routes
 const routes = [
@@ -46,7 +46,7 @@ const routes = [
         component: 'login-form',
         action: async () => {
           // Redirect if already logged in
-          if (await AuthService.isAuthenticated()) {
+          if (await authService.isAuthenticated()) {
             return '/dashboard';
           }
         }
@@ -64,7 +64,7 @@ const routes = [
         component: 'app-shell',
         action: async () => {
           // Protect route
-          if (!(await AuthService.isAuthenticated())) {
+          if (!(await authService.isAuthenticated())) {
             return '/login';
           }
         },
@@ -153,7 +153,7 @@ const router = new Router(document.getElementById('app') as HTMLElement);
 router.setRoutes(routes);
 
 // Initialize accessibility service
-AccessibilityService.init();
+accessibilityService.init();
 
 // Set up global error handling
 window.addEventListener('error', (event) => {
