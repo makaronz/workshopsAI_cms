@@ -77,7 +77,7 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
   private cache: Map<string, { data: any; timestamp: number }> = new Map();
   private activeStreams: Map<string, AbortController> = new Map();
 
-  constructor(config: any) {
+  constructor(config: any = {}) {
     super();
     this.config = config;
 
@@ -87,7 +87,6 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
       port: parseInt(process.env.REDIS_PORT || '6379'),
       password: process.env.REDIS_PASSWORD,
       db: parseInt(process.env.REDIS_DB || '0'),
-      retryDelayOnFailover: 100,
       maxRetriesPerRequest: null,
       lazyConnect: true,
       enableOfflineQueue: false,
@@ -95,24 +94,24 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
     });
 
     // Initialize OpenAI client only if API key is provided
-    const openaiApiKey = config.openai?.apiKey || process.env.OPENAI_API_KEY;
+    const openaiApiKey = config?.openai?.apiKey || process.env.OPENAI_API_KEY;
     this.openai = openaiApiKey
       ? new OpenAI({
           apiKey: openaiApiKey,
-          baseURL: config.openai?.baseURL,
-          timeout: config.openai?.timeout || 30000, // Reduced timeout
-          organizationId: config.openai?.organizationId,
+          baseURL: config?.openai?.baseURL,
+          timeout: config?.openai?.timeout || 30000, // Reduced timeout
+          organizationId: config?.openai?.organizationId,
           maxRetries: 2,
         })
       : null;
 
     // Initialize Anthropic client only if API key is provided
-    const anthropicApiKey = config.anthropic?.apiKey || process.env.ANTHROPIC_API_KEY;
+    const anthropicApiKey = config?.anthropic?.apiKey || process.env.ANTHROPIC_API_KEY;
     this.anthropic = anthropicApiKey
       ? new Anthropic({
           apiKey: anthropicApiKey,
-          baseURL: config.anthropic?.baseURL,
-          timeout: config.anthropic?.timeout || 30000, // Reduced timeout
+          baseURL: config?.anthropic?.baseURL,
+          timeout: config?.anthropic?.timeout || 30000, // Reduced timeout
           maxRetries: 2,
         })
       : null;
