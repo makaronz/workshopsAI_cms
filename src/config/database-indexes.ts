@@ -509,7 +509,7 @@ export class EnhancedDatabaseIndexes {
         lastUsed: await this.getLastUsedDate(stat.indexname),
       },
       efficiency: {
-        selectivity: this.calculateSelectivity(stat.indexname, stat.tablename),
+        selectivity: await this.calculateSelectivity(stat.indexname, stat.tablename),
         duplicateRatio: await this.calculateDuplicateRatio(stat.indexname, stat.tablename),
         cacheHitRatio,
       },

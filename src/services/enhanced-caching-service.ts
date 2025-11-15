@@ -954,6 +954,35 @@ export class EnhancedCachingService extends EventEmitter {
     }
   }
 
+  /**
+   * Get cache statistics
+   */
+  public getStats(): CacheStats {
+    // Update hit rates
+    const l1Total = this.stats.L1.hitCount + this.stats.L1.missCount;
+    this.stats.L1.hitRate = l1Total > 0 ? this.stats.L1.hitCount / l1Total : 0;
+
+    const l2Total = this.stats.L2.hitCount + this.stats.L2.missCount;
+    this.stats.L2.hitRate = l2Total > 0 ? this.stats.L2.hitCount / l2Total : 0;
+
+    const l3Total = this.stats.L3.hitCount + this.stats.L3.missCount;
+    this.stats.L3.hitRate = l3Total > 0 ? this.stats.L3.hitCount / l3Total : 0;
+
+    this.stats.overall.totalHits = this.stats.L1.hitCount + this.stats.L2.hitCount + this.stats.L3.hitCount;
+    this.stats.overall.totalMisses = this.stats.L1.missCount + this.stats.L2.missCount + this.stats.L3.missCount;
+    const overallTotal = this.stats.overall.totalHits + this.stats.overall.totalMisses;
+    this.stats.overall.overallHitRate = overallTotal > 0 ? this.stats.overall.totalHits / overallTotal : 0;
+
+    // Update L1 stats from cache
+    const l1CacheStats = this.L1Cache.getStats();
+    this.stats.L1.size = l1CacheStats.size;
+    this.stats.L1.maxSize = l1CacheStats.maxSize;
+    this.stats.L1.memoryUsage = l1CacheStats.totalSize;
+    this.stats.L1.hotKeys = l1CacheStats.hotKeys;
+
+    return { ...this.stats };
+  }
+
   private startAnalytics(): void {
     if (this.analyticsInterval) {
       clearInterval(this.analyticsInterval);
