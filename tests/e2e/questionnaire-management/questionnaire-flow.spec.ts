@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { generateTestData, cleanupTestData } from '../../helpers/test-data-factory';
-import { authenticateUser } from '../../helpers/auth-helpers';
+import { authenticateUser } from '../../helpers/e2e-auth-helpers';
 import { API_ENDPOINTS } from '../../fixtures/api-endpoints';
 
 test.describe('Questionnaire Management Flow', () => {
