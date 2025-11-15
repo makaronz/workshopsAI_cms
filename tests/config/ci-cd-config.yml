@@ -1,0 +1,562 @@
+name: WorkshopsAI CMS Test Pipeline
+on:
+  push:
+    branches: [main, develop, 'test/*']
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of tests to run'
+        required: false
+        type: choice
+        default: 'all'
+        options:
+          - all
+          - unit
+          - integration
+          - performance
+          - e2e
+      environment:
+        description: 'Target environment'
+        required: false
+        type: choice
+        default: 'ci'
+        options:
+          - ci
+          - staging
+          - production
+
+jobs:
+  # Unit Tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:unit
+        env:
+          NODE_ENV: test
+          TEST_DATABASE_URL: postgresql://test:test@localhost:5432/test_db
+          TEST_REDIS_URL: redis://localhost:6379/1
+
+      - name: Generate coverage report
+        run: npm run test:coverage
+
+      - name: Upload coverage to Codecov
+        if: matrix.node-version == '20.x'
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+
+  # Integration Tests
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_USER: test
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run database migrations
+        run: |
+          npm run db:migrate
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_db
+
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379/1
+
+  # Performance Tests
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_USER: test
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup test database
+        run: |
+          npm run db:migrate
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_db
+
+      - name: Run performance tests
+        run: npm run test:performance
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379/1
+
+      - name: Generate performance report
+        run: npm run test:performance:report
+
+      - name: Upload performance artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-reports
+          path: test-results/performance/
+          retention-days: 30
+
+  # E2E Tests
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [chromium, firefox, webkit]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+
+      - name: Build application
+        run: npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install-deps
+
+      - name: Start application
+        run: |
+          npm start &
+          sleep 10
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          BASE_URL: http://localhost:3001
+
+      - name: Upload E2E artifacts
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: e2e-results
+          path: test-results/
+          retention-days: 7
+
+  # Security Tests
+  security-tests:
+    name: Security Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security audit
+        run: npm audit --audit-level=high
+
+      - name: Run SAST scan
+        run: npm run security:scan
+
+      - name: Run OWASP ZAP scan
+        run: npm run security:zap-spider
+
+  # Load Tests
+  load-tests:
+    name: Load Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' || github.event.inputs.test_type == 'performance'
+
+    strategy:
+      matrix:
+        scenario: [basic, stress, spike]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start application
+        run: |
+          npm start &
+          sleep 10
+
+      - name: Install K6
+        run: |
+          sudo gpg -k https://dl.k6.io/key/gpg | sudo apt-key add -
+          sudo echo "deb https://dl.k6.io/deb stable main" | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install k6
+
+      - name: Run load tests
+        run: |
+          if [ "${{ matrix.scenario }}" == "basic" ]; then
+            npm run test:load
+          elif [ "${{ matrix.scenario }}" == "stress" ]; then
+            npm run test:stress
+          elif [ "${{ matrix.scenario }}" == "spike" ]; then
+            npm run test:spike
+          fi
+
+      - name: Upload load test results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: load-test-results-${{ matrix.scenario }}
+          path: load-test-results/
+          retention-days: 30
+
+  # Database Performance Tests
+  db-performance-tests:
+    name: Database Performance Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_USER: test
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup test database
+        run: |
+          npm run db:migrate
+          npm run db:seed-large # Seed with large dataset
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_db
+
+      - name: Run database performance tests
+        run: npm run test:db-performance
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://test:test@localhost:5432/test_db
+
+      - name: Generate database performance report
+        run: npm run test:db-performance:report
+
+      - name: Upload database performance artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: db-performance-results
+          path: db-performance-results/
+          retention-days: 30
+
+  # Cross-Browser Compatibility Tests
+  cross-browser-tests:
+    name: Cross-Browser Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [chrome, firefox, safari, edge]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        exclude:
+          - os: windows-latest
+            browser: safari
+          - os: macos-latest
+            browser: edge
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start application
+        run: |
+          npm start &
+          sleep 10
+
+      - name: Run cross-browser tests
+        run: npm run test:cross-browser
+        env:
+          BROWSER: ${{ matrix.browser }}
+          BASE_URL: http://localhost:3001
+
+      - name: Upload cross-browser artifacts
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: cross-browser-results-${{ matrix.browser }}-${{ matrix.os }}
+          path: cross-browser-results/
+          retention-days: 7
+
+  # Cache Performance Tests
+  cache-performance-tests:
+    name: Cache Performance Tests
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run cache performance tests
+        run: npm run test:cache-performance
+        env:
+          NODE_ENV: test
+          REDIS_URL: redis://localhost:6379/1
+
+      - name: Generate cache performance report
+        run: npm run test:cache-performance:report
+
+      - name: Upload cache performance artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: cache-performance-results
+          path: cache-performance-results/
+          retention-days: 30
+
+  # Test Results Aggregation
+  test-results:
+    name: Aggregate Test Results
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, performance-tests, e2e-tests]
+    if: always()
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Generate comprehensive test report
+        run: |
+          # Create comprehensive report
+          echo "# Test Results Summary" > test-results-summary.md
+          echo "" >> test-results-summary.md
+          echo "## Unit Tests" >> test-results-summary.md
+          echo "- Status: ${{ needs.unit-tests.result }}" >> test-results-summary.md
+          echo "" >> test-results-summary.md
+          echo "## Integration Tests" >> test-results-summary.md
+          echo "- Status: ${{ needs.integration-tests.result }}" >> test-results-summary.md
+          echo "" >> test-results-summary.md
+          echo "## Performance Tests" >> test-results-summary.md
+          echo "- Status: ${{ needs.performance-tests.result }}" >> test-results-summary.md
+          echo "" >> test-results-summary.md
+          echo "## E2E Tests" >> test-results-summary.md
+          echo "- Status: ${{ needs.e2e-tests.result }}" >> test-results-summary.md
+
+      - name: Upload test summary
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results-summary
+          path: test-results-summary.md
+          retention-days: 90
+
+  # Deployment Readiness Check
+  deployment-readiness:
+    name: Deployment Readiness Check
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, performance-tests, e2e-tests]
+    if: needs.unit-tests.result == 'success' && needs.integration-tests.result == 'success'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run deployment readiness checks
+        run: |
+          npm run validate:strict
+          echo "✅ All checks passed - ready for deployment"
+
+      - name: Generate deployment readiness report
+        run: |
+          echo "# Deployment Readiness Report" > deployment-readiness.md
+          echo "" >> deployment-readiness.md
+          echo "All validation checks passed successfully." >> deployment-readiness.md
+          echo "" >> deployment-readiness.md
+          echo "Ready for deployment to staging/production." >> deployment-readiness.md
+
+      - name: Upload deployment readiness report
+        uses: actions/upload-artifact@v3
+        with:
+          name: deployment-readiness-report
+          path: deployment-readiness.md
+          retention-days: 30
+
+  # Slack Notification
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, performance-tests, e2e-tests, test-results]
+    if: always()
+
+    steps:
+      - name: Notify Slack on success
+        if: needs.unit-tests.result == 'success' && needs.integration-tests.result == 'success' && needs.e2e-tests.result == 'success'
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            -d '{"text":"✅ All tests passed successfully!","channel":"#dev-alerts"}' \
+            ${{ secrets.SLACK_WEBHOOK }}
+
+      - name: Notify Slack on failure
+        if: failure()
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            -d '{"text":"❌ Tests failed! Please check the logs.","channel":"#dev-alerts"}' \
+            ${{ secrets.SLACK_WEBHOOK }}

@@ -2,7 +2,7 @@
 # Production-ready containerization with security and optimization
 
 # Stage 1: Base image with dependencies
-FROM node:18-alpine AS base
+FROM node:20-alpine AS base
 LABEL maintainer="workshopsAI <dev@workshopsai.com>"
 LABEL version="1.0.0"
 LABEL description="workshopsAI CMS - Production Docker Image"
@@ -13,6 +13,8 @@ RUN apk update && apk upgrade && \
     dumb-init \
     curl \
     postgresql-client \
+    python3 \
+    py3-pip \
     && rm -rf /var/cache/apk/*
 
 # Create app directory
@@ -20,6 +22,10 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+
+# Install Python semgrep for security scanning
+# Using --break-system-packages is safe in Docker containers (isolated environment)
+RUN pip3 install --break-system-packages semgrep==1.45.0
 
 # Install production dependencies
 RUN npm ci --only=production && npm cache clean --force
@@ -30,6 +36,9 @@ RUN addgroup -g 1001 -S nodejs && \
 
 # Stage 2: Development stage
 FROM base AS development
+# Skip chromedriver download in Docker environment
+ENV CHROMEDRIVER_SKIP_DOWNLOAD=true
+ENV DETECT_CHROMEDRIVER_VERSION=false
 RUN npm ci
 COPY . .
 USER nodejs
@@ -38,6 +47,9 @@ CMD ["npm", "run", "dev"]
 
 # Stage 3: Build stage
 FROM base AS builder
+# Skip chromedriver download in Docker environment
+ENV CHROMEDRIVER_SKIP_DOWNLOAD=true
+ENV DETECT_CHROMEDRIVER_VERSION=false
 RUN npm ci
 COPY . .
 
@@ -88,6 +100,9 @@ CMD ["node", "dist/index.js"]
 
 # Stage 5: Security scanning stage (for CI/CD)
 FROM base AS security
+# Skip chromedriver download in Docker environment
+ENV CHROMEDRIVER_SKIP_DOWNLOAD=true
+ENV DETECT_CHROMEDRIVER_VERSION=false
 RUN npm ci
 COPY . .
 RUN npm audit --audit-level=moderate && \
@@ -95,6 +110,9 @@ RUN npm audit --audit-level=moderate && \
 
 # Stage 6: Testing stage
 FROM base AS test
+# Skip chromedriver download in Docker environment
+ENV CHROMEDRIVER_SKIP_DOWNLOAD=true
+ENV DETECT_CHROMEDRIVER_VERSION=false
 RUN npm ci
 COPY . .
 RUN npm run typecheck && \

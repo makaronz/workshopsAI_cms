@@ -183,12 +183,12 @@ jobs:
       # Container Security Analysis
       - name: Build Docker image for scanning
         run: |
-          docker build -t workshopsai/cms:security-scan .
+          docker build -t workshopsai-cms:security-scan .
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'workshopsai/cms:security-scan'
+          image-ref: 'workshopsai-cms:security-scan'
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH,MEDIUM,LOW'
@@ -196,7 +196,7 @@ jobs:
       - name: Run Grype vulnerability scanner
         uses: anchore/scan-action@v3
         with:
-          image: 'workshopsai/cms:security-scan'
+          image: 'workshopsai-cms:security-scan'
           format: 'sarif'
           output-file: 'grype-results.sarif'
           fail-build: false

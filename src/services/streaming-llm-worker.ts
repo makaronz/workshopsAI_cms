@@ -71,8 +71,8 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
   private queue: Queue;
   private queueEvents: QueueEvents;
   private worker: Worker;
-  private openai: OpenAI;
-  private anthropic: Anthropic;
+  private openai: OpenAI | null;
+  private anthropic: Anthropic | null;
   private config: any;
   private cache: Map<string, { data: any; timestamp: number }> = new Map();
   private activeStreams: Map<string, AbortController> = new Map();
@@ -94,22 +94,28 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
       maxMemoryPolicy: 'allkeys-lru',
     });
 
-    // Initialize OpenAI client
-    this.openai = new OpenAI({
-      apiKey: config.openai?.apiKey || process.env.OPENAI_API_KEY,
-      baseURL: config.openai?.baseURL,
-      timeout: config.openai?.timeout || 30000, // Reduced timeout
-      organizationId: config.openai?.organizationId,
-      maxRetries: 2,
-    });
+    // Initialize OpenAI client only if API key is provided
+    const openaiApiKey = config.openai?.apiKey || process.env.OPENAI_API_KEY;
+    this.openai = openaiApiKey
+      ? new OpenAI({
+          apiKey: openaiApiKey,
+          baseURL: config.openai?.baseURL,
+          timeout: config.openai?.timeout || 30000, // Reduced timeout
+          organizationId: config.openai?.organizationId,
+          maxRetries: 2,
+        })
+      : null;
 
-    // Initialize Anthropic client
-    this.anthropic = new Anthropic({
-      apiKey: config.anthropic?.apiKey || process.env.ANTHROPIC_API_KEY,
-      baseURL: config.anthropic?.baseURL,
-      timeout: config.anthropic?.timeout || 30000, // Reduced timeout
-      maxRetries: 2,
-    });
+    // Initialize Anthropic client only if API key is provided
+    const anthropicApiKey = config.anthropic?.apiKey || process.env.ANTHROPIC_API_KEY;
+    this.anthropic = anthropicApiKey
+      ? new Anthropic({
+          apiKey: anthropicApiKey,
+          baseURL: config.anthropic?.baseURL,
+          timeout: config.anthropic?.timeout || 30000, // Reduced timeout
+          maxRetries: 2,
+        })
+      : null;
 
     this.initializeQueueAndWorker();
     this.setupEventHandlers();
@@ -298,6 +304,9 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
 
     try {
       if (provider === 'openai' && options.streamResponse) {
+        if (!this.openai) {
+          throw new Error('OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.');
+        }
         // Stream OpenAI response
         const stream = await this.openai.chat.completions.create({
           model,
@@ -336,6 +345,9 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
         totalTokens = this.estimateTokens(accumulatedResult);
 
       } else if (provider === 'anthropic') {
+        if (!this.anthropic) {
+          throw new Error('Anthropic API key not configured. Please set ANTHROPIC_API_KEY environment variable.');
+        }
         // Stream Anthropic response
         const stream = await this.anthropic.messages.create({
           model,
@@ -576,6 +588,9 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
     options: any,
   ): Promise<{ content: string; usage?: any }> {
     if (provider === 'openai') {
+      if (!this.openai) {
+        throw new Error('OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.');
+      }
       const response = await this.openai.chat.completions.create({
         model,
         messages: [
@@ -598,6 +613,9 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
         usage: response.usage,
       };
     } else {
+      if (!this.anthropic) {
+        throw new Error('Anthropic API key not configured. Please set ANTHROPIC_API_KEY environment variable.');
+      }
       const response = await this.anthropic.messages.create({
         model,
         max_tokens: options.maxTokens || 2000,
@@ -931,13 +949,31 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
   }
 }
 
-// Create and export streaming worker instance
-export const streamingLLMAnalysisWorker = new StreamingLLMAnalysisWorker({
-  openai: {
-    apiKey: process.env.OPENAI_API_KEY,
-    organizationId: process.env.OPENAI_ORG_ID,
+// Create and export streaming worker instance with lazy initialization
+let streamingWorkerInstance: StreamingLLMAnalysisWorker | null = null;
+
+export function getStreamingLLMAnalysisWorker(): StreamingLLMAnalysisWorker {
+  if (!streamingWorkerInstance) {
+    streamingWorkerInstance = new StreamingLLMAnalysisWorker({
+      openai: process.env.OPENAI_API_KEY
+        ? {
+            apiKey: process.env.OPENAI_API_KEY,
+            organizationId: process.env.OPENAI_ORG_ID,
+          }
+        : undefined,
+      anthropic: process.env.ANTHROPIC_API_KEY
+        ? {
+            apiKey: process.env.ANTHROPIC_API_KEY,
+          }
+        : undefined,
+    });
+  }
+  return streamingWorkerInstance;
+}
+
+// For backward compatibility
+export const streamingLLMAnalysisWorker = {
+  get instance() {
+    return getStreamingLLMAnalysisWorker();
   },
-  anthropic: {
-    apiKey: process.env.ANTHROPIC_API_KEY,
-  },
-});
+};

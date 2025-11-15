@@ -193,14 +193,17 @@ export class MockVectorDatabase implements VectorDatabase {
  * Embeddings service for managing vector embeddings
  */
 export class EmbeddingsService {
-  private openai: OpenAI;
+  private openai: OpenAI | null;
   private vectorDB: VectorDatabase;
   private defaultModel: string;
 
   constructor() {
-    this.openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    // Initialize OpenAI only if API key is provided
+    this.openai = process.env.OPENAI_API_KEY 
+      ? new OpenAI({
+          apiKey: process.env.OPENAI_API_KEY,
+        })
+      : null;
     this.vectorDB = new MockVectorDatabase(); // Replace with actual vector DB
     this.defaultModel = 'text-embedding-3-small';
   }
@@ -220,6 +223,10 @@ export class EmbeddingsService {
     }
 
     if (modelConfig.provider === 'openai') {
+      if (!this.openai) {
+        throw new Error('OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.');
+      }
+      
       try {
         const response = await this.openai.embeddings.create({
           model: modelConfig.name,
@@ -616,8 +623,22 @@ export class EmbeddingsService {
   }
 }
 
-// Export singleton instance
-export const embeddingsService = new EmbeddingsService();
+// Export singleton instance with lazy initialization
+let embeddingsServiceInstance: EmbeddingsService | null = null;
+
+export function getEmbeddingsService(): EmbeddingsService {
+  if (!embeddingsServiceInstance) {
+    embeddingsServiceInstance = new EmbeddingsService();
+  }
+  return embeddingsServiceInstance;
+}
+
+// For backward compatibility
+export const embeddingsService = {
+  get instance() {
+    return getEmbeddingsService();
+  },
+};
 
 // Export vector database interface for actual implementation
 export { VectorDatabase };
