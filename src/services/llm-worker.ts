@@ -106,7 +106,7 @@ export class LLMAnalysisWorker {
       password: config.redis.password,
       db: config.redis.db || 0,
       retryDelayOnFailover: 100,
-      maxRetriesPerRequest: 3,
+      maxRetriesPerRequest: null,
     });
 
     // Initialize OpenAI client
