@@ -633,12 +633,20 @@ export function getEmbeddingsService(): EmbeddingsService {
   return embeddingsServiceInstance;
 }
 
-// For backward compatibility
-export const embeddingsService = {
-  get instance() {
-    return getEmbeddingsService();
-  },
-};
+// Create proxy object that forwards all method calls to the singleton instance
+export const embeddingsService = new Proxy({} as EmbeddingsService, {
+  get(_target, prop) {
+    const instance = getEmbeddingsService();
+    const value = (instance as any)[prop];
+    
+    // If it's a function, bind it to the instance
+    if (typeof value === 'function') {
+      return value.bind(instance);
+    }
+    
+    return value;
+  }
+});
 
 // Export vector database interface for actual implementation
 export { VectorDatabase };

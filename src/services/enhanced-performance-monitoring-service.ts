@@ -545,6 +545,10 @@ export class EnhancedPerformanceMonitoringService extends EventEmitter {
       // Keep only recent recommendations (last 24 hours)
       const cutoff = Date.now() - 24 * 60 * 60 * 1000;
       this.recommendations = this.recommendations.filter(r => {
+        // Skip if timestamp is invalid
+        if (!r.timestamp || !r.timestamp.getTime) {
+          return false;
+        }
         // Keep critical recommendations longer
         if (r.priority === 'critical') {
           return r.timestamp.getTime() > (cutoff - 3 * 24 * 60 * 60 * 1000);
