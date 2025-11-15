@@ -18,6 +18,7 @@ import responseRoutes from './routes/responses';
 import publicRoutes from './routes/public';
 import authRoutes from './routes/auth';
 import fileRoutes from './routes/api/files';
+import { initializePreviewRoutes } from './routes/api/preview';
 import fileSignedRoutes from './routes/api/files-signed';
 
 // Import configuration
@@ -269,7 +270,6 @@ const startServer = async () => {
 
     // Initialize preview routes
     console.log('🛣️ Initializing Preview routes...');
-    const { initializePreviewRoutes } = require('./routes/api/preview');
     const previewRouter = initializePreviewRoutes(previewService);
     app.use('/api/v1/preview', previewRouter);
 
