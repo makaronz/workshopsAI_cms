@@ -360,7 +360,7 @@ export class AppHeader extends LitElement {
             <span>WorkshopsAI CMS</span>
           </a>
 
-          <nav class="navigation" role="navigation" aria-label="Navigation">
+          <nav class="navigation" role="navigation" aria-label="${t('accessibility.openMenu')}">
             <a
               href="/dashboard"
               class="nav-link ${classMap({ active: this.isActivePath('/dashboard') })}"
@@ -402,7 +402,7 @@ export class AppHeader extends LitElement {
               <select
                 class="language-button"
                 @change=${this.handleLanguageChange}
-                aria-label="Navigation"
+                aria-label="${t('accessibility.toggleLanguage')}"
               >
                 <option value="en">English</option>
                 <option value="pl">Polski</option>
@@ -425,7 +425,7 @@ export class AppHeader extends LitElement {
               <select
                 class="language-button"
                 @change=${this.handleLanguageChange}
-                aria-label="Navigation"
+                aria-label="${t('accessibility.toggleLanguage')}"
               >
                 <option value="en">English</option>
                 <option value="pl">Polski</option>
@@ -436,7 +436,7 @@ export class AppHeader extends LitElement {
           <button
             class="mobile-menu-button"
             @click=${this.toggleMobileMenu}
-            aria-label="Navigation"
+            aria-label="${t('accessibility.openMenu')}"
             aria-expanded=${isMobileMenuOpen}
             aria-controls="mobile-menu"
           >
@@ -453,7 +453,7 @@ export class AppHeader extends LitElement {
         id="mobile-menu"
         class="mobile-menu ${classMap({ open: isMobileMenuOpen })}"
         role="navigation"
-        aria-label="Navigation"
+        aria-label="${t('accessibility.openMenu')}"
       >
         <nav class="mobile-navigation">
           ${isAuthenticated ? html`
