@@ -62,6 +62,7 @@ export class LoginForm extends LitElement {
       font-size: 1rem;
       transition: border-color 0.15s, box-shadow 0.15s;
       background: var(--input-bg, #ffffff);
+      color: var(--text-color, #1f2937);
     }
 
     .form-input:focus {
