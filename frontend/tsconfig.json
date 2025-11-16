@@ -10,6 +10,8 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
