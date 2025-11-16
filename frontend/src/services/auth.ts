@@ -238,6 +238,10 @@ class AuthService {
         expiresIn: tokens.expiresIn,
       };
     } catch (error: any) {
+      // Log full error for debugging
+      console.error('Registration error:', error);
+      console.error('Registration error response:', error.response?.data);
+      
       const message = error.response?.data?.message || 
                      error.response?.data?.error?.message || 
                      (error.response?.data?.details ? 
