@@ -434,10 +434,14 @@ router.post(
       });
     } catch (error: any) {
       console.error('Registration error:', error);
+      console.error('Registration error stack:', error.stack);
 
       res.status(500).json({
         error: 'Registration failed',
-        message: 'An unexpected error occurred',
+        message: error.message || 'An unexpected error occurred',
+        ...(process.env.NODE_ENV === 'development' && {
+          details: error.stack,
+        }),
       });
     }
   }),
