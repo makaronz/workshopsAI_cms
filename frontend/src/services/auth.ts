@@ -142,8 +142,16 @@ class AuthService {
   }
 
   private setAccessToken(token: string, rememberMe: boolean = false): void {
-    const storage = rememberMe ? localStorage : sessionStorage;
-    storage.setItem('workshopsai-access-token', token);
+    // Always save to localStorage for reliability
+    // Also save to sessionStorage if rememberMe is false for compatibility
+    localStorage.setItem('workshopsai-access-token', token);
+    if (!rememberMe) {
+      sessionStorage.setItem('workshopsai-access-token', token);
+    } else {
+      // Remove from sessionStorage if rememberMe is true
+      sessionStorage.removeItem('workshopsai-access-token');
+    }
+    console.log('💾 Token saved to:', rememberMe ? 'localStorage only' : 'localStorage + sessionStorage');
   }
 
   private getRefreshToken(): string | null {
