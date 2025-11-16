@@ -10,6 +10,14 @@ import './styles/global.css';
 import './components/auth/login-form';
 import './components/auth/register-form';
 
+// Import dashboard components
+import './components/layout/app-shell';
+import './components/layout/app-header';
+import './components/layout/app-footer';
+
+// Import auth service
+import authService from './services/auth';
+
 // Remove loading screen and show login form
 document.addEventListener('DOMContentLoaded', () => {
   console.log('✅ DOM Content Loaded');
@@ -23,37 +31,61 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (appElement) {
-    // Check current route
+    // Check current route and authentication
     const currentPath = window.location.pathname;
     
-    if (currentPath === '/register') {
-      appElement.innerHTML = '<register-form></register-form>';
-      console.log('✅ Register form rendered');
-    } else {
-      appElement.innerHTML = '<login-form></login-form>';
-      console.log('✅ Login form rendered');
-    }
-    
-    appElement.style.display = 'block';
+    // Initialize routing based on path and auth status
+    initializeRouting(appElement, currentPath);
   }
 });
 
+// Initialize routing based on path and authentication
+async function initializeRouting(appElement: HTMLElement, path: string) {
+  // Check authentication status
+  const isAuthenticated = await authService.isAuthenticated();
+  
+  if (path === '/register') {
+    appElement.innerHTML = '<register-form></register-form>';
+    console.log('✅ Register form rendered');
+  } else if (path === '/dashboard' || path.startsWith('/dashboard')) {
+    if (isAuthenticated) {
+      appElement.innerHTML = '<app-shell></app-shell>';
+      console.log('✅ Dashboard rendered');
+    } else {
+      // Not authenticated, redirect to login
+      window.location.href = '/login';
+      return;
+    }
+  } else {
+    // Default to login form
+    if (isAuthenticated && path === '/login') {
+      // Already logged in, redirect to dashboard
+      window.location.href = '/dashboard';
+      return;
+    }
+    appElement.innerHTML = '<login-form></login-form>';
+    console.log('✅ Login form rendered');
+  }
+  
+  appElement.style.display = 'block';
+}
+
 // Set up event listeners for navigation between login and register
-document.addEventListener('navigate-to-register', ((e: CustomEvent) => {
+document.addEventListener('navigate-to-register', (async (e: CustomEvent) => {
   e.preventDefault();
   window.history.pushState({}, '', '/register');
   const appElement = document.getElementById('app');
   if (appElement) {
-    appElement.innerHTML = '<register-form></register-form>';
+    await initializeRouting(appElement, '/register');
   }
 }) as EventListener);
 
-document.addEventListener('navigate-to-login', ((e: CustomEvent) => {
+document.addEventListener('navigate-to-login', (async (e: CustomEvent) => {
   e.preventDefault();
   window.history.pushState({}, '', '/login');
   const appElement = document.getElementById('app');
   if (appElement) {
-    appElement.innerHTML = '<login-form></login-form>';
+    await initializeRouting(appElement, '/login');
   }
 }) as EventListener);
 
@@ -66,15 +98,11 @@ document.addEventListener('forgot-password', ((e: CustomEvent) => {
 }) as EventListener);
 
 // Handle browser back/forward buttons
-window.addEventListener('popstate', () => {
+window.addEventListener('popstate', async () => {
   const currentPath = window.location.pathname;
   const appElement = document.getElementById('app');
   if (appElement) {
-    if (currentPath === '/register') {
-      appElement.innerHTML = '<register-form></register-form>';
-    } else {
-      appElement.innerHTML = '<login-form></login-form>';
-    }
+    await initializeRouting(appElement, currentPath);
   }
 });
 
