@@ -7,13 +7,22 @@ import authService, { LoginCredentials, AuthResponse } from '../../services/auth
 export class LoginForm extends LitElement {
   static styles: CSSResultGroup = css`
     :host {
-      display: block;
-      max-width: 400px;
-      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
       padding: 2rem;
+      background: linear-gradient(135deg, #eef2ff, #e0f2fe);
+    }
+
+    .login-card {
+      width: min(480px, 100%);
+      padding: 2.5rem;
+      border-radius: 16px;
       background: var(--surface-color, #ffffff);
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      box-shadow:
+        0 10px 15px -3px rgba(15, 23, 42, 0.15),
+        0 4px 6px -4px rgba(15, 23, 42, 0.1);
     }
 
     .login-header {
@@ -352,6 +361,7 @@ export class LoginForm extends LitElement {
     const { errors, isLoading, serverError } = this;
 
     return html`
+      <div class="login-card">
       <form @submit=${this.handleSubmit} @keydown=${this.handleKeyDown} novalidate>
         <div class="login-header">
           <h1 class="login-title">WorkshopsAI CMS</h1>
@@ -467,6 +477,7 @@ export class LoginForm extends LitElement {
             Contact the admin team
           </a>
         </div>
+      </div>
     `;
   }
 }
