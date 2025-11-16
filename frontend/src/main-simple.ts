@@ -113,12 +113,30 @@ document.addEventListener('register-success', () => {
 });
 
 // Handle login success - redirect to dashboard
-document.addEventListener('login-success', ((e: CustomEvent) => {
+document.addEventListener('login-success', (async (e: CustomEvent) => {
   console.log('✅ Login successful, redirecting to dashboard...');
-  // Redirect to dashboard after short delay
-  setTimeout(() => {
+  
+  // Wait a bit for tokens to be saved
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  // Verify authentication before redirect
+  const isAuthenticated = await authService.isAuthenticated();
+  console.log('🔐 Authentication status:', isAuthenticated);
+  
+  if (isAuthenticated) {
+    // Redirect to dashboard
     window.location.href = '/dashboard';
-  }, 500);
+  } else {
+    console.warn('⚠️ Not authenticated after login, waiting a bit more...');
+    // Wait a bit more and try again
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const isAuthRetry = await authService.isAuthenticated();
+    if (isAuthRetry) {
+      window.location.href = '/dashboard';
+    } else {
+      console.error('❌ Authentication failed after login');
+    }
+  }
 }) as EventListener);
 
 // Global error handling
