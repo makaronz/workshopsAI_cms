@@ -475,7 +475,7 @@ export class LoginForm extends LitElement {
             e.preventDefault();
             this.dispatchEvent(new CustomEvent('navigate-to-register', { bubbles: true }));
           }}>
-            Contact the admin team
+            Create an account
           </a>
         </div>
       </div>

@@ -18,11 +18,12 @@ export interface LoginCredentials {
 }
 
 export interface RegisterData {
+  name: string;
   email: string;
   password: string;
   confirmPassword: string;
-  firstName: string;
-  lastName: string;
+  role?: 'participant' | 'facilitator';
+  agreeToTerms: boolean;
 }
 
 export interface AuthResponse {
@@ -197,16 +198,49 @@ class AuthService {
 
   public async register(data: RegisterData): Promise<AuthResponse> {
     try {
-      const response = await this.api.post<AuthResponse>('/auth/register', data);
-      const { user, accessToken, refreshToken } = response.data;
+      // Backend expects data in specific format
+      const registerPayload = {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+        role: data.role || 'participant',
+        agreeToTerms: data.agreeToTerms,
+      };
 
-      this.setAccessToken(accessToken);
-      this.setRefreshToken(refreshToken);
+      const response = await this.api.post<{
+        success: boolean;
+        message: string;
+        data: {
+          user: User;
+          tokens: {
+            accessToken: string;
+            refreshToken: string;
+            expiresIn: number;
+            tokenType: string;
+          };
+          sessionId: string;
+        };
+      }>('/auth/register', registerPayload);
+
+      const { user, tokens } = response.data.data;
+
+      this.setAccessToken(tokens.accessToken);
+      this.setRefreshToken(tokens.refreshToken);
       this.currentUser = user;
 
-      return response.data;
+      return {
+        user,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresIn: tokens.expiresIn,
+      };
     } catch (error: any) {
-      const message = error.response?.data?.error?.message || t('auth.registerError');
+      const message = error.response?.data?.message || 
+                     error.response?.data?.error?.message || 
+                     (error.response?.data?.details ? 
+                       error.response.data.details.map((d: any) => d.message).join(', ') : 
+                       t('auth.registerError'));
       throw new Error(message);
     }
   }
