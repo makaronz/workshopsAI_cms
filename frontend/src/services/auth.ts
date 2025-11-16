@@ -50,8 +50,10 @@ class AuthService {
   private authPromise: Promise<User | null> | null = null;
 
   private constructor() {
+    // Use /api instead of /api/v1 to work with Vite proxy
+    // Proxy will rewrite /api to /api/v1 automatically
     this.api = axios.create({
-      baseURL: import.meta.env.VITE_API_URL || '/api/v1',
+      baseURL: import.meta.env.VITE_API_URL || '/api',
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json',
@@ -164,7 +166,7 @@ class AuthService {
 
     try {
       const response = await axios.post<AuthResponse>(
-        `${import.meta.env.VITE_API_URL || '/api/v1'}/auth/refresh`,
+        `${import.meta.env.VITE_API_URL || '/api'}/auth/refresh`,
         { refreshToken },
         { timeout: 5000 }
       );

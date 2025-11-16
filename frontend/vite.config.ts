@@ -96,7 +96,14 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api/v1')
+        rewrite: (path) => {
+          // If path already starts with /api/v1, keep it
+          if (path.startsWith('/api/v1')) {
+            return path;
+          }
+          // Otherwise, rewrite /api to /api/v1
+          return path.replace(/^\/api/, '/api/v1');
+        }
       }
     }
   },
