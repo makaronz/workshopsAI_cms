@@ -436,6 +436,18 @@ router.post(
       console.error('Registration error:', error);
       console.error('Registration error stack:', error.stack);
 
+      // Handle duplicate key error (race condition or case sensitivity issue)
+      if (
+        error.message?.includes('duplicate key') ||
+        error.message?.includes('unique constraint') ||
+        error.code === '23505' // PostgreSQL unique violation error code
+      ) {
+        return res.status(409).json({
+          error: 'User already exists',
+          message: 'An account with this email already exists. Please try logging in instead.',
+        });
+      }
+
       res.status(500).json({
         error: 'Registration failed',
         message: error.message || 'An unexpected error occurred',

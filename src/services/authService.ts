@@ -5,7 +5,7 @@ import { Request } from 'express';
 import { db, RLSHelper } from '../config/postgresql-database';
 import { redisService } from '../config/redis';
 import { users, auditLogs, consents } from '../models/postgresql-schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, isNull } from 'drizzle-orm';
 
 // JWT configuration
 const JWT_SECRET =
@@ -151,7 +151,7 @@ export class AuthService {
       .where(
         and(
           eq(users.email, email.toLowerCase()),
-          eq(users.deletedAt, null as any),
+          isNull(users.deletedAt),
         ),
       )
       .limit(1);
@@ -163,7 +163,7 @@ export class AuthService {
     const user = await db
       .select()
       .from(users)
-      .where(and(eq(users.id, id), eq(users.deletedAt, null as any)))
+      .where(and(eq(users.id, id), isNull(users.deletedAt)))
       .limit(1);
     return user[0] || null;
   }
