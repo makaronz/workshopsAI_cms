@@ -165,17 +165,25 @@ class AuthService {
     if (!refreshToken) return null;
 
     try {
-      const response = await axios.post<AuthResponse>(
+      const response = await axios.post<{
+        success: boolean;
+        message: string;
+        data: {
+          accessToken: string;
+          expiresIn: number;
+          tokenType: string;
+        };
+      }>(
         `${import.meta.env.VITE_API_URL || '/api'}/auth/refresh`,
         { refreshToken },
         { timeout: 5000 }
       );
 
-      this.setAccessToken(response.data.accessToken);
-      this.setRefreshToken(response.data.refreshToken);
-      this.currentUser = response.data.user;
+      // Refresh endpoint only returns accessToken, not refreshToken
+      this.setAccessToken(response.data.data.accessToken);
+      // Keep existing refreshToken - it doesn't change on refresh
 
-      return response.data.accessToken;
+      return response.data.data.accessToken;
     } catch (error) {
       this.clearAuthStorage();
       return null;
