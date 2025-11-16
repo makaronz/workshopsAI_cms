@@ -96,13 +96,24 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true,
+        secure: false,
         rewrite: (path) => {
-          // If path already starts with /api/v1, keep it
+          // Frontend sends /api/auth/register
+          // Backend expects /api/v1/auth/register
+          // So we need to rewrite /api to /api/v1
           if (path.startsWith('/api/v1')) {
-            return path;
+            return path; // Already has /api/v1
           }
-          // Otherwise, rewrite /api to /api/v1
+          // Rewrite /api/... to /api/v1/...
           return path.replace(/^\/api/, '/api/v1');
+        },
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, res) => {
+            console.log('Proxy error:', err);
+          });
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            console.log('Proxying:', req.method, req.url, '→', proxyReq.path);
+          });
         }
       }
     }
