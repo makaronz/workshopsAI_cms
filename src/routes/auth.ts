@@ -57,7 +57,7 @@ const registerSchema = z
 // Rate limiting for authentication endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Limit each IP to 10 requests per windowMs
+  max: process.env.NODE_ENV === 'development' ? 100 : 10, // Higher limit for development
   message: {
     error: 'Too many authentication attempts',
     message: 'Please try again later',
@@ -68,6 +68,10 @@ const authLimiter = rateLimit({
     const ip = req.ip || req.connection.remoteAddress || 'unknown';
     const userAgent = req.headers['user-agent'] || 'unknown';
     return `${ip}:${userAgent}`;
+  },
+  skip: (req) => {
+    // Skip rate limiting in development for testing
+    return process.env.NODE_ENV === 'development' && req.query.skipRateLimit === 'true';
   },
 });
 
