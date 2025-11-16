@@ -247,7 +247,7 @@ export default defineConfig({
     },
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:3010',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api/v1'),
         // Add caching for API responses during development

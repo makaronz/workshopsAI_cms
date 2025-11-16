@@ -56,7 +56,7 @@ let dbOptimization: DatabaseOptimizationIntegration;
 let streamingWorker: StreamingLLMAnalysisWorker;
 
 // Environment variables - Fix index signature access
-const PORT = process.env['PORT'] || 3001;
+const PORT = process.env['PORT'] || 3010;
 const NODE_ENV = process.env['NODE_ENV'] || 'development';
 const CORS_ORIGIN = process.env['CORS_ORIGIN'] || 'http://localhost:3000';
 
