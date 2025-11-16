@@ -84,6 +84,15 @@ document.addEventListener('register-success', () => {
   console.log('✅ Registration successful');
 });
 
+// Handle login success - redirect to dashboard
+document.addEventListener('login-success', ((e: CustomEvent) => {
+  console.log('✅ Login successful, redirecting to dashboard...');
+  // Redirect to dashboard after short delay
+  setTimeout(() => {
+    window.location.href = '/dashboard';
+  }, 500);
+}) as EventListener);
+
 // Global error handling
 window.addEventListener('error', (event) => {
   console.error('❌ Global error:', event.error);

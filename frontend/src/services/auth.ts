@@ -184,16 +184,37 @@ class AuthService {
 
   public async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      const response = await this.api.post<AuthResponse>('/auth/login', credentials);
-      const { user, accessToken, refreshToken } = response.data;
+      const response = await this.api.post<{
+        success: boolean;
+        message: string;
+        data: {
+          user: User;
+          tokens: {
+            accessToken: string;
+            refreshToken: string;
+            expiresIn: number;
+            tokenType: string;
+          };
+          sessionId: string;
+        };
+      }>('/auth/login', credentials);
 
-      this.setAccessToken(accessToken, credentials.rememberMe);
-      this.setRefreshToken(refreshToken);
+      const { user, tokens } = response.data.data;
+
+      this.setAccessToken(tokens.accessToken, credentials.rememberMe);
+      this.setRefreshToken(tokens.refreshToken);
       this.currentUser = user;
 
-      return response.data;
+      return {
+        user,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresIn: tokens.expiresIn,
+      };
     } catch (error: any) {
-      const message = error.response?.data?.error?.message || t('auth.loginError');
+      const message = error.response?.data?.message || 
+                     error.response?.data?.error?.message || 
+                     t('auth.loginError');
       throw new Error(message);
     }
   }
