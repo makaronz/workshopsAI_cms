@@ -1,7 +1,6 @@
 import { LitElement, html, css, CSSResultGroup, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
-// import i18nService from '../../services/i18n'; // Commented out - using plain English for now
 import authService, { LoginCredentials, AuthResponse } from '../../services/auth';
 
 @customElement('login-form')
@@ -273,13 +272,13 @@ export class LoginForm extends LitElement {
     const errors: Record<string, string> = {};
 
     if (!this.formData.email) {
-      errors.email = t('forms.validation.required');
+      errors.email = 'Email is required';
     } else if (!this.isValidEmail(this.formData.email)) {
-      errors.email = t('forms.validation.email');
+      errors.email = 'Enter a valid email address';
     }
 
     if (!this.formData.password) {
-      errors.password = t('forms.validation.required');
+      errors.password = 'Password is required';
     }
 
     this.errors = errors;
@@ -311,10 +310,10 @@ export class LoginForm extends LitElement {
       }));
 
       // Announce success to screen readers
-      this.announceToScreenReader(t('auth.loginSuccess'));
+      this.announceToScreenReader('Signed in successfully');
 
     } catch (error) {
-      this.serverError = error instanceof Error ? error.message : t('auth.loginError');
+      this.serverError = error instanceof Error ? error.message : 'Unable to sign in right now. Please try again.';
 
       // Announce error to screen readers
       this.announceToScreenReader(this.serverError, 'assertive');
@@ -355,8 +354,8 @@ export class LoginForm extends LitElement {
     return html`
       <form @submit=${this.handleSubmit} @keydown=${this.handleKeyDown} novalidate>
         <div class="login-header">
-          <h1 class="login-title"></h1>
-          <p class="login-subtitle"></p>
+          <h1 class="login-title">WorkshopsAI CMS</h1>
+          <p class="login-subtitle">Sign in to manage your research workflows</p>
         </div>
 
         ${serverError ? html`
@@ -367,7 +366,7 @@ export class LoginForm extends LitElement {
 
         <div class="form-group">
           <label for="email" class="form-label">
-            
+            Email address
             <span aria-label="required">*</span>
           </label>
           <input
@@ -395,7 +394,7 @@ export class LoginForm extends LitElement {
 
         <div class="form-group">
           <label for="password" class="form-label">
-            
+            Password
             <span aria-label="required">*</span>
           </label>
           <input
@@ -431,7 +430,7 @@ export class LoginForm extends LitElement {
             @change=${this.handleInputChange}
           />
           <label for="remember-me" class="checkbox-label">
-            
+            Remember me
           </label>
         </div>
 
@@ -445,7 +444,7 @@ export class LoginForm extends LitElement {
             ?disabled=${isLoading}
             aria-describedby=${serverError ? 'server-error' : ''}
           >
-            ${isLoading ? t('common.loading') : t('auth.login')}
+            ${isLoading ? 'Signing in…' : 'Sign In'}
           </button>
         </div>
 
@@ -454,20 +453,20 @@ export class LoginForm extends LitElement {
             e.preventDefault();
             this.dispatchEvent(new CustomEvent('forgot-password', { bubbles: true }));
           }}>
-            
+            Forgot password?
           </a>
         </div>
       </form>
 
-      <div class="register-link">
-        <span> </span>
-        <a href="/register" @click=${(e: Event) => {
-          e.preventDefault();
-          this.dispatchEvent(new CustomEvent('navigate-to-register', { bubbles: true }));
-        }}>
-          
-        </a>
-      </div>
+        <div class="register-link">
+          <span>Need an account?</span>
+          <a href="/register" @click=${(e: Event) => {
+            e.preventDefault();
+            this.dispatchEvent(new CustomEvent('navigate-to-register', { bubbles: true }));
+          }}>
+            Contact the admin team
+          </a>
+        </div>
     `;
   }
 }
