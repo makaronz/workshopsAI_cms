@@ -223,14 +223,34 @@ class AuthService {
         hasTokens: !!response.data.data?.tokens
       });
 
+      console.log('📦 Response data structure:', {
+        hasData: !!response.data.data,
+        hasUser: !!response.data.data?.user,
+        hasTokens: !!response.data.data?.tokens,
+        tokensKeys: response.data.data?.tokens ? Object.keys(response.data.data.tokens) : []
+      });
+
       const { user, tokens } = response.data.data;
 
-      console.log('💾 Saving tokens...');
+      console.log('💾 Saving tokens...', {
+        hasAccessToken: !!tokens?.accessToken,
+        hasRefreshToken: !!tokens?.refreshToken,
+        rememberMe: credentials.rememberMe
+      });
+      
+      if (!tokens?.accessToken || !tokens?.refreshToken) {
+        throw new Error('Missing tokens in response');
+      }
+      
       this.setAccessToken(tokens.accessToken, credentials.rememberMe);
       this.setRefreshToken(tokens.refreshToken);
       this.currentUser = user;
 
-      console.log('✅ Login successful, tokens saved');
+      console.log('✅ Login successful, tokens saved', {
+        accessTokenSaved: !!this.getAccessToken(),
+        refreshTokenSaved: !!this.getRefreshToken(),
+        currentUser: !!this.currentUser
+      });
 
       return {
         user,
