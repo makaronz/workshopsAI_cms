@@ -1,0 +1,136 @@
+{
+  "classification_complete": true,
+  "timestamp": "2025-11-17T11:38:45.000Z",
+  "classification_method": "aggressive",
+  "findings": {
+    "OK": [
+      {
+        "feature": "Authentication system",
+        "components": ["login-form", "register-form", "auth service"],
+        "endpoints": ["/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/me", "/api/v1/auth/refresh"],
+        "status": "Fully functional with proper token handling",
+        "confidence": "HIGH"
+      },
+      {
+        "feature": "Dashboard navigation",
+        "components": ["app-shell", "app-header", "dashboard"],
+        "routes": ["/dashboard", "/dashboard/questionnaires/new"],
+        "status": "Working but limited routes implemented",
+        "confidence": "MEDIUM"
+      },
+      {
+        "feature": "Questionnaire builder",
+        "components": ["questionnaire-builder-page", "questionnaire-manager"],
+        "endpoints": ["/api/v1/questionnaires"],
+        "status": "Complete CRUD operations available",
+        "confidence": "HIGH"
+      }
+    ],
+    "BROKEN": [
+      {
+        "feature": "Template system",
+        "components": ["TemplateManager", "TemplateEditor", "TemplateGallery", "TemplateCustomizer", "TemplateSharing"],
+        "missing_backend": true,
+        "issue": "No corresponding backend routes or services found",
+        "impact": "HIGH - entire feature unusable",
+        "confidence": "HIGH"
+      },
+      {
+        "feature": "Workshop creation flow",
+        "components": ["WorkshopEditor", "workshop-editor"],
+        "missing_route": "/dashboard/workshops/new",
+        "issue": "Frontend route exists but no backend implementation",
+        "impact": "HIGH - key workflow broken",
+        "confidence": "HIGH"
+      }
+    ],
+    "LEGACY": [],
+    "DEAD_CODE": [
+      {
+        "feature": "tRPC infrastructure",
+        "components": ["@trpc/server", "@trpc/client", "@trpc/react-query"],
+        "issue": "tRPC libraries installed but no tRPC routes implemented",
+        "impact": "MEDIUM - unused dependencies",
+        "confidence": "HIGH"
+      },
+      {
+        "feature": "Template components",
+        "components": ["TemplateManager", "TemplateEditor", "TemplateGallery", "TemplateCustomizer", "TemplateSharing"],
+        "issue": "Components exist without backend services",
+        "impact": "HIGH - unusable UI components",
+        "confidence": "HIGH"
+      },
+      {
+        "feature": "React components in Lit frontend",
+        "components": ["All template components are React-based"],
+        "issue": "Frontend uses Lit but templates are React components",
+        "impact": "HIGH - framework mismatch",
+        "confidence": "HIGH"
+      }
+    ],
+    "DUPLICATES": [
+      {
+        "feature": "Questionnaire routes",
+        "routes": ["/api/v1/questionnaires", "/api/v1/questionnaires-new"],
+        "issue": "Multiple route files for same functionality",
+        "impact": "MEDIUM - maintenance complexity",
+        "confidence": "HIGH"
+      },
+      {
+        "feature": "Multiple workshop components",
+        "components": ["WorkshopEditor", "workshop-editor"],
+        "issue": "Duplicate workshop editor components",
+        "impact": "LOW - minor duplication",
+        "confidence": "MEDIUM"
+      }
+    ],
+    "INCONSISTENCIES": [
+      {
+        "feature": "Frontend/Backend routing",
+        "issue": "Frontend routes don't match backend route patterns",
+        "examples": [
+          "Frontend: /dashboard/workshops/new → Backend: Missing",
+          "Frontend: Template system → Backend: No API endpoints",
+          "Frontend: React components → Backend: Lit-based frontend"
+        ],
+        "impact": "HIGH - system fragmentation",
+        "confidence": "HIGH"
+      },
+      {
+        "feature": "Technology stack mismatch",
+        "issue": "Mixed React and Lit components in frontend",
+        "examples": [
+          "Frontend main: Lit-based",
+          "Template system: React-based",
+          "Authentication: Lit web components"
+        ],
+        "impact": "HIGH - architectural inconsistency",
+        "confidence": "HIGH"
+      }
+    ]
+  },
+  "summary": {
+    "total_features_analyzed": 5,
+    "ok_count": 3,
+    "broken_count": 2,
+    "legacy_count": 0,
+    "dead_code_issues": 3,
+    "duplicate_issues": 2,
+    "inconsistency_issues": 2,
+    "overall_health_score": 40,
+    "critical_issues": [
+      "Template system completely broken - no backend",
+      "Workshop creation flow broken - missing routes",
+      "Framework inconsistency - React vs Lit mixed",
+      "Technology stack fragmentation"
+    ],
+    "recommendations": [
+      "Remove tRPC dependencies if not used",
+      "Remove React template components or convert to Lit",
+      "Implement missing workshop backend routes",
+      "Choose single frontend framework (Lit recommended)",
+      "Consolidate questionnaire routing",
+      "Audit and remove dead code systematically"
+    ]
+  }
+}
