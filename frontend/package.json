@@ -20,7 +20,6 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,scss,json}\""
   },
   "dependencies": {
-    "@vaadin/router": "^2.0.0",
     "axe-core": "^4.8.2",
     "axios": "^1.6.7",
     "i18next": "^23.10.1",

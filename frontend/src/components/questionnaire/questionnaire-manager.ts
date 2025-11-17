@@ -15,6 +15,7 @@ import type {
 
 import { QuestionnaireBuilder } from './questionnaire-builder.js';
 import { QuestionnairePreview } from './questionnaire-preview.js';
+import { TokenManager } from '../../utils/authTokens';
 
 /**
  * Questionnaire Manager Component
@@ -319,9 +320,8 @@ export class QuestionnaireManager extends LitElement {
     this.isLoading = true;
 
     try {
-      // Get access token from storage
-      const token = localStorage.getItem('workshopsai-access-token') || 
-                    sessionStorage.getItem('workshopsai-access-token');
+      // Get access token using centralized token management
+      const token = TokenManager.getAccessToken();
       
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
@@ -339,8 +339,9 @@ export class QuestionnaireManager extends LitElement {
         throw new Error('Failed to load questionnaire');
       }
 
-      const data = await response.json();
-      this.questionnaire = data;
+      const responseData = await response.json();
+      // Handle canonical API response format: { success: true, data: questionnaire }
+      this.questionnaire = responseData.data || responseData;
       this.showNotification('success', 'Success', 'Questionnaire loaded successfully');
     } catch (error) {
       console.error('Error loading questionnaire:', error);
@@ -361,15 +362,14 @@ export class QuestionnaireManager extends LitElement {
     this.saveStatus = 'saving';
 
     try {
-      // Get access token from storage
-      const token = localStorage.getItem('workshopsai-access-token') || 
-                    sessionStorage.getItem('workshopsai-access-token');
+      // Get access token using centralized token management
+      const token = TokenManager.getAccessToken();
       
       const url = this.questionnaireId && this.questionnaireId !== 'new' ?
         `${this.apiBaseUrl}/${this.questionnaireId}` :
         this.apiBaseUrl;
 
-      const method = (this.questionnaireId && this.questionnaireId !== 'new') ? 'PUT' : 'POST';
+      const method = (this.questionnaireId && this.questionnaireId !== 'new') ? 'PATCH' : 'POST';
 
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
@@ -390,7 +390,9 @@ export class QuestionnaireManager extends LitElement {
         throw new Error(errorData.error || 'Failed to save questionnaire');
       }
 
-      const savedQuestionnaire = await response.json();
+      const responseData = await response.json();
+      // Handle canonical API response format: { success: true, data: questionnaire }
+      const savedQuestionnaire = responseData.data || responseData;
 
       if (!this.questionnaireId) {
         this.questionnaireId = savedQuestionnaire.id;
@@ -430,9 +432,8 @@ export class QuestionnaireManager extends LitElement {
     this.isLoading = true;
 
     try {
-      // Get access token from storage
-      const token = localStorage.getItem('workshopsai-access-token') || 
-                    sessionStorage.getItem('workshopsai-access-token');
+      // Get access token using centralized token management
+      const token = TokenManager.getAccessToken();
       
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
@@ -451,7 +452,9 @@ export class QuestionnaireManager extends LitElement {
         throw new Error('Failed to publish questionnaire');
       }
 
-      const updatedQuestionnaire = await response.json();
+      const responseData = await response.json();
+      // Handle canonical API response format: { success: true, data: questionnaire }
+      const updatedQuestionnaire = responseData.data || responseData;
       this.questionnaire = updatedQuestionnaire;
 
       this.showNotification('success', 'Published', 'Questionnaire published successfully');

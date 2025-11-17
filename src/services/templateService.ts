@@ -4,6 +4,7 @@
  */
 
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import { TokenManager } from '../../frontend/src/utils/authTokens';
 import {
   Template,
   WorkshopTemplate,
@@ -62,10 +63,10 @@ export class TemplateService {
       },
     });
 
-    // Request interceptor for authentication
+    // Request interceptor for authentication using centralized token management
     this.api.interceptors.request.use(
       config => {
-        const token = localStorage.getItem('auth_token');
+        const token = TokenManager.getAccessToken();
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -74,14 +75,13 @@ export class TemplateService {
       error => Promise.reject(error),
     );
 
-    // Response interceptor for error handling
+    // Response interceptor for error handling using centralized token management
     this.api.interceptors.response.use(
       response => response,
       error => {
         if (error.response?.status === 401) {
-          // Handle unauthorized access
-          localStorage.removeItem('auth_token');
-          window.location.href = '/login';
+          // Handle unauthorized access using centralized token management
+          TokenManager.handleUnauthorized();
         }
         return Promise.reject(error);
       },

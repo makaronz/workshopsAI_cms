@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import i18nService, { t } from './i18n';
+import { TokenManager, ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from '../utils/authTokens';
 
 export interface User {
   id: string;
@@ -60,10 +61,10 @@ class AuthService {
       },
     });
 
-    // Request interceptor to add auth token
+    // Request interceptor to add auth token using centralized management
     this.api.interceptors.request.use(
       (config) => {
-        const token = this.getAccessToken();
+        const token = TokenManager.getAccessToken();
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
           console.log('🔑 [REQUEST] Adding token to request:', {
@@ -188,35 +189,24 @@ class AuthService {
   }
 
   private getAccessToken(): string | null {
-    return localStorage.getItem('workshopsai-access-token') ||
-           sessionStorage.getItem('workshopsai-access-token');
+    return TokenManager.getAccessToken();
   }
 
   private setAccessToken(token: string, rememberMe: boolean = false): void {
-    // Always save to localStorage for reliability
-    // Also save to sessionStorage if rememberMe is false for compatibility
-    localStorage.setItem('workshopsai-access-token', token);
-    if (!rememberMe) {
-      sessionStorage.setItem('workshopsai-access-token', token);
-    } else {
-      // Remove from sessionStorage if rememberMe is true
-      sessionStorage.removeItem('workshopsai-access-token');
-    }
+    TokenManager.setAccessToken(token, rememberMe);
     console.log('💾 Token saved to:', rememberMe ? 'localStorage only' : 'localStorage + sessionStorage');
   }
 
   private getRefreshToken(): string | null {
-    return localStorage.getItem('workshopsai-refresh-token');
+    return TokenManager.getRefreshToken();
   }
 
   private setRefreshToken(token: string): void {
-    localStorage.setItem('workshopsai-refresh-token', token);
+    TokenManager.setRefreshToken(token);
   }
 
   private clearAuthStorage(): void {
-    localStorage.removeItem('workshopsai-access-token');
-    localStorage.removeItem('workshopsai-refresh-token');
-    sessionStorage.removeItem('workshopsai-access-token');
+    TokenManager.clearTokens();
   }
 
   private async refreshAccessToken(): Promise<string | null> {
@@ -504,7 +494,7 @@ class AuthService {
 
   public subscribeToAuthChanges(callback: (user: User | null) => void): () => void {
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'workshopsai-access-token' && !event.newValue) {
+      if (event.key === ACCESS_TOKEN_KEY && !event.newValue) {
         // Token was cleared elsewhere
         this.currentUser = null;
         callback(null);

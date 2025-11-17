@@ -1,4 +1,4 @@
-name: Testing Pipeline
+name: Comprehensive Testing Pipeline for WorkshopsAI CMS
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
     - cron: '0 2 * * *'
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
   POSTGRES_VERSION: '15'
   PLAYWRIGHT_BROWSERS: 'chromium,firefox,webkit'
 

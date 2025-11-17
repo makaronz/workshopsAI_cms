@@ -1,5 +1,5 @@
 /**
- * Simplified Main Entry Point
+ * Simplified Main Entry Point with Live Dashboard
  * No complex routing, just show login form directly
  */
 
@@ -21,6 +21,9 @@ import './components/questionnaire/questionnaire-manager';
 
 // Import workshop components
 import './components/workshop/WorkshopEditor';
+
+// Import dashboard components
+import './components/dashboard/dashboard-overview';
 
 // Import auth service
 import authService from './services/auth';
@@ -52,7 +55,8 @@ export async function initializeRouting(appElement: HTMLElement, path: string) {
   console.log('🔄 Initializing routing for path:', path);
 
   // Check if tokens exist in storage first (faster check)
-  const hasToken = TokenManager.hasValidToken();
+  const hasToken = !!(localStorage.getItem('workshopsai-access-token') ||
+                     sessionStorage.getItem('workshopsai-access-token'));
 
   console.log('🔑 Token check:', { hasToken, path });
 
@@ -81,76 +85,9 @@ export async function initializeRouting(appElement: HTMLElement, path: string) {
         appElement.innerHTML = '<app-shell><workshop-editor></workshop-editor></app-shell>';
         console.log('✅ Workshop editor page rendered');
       } else if (path === '/dashboard') {
-        // Main dashboard
-        appElement.innerHTML = `
-          <app-shell>
-            <div style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
-              <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 1rem; color: #1f2937;">
-                Dashboard
-              </h1>
-              <p style="color: #6b7280; margin-bottom: 2rem;">
-                Welcome to WorkshopsAI CMS - Content Management System for Sociologists
-              </p>
-
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-                <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                  <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280; margin: 0 0 0.5rem 0;">WORKSHOPS</h3>
-                  <p style="font-size: 2.5rem; font-weight: 700; color: #2563eb; margin: 0;">0</p>
-                  <p style="font-size: 0.875rem; color: #6b7280; margin: 0.5rem 0 0 0;">Total workshops</p>
-                </div>
-
-                <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                  <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280; margin: 0 0 0.5rem 0;">QUESTIONNAIRES</h3>
-                  <p style="font-size: 2.5rem; font-weight: 700; color: #10b981; margin: 0;">0</p>
-                  <p style="font-size: 0.875rem; color: #6b7280; margin: 0.5rem 0 0 0;">Active questionnaires</p>
-                </div>
-
-                <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                  <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280; margin: 0 0 0.5rem 0;">RESPONSES</h3>
-                  <p style="font-size: 2.5rem; font-weight: 700; color: #f59e0b; margin: 0;">0</p>
-                  <p style="font-size: 0.875rem; color: #6b7280; margin: 0.5rem 0 0 0;">Total responses</p>
-                </div>
-
-                <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                  <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280; margin: 0 0 0.5rem 0;">ANALYSIS JOBS</h3>
-                  <p style="font-size: 2.5rem; font-weight: 700; color: #8b5cf6; margin: 0;">0</p>
-                  <p style="font-size: 0.875rem; color: #6b7280; margin: 0.5rem 0 0 0;">Completed analyses</p>
-                </div>
-              </div>
-
-              <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                <h2 style="font-size: 1.25rem; font-weight: 600; margin: 0 0 1rem 0; color: #1f2937;">
-                  Quick Actions
-                </h2>
-                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                  <a href="/dashboard/workshops/new" class="dashboard-link" style="padding: 0.75rem 1.5rem; background: #2563eb; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">
-                    + Create Workshop
-                  </a>
-                  <a href="/dashboard/questionnaires/new" class="dashboard-link" style="padding: 0.75rem 1.5rem; background: #10b981; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">
-                    + Create Questionnaire
-                  </a>
-                  <a href="/api/v1" target="_blank" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">
-                    API Documentation
-                  </a>
-                </div>
-              </div>
-
-              <div style="margin-top: 2rem; padding: 1.5rem; background: #dbeafe; border-left: 4px solid #2563eb; border-radius: 4px;">
-                <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #1e40af;">
-                  🎉 System Status: Fully Operational
-                </h3>
-                <ul style="margin: 0; padding-left: 1.5rem; color: #1e40af;">
-                  <li>✅ Backend API: Connected</li>
-                  <li>✅ Database: PostgreSQL connected</li>
-                  <li>✅ Redis Cache: Active</li>
-                  <li>✅ Frontend: Running</li>
-                  <li>✅ Workshop Editor: Implemented</li>
-                </ul>
-              </div>
-            </div>
-          </app-shell>
-        `;
-        console.log('✅ Dashboard rendered');
+        // Main dashboard - use live data component
+        appElement.innerHTML = '<app-shell><dashboard-overview></dashboard-overview></app-shell>';
+        console.log('✅ Dashboard with live data rendered');
       } else {
         // Other dashboard sub-routes - show dashboard with message
         appElement.innerHTML = `
@@ -277,7 +214,7 @@ document.addEventListener('click', async (e: MouseEvent) => {
     console.log('🔗 [NAVIGATION] Intercepting link click:', {
       href,
       currentPath: window.location.pathname,
-      hasToken: TokenManager.hasValidToken()
+      hasToken: !!(localStorage.getItem('workshopsai-access-token') || sessionStorage.getItem('workshopsai-access-token'))
     });
 
     // Update URL without reload
@@ -305,9 +242,10 @@ document.addEventListener('login-success', (async (e: CustomEvent) => {
   // Wait for tokens to be saved to storage
   await new Promise(resolve => setTimeout(resolve, 200));
 
-  // Check if tokens are actually in storage using centralized management
-  const accessToken = TokenManager.getAccessToken();
-  const refreshToken = TokenManager.getRefreshToken();
+  // Check if tokens are actually in storage
+  const accessToken = localStorage.getItem('workshopsai-access-token') ||
+                      sessionStorage.getItem('workshopsai-access-token');
+  const refreshToken = localStorage.getItem('workshopsai-refresh-token');
 
   console.log('🔑 Token check:', {
     hasAccessToken: !!accessToken,
@@ -335,7 +273,8 @@ document.addEventListener('login-success', (async (e: CustomEvent) => {
 
     try {
       const isAuthRetry = await authService.isAuthenticated();
-      const retryAccessToken = TokenManager.getAccessToken();
+      const retryAccessToken = localStorage.getItem('workshopsai-access-token') ||
+                               sessionStorage.getItem('workshopsai-access-token');
 
       console.log('🔄 Retry check:', {
         isAuthenticated: isAuthRetry,
@@ -376,4 +315,4 @@ window.addEventListener('unhandledrejection', (event) => {
   console.error('❌ Unhandled promise rejection:', event.reason);
 });
 
-console.log('✅ main-simple.ts loaded successfully');
+console.log('✅ main-simple-live.ts loaded successfully');

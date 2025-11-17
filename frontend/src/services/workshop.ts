@@ -8,6 +8,7 @@ import {
   ApiResponse,
   PaginatedResponse
 } from '@/types/workshop';
+import { TokenManager, createAuthInterceptor, createAuthErrorHandler } from '../utils/authTokens';
 
 /**
  * Workshop Service - Handles all workshop-related API operations
@@ -27,29 +28,13 @@ export class WorkshopService {
       },
     });
 
-    // Add request interceptor for authentication
-    this.api.interceptors.request.use(
-      (config) => {
-        const token = localStorage.getItem('auth_token');
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error) => Promise.reject(error)
-    );
+    // Add request interceptor for authentication using centralized token management
+    this.api.interceptors.request.use(createAuthInterceptor());
 
-    // Add response interceptor for error handling
+    // Add response interceptor for error handling using centralized token management
     this.api.interceptors.response.use(
       (response: AxiosResponse) => response,
-      (error) => {
-        if (error.response?.status === 401) {
-          // Handle unauthorized - redirect to login
-          localStorage.removeItem('auth_token');
-          window.location.href = '/login';
-        }
-        return Promise.reject(this.handleError(error));
-      }
+      createAuthErrorHandler()
     );
   }
 
