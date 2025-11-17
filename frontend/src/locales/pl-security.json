@@ -1,0 +1,194 @@
+{
+  "auth": {
+    "login": {
+      "title": "Zaloguj się",
+      "subtitle": "Zaloguj się, aby zarządzać swoimi warsztatami badawczymi",
+      "email": "Adres email",
+      "emailPlaceholder": "Wprowadź swój służbowy email",
+      "password": "Hasło",
+      "passwordPlaceholder": "Wprowadź swoje hasło",
+      "rememberMe": "Zapamiętaj mnie na tym urządzeniu",
+      "forgotPassword": "Zapomniałeś hasła?",
+      "signInButton": "Zaloguj się",
+      "noAccount": "Nie masz konta?",
+      "createAccount": "Utwórz konto",
+      "securityFeatures": "Funkcje bezpieczeństwa",
+      "securityFeaturesList": [
+        "Walidacja i sanityzacja danych wejściowych",
+        "Ograniczanie szybkości i ochrona przed atakami siłowymi",
+        "Bezpieczne zarządzanie sesjami",
+        "Szyfrowana komunikacja HTTPS"
+      ],
+      "showSecurity": "Pokaż informacje o bezpieczeństwie",
+      "hideSecurity": "Ukryj informacje o bezpieczeństwie"
+    },
+    "register": {
+      "title": "Utwórz konto",
+      "subtitle": "Dołącz do WorkshopsAI CMS, aby zarządzać swoimi warsztatami badawczymi",
+      "fullName": "Pełne imię i nazwisko",
+      "fullNamePlaceholder": "Wprowadź swoje legalne imię i nazwisko",
+      "fullNameHint": "Wprowadź swoje legalne imię i nazwisko tak, jak widnieją na dokumentach urzędowych",
+      "email": "Adres email",
+      "emailPlaceholder": "Wprowadź swój służbowy adres email",
+      "emailHint": "Użyjemy tego do powiadomień o koncie i odzyskiwania hasła",
+      "accountType": "Typ konta",
+      "participantType": "Uczestnik - Będę uczestniczyć w warsztatach",
+      "facilitatorType": "Prowadzący - Będę prowadzić warsztaty",
+      "accountTypeHint": "Możesz zmienić to później po zatwierdzeniu przez administratora",
+      "password": "Hasło",
+      "passwordPlaceholder": "Utwórz silne hasło",
+      "confirmPassword": "Potwierdź hasło",
+      "confirmPasswordPlaceholder": "Wprowadź ponownie swoje hasło",
+      "terms": {
+        "agreement": "Zgadzam się z",
+        "termsAndConditions": "Regulaminem",
+        "privacyPolicy": "Polityką prywatności"
+      },
+      "createButton": "Utwórz konto",
+      "hasAccount": "Masz już konto?",
+      "signIn": "Zaloguj się",
+      "privacyNotice": {
+        "title": "Twoja prywatność i bezpieczeństwo",
+        "message": "Używamy standardowego szyfrowania branżowego i nigdy nie udostępniamy Twoich danych stronom trzecim."
+      },
+      "passwordStrength": {
+        "weak": "Słabe",
+        "fair": "Dostateczne",
+        "good": "Dobre",
+        "strong": "Silne",
+        "requirements": {
+          "title": "Wymagania dotyczące hasła:",
+          "length": "Co najmniej 8 znaków",
+          "uppercase": "Jedna wielka litera",
+          "lowercase": "Jedna mała litera",
+          "number": "Jedna cyfra",
+          "special": "Jeden znak specjalny"
+        }
+      }
+    },
+    "validation": {
+      "required": "To pole jest wymagane",
+      "email": "Wprowadź poprawny adres email",
+      "password": {
+        "required": "Hasło jest wymagane",
+        "tooShort": "Hasło musi mieć co najmniej 8 znaków",
+        "tooLong": "Hasło musi mieć mniej niż 128 znaków",
+        "weak": "Hasło jest zbyt słabe",
+        "noUppercase": "Hasło musi zawierać co najmniej jedną wielką literę",
+        "noLowercase": "Hasło musi zawierać co najmniej jedną małą literę",
+        "noNumber": "Hasło musi zawierać co najmniej jedną cyfrę",
+        "noSpecial": "Hasło musi zawierać co najmniej jeden znak specjalny",
+        "common": "Hasło jest zbyt powszechne lub przewidywalne"
+      },
+      "name": {
+        "required": "Imię jest wymagane",
+        "tooShort": "Imię musi mieć co najmniej 2 znaki",
+        "tooLong": "Imię musi mieć mniej niż 100 znaków",
+        "invalid": "Imię może zawierać tylko litery, spacje, myślniki i apostrofy"
+      },
+      "confirmPassword": {
+        "required": "Potwierdź swoje hasło",
+        "mismatch": "Hasła nie pasują do siebie"
+      },
+      "terms": {
+        "required": "Musisz zaakceptować regulamin i politykę prywatności"
+      },
+      "role": {
+        "required": "Typ konta jest wymagany"
+      }
+    },
+    "errors": {
+      "loginFailed": "Nieprawidłowy email lub hasło",
+      "accountLocked": "Zbyt wielu nieudanych prób logowania. Spróbuj ponownie później.",
+      "accountLockedTime": "Konto zostało tymczasowo zablokowane z powodu wielu nieudanych prób logowania. Spróbuj ponownie za {{time}}.",
+      "emailExists": "Konto z tym adresem email już istnieje",
+      "weakPassword": "Hasło nie spełnia wymagań bezpieczeństwa",
+      "invalidCredentials": "Podano nieprawidłowe dane uwierzytelniające",
+      "sessionExpired": "Twoja sesja wygasła. Zaloguj się ponownie.",
+      "accessDenied": "Odmowa dostępu. Nie masz uprawnień do wykonania tej czynności.",
+      "rateLimit": "Zbyt wiele prób. Spróbuj ponownie później.",
+      "serverError": "Nie można teraz przetworzyć Twojego żądania. Spróbuj ponownie.",
+      "networkError": "Błąd sieci. Sprawdź połączenie i spróbuj ponownie.",
+      "unknownError": "Wystąpił nieoczekiwany błąd. Spróbuj ponownie."
+    },
+    "success": {
+      "loginSuccess": "Pomyślnie zalogowano! Przekierowywanie...",
+      "registerSuccess": "Rejestracja zakończona sukcesem! Przekierowywanie do panelu...",
+      "passwordReset": "Instrukcje resetowania hasła wysłane na Twój email",
+      "accountCreated": "Twoje konto zostało pomyślnie utworzone"
+    }
+  },
+  "loading": {
+    "states": {
+      "authenticating": "Uwierzytelnianie...",
+      "creatingAccount": "Tworzenie konta...",
+      "loading": "Ładowanie...",
+      "processing": "Przetwarzanie...",
+      "saving": "Zapisywanie...",
+      "verifying": "Weryfikacja...",
+      "connecting": "Łączenie...",
+      "fetching": "Pobieranie danych...",
+      "uploading": "Przesyłanie...",
+      "downloading": "Pobieranie..."
+    },
+    "messages": {
+      "pleaseWait": "Proszę czekać...",
+      "thisMayTakeMoment": "Może to chwilę potrwać.",
+      "almostDone": "Prawie gotowe...",
+      "finishingUp": "Kończenie...",
+      "secureConnection": "Nawiązywanie bezpiecznego połączenia...",
+      "validatingData": "Weryfikacja Twoich danych...",
+      "preparingContent": "Przygotowywanie treści..."
+    }
+  },
+  "security": {
+    "level": {
+      "low": "Niski",
+      "medium": "Średni",
+      "high": "Wysoki",
+      "critical": "Krytyczny"
+    },
+    "notifications": {
+      "suspiciousActivity": "Wykryto podejrzaną aktywność na Twoim koncie",
+      "securityAlert": "Alert bezpieczeństwa",
+      "loginFromNewDevice": "Wykryto nowe logowanie z urządzenia {{device}}",
+      "multipleFailedAttempts": "Wykryto wiele nieudanych prób logowania",
+      "passwordChanged": "Twoje hasło zostało zmienione",
+      "accountLocked": "Twoje konto zostało tymczasowo zablokowane",
+      "accountUnlocked": "Twoje konto zostało odblokowane"
+    },
+    "actions": {
+      "reviewActivity": "Przejrzyj aktywność",
+      "secureAccount": "Zabezpiecz konto",
+      "changePassword": "Zmień hasło",
+      "enable2FA": "Włącz uwierzytelnianie dwuskładnikowe",
+      "contactSupport": "Skontaktuj się z pomocą techniczną",
+      "dismiss": "Odrzuć",
+      "takeAction": "Podjęcie działania"
+    },
+    "features": {
+      "encryption": "Szyfrowanie end-to-end",
+      "twoFactor": "Uwierzytelnianie dwuskładnikowe",
+      "sessionManagement": "Bezpieczne zarządzanie sesjami",
+      "rateLimiting": "Ochrona przed atakami siłowymi",
+      "inputValidation": "Walidacja i sanityzacja danych wejściowych",
+      "securityMonitoring": "Monitoring bezpieczeństwa 24/7",
+      "gdprCompliant": "Zgodne z RODO",
+      "secureBackup": "Bezpieczna kopia zapasowa danych"
+    }
+  },
+  "accessibility": {
+    "loading": "Ładowanie treści",
+    "error": "Wystąpił błąd",
+    "required": "wymagane",
+    "optional": "opcjonalne",
+    "currentPassword": "Bieżące hasło",
+    "invalidInput": "Nieprawidłowe dane wejściowe",
+    "passwordHidden": "Hasło ukryte",
+    "passwordShown": "Hasło widoczne",
+    "validationError": "Błąd walidacji",
+    "securityFeature": "Funkcja bezpieczeństwa",
+    "securityNotice": "Informacja o bezpieczeństwie",
+    "statusChanged": "Status zmieniony"
+  }
+}

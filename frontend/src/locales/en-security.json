@@ -1,0 +1,194 @@
+{
+  "auth": {
+    "login": {
+      "title": "Sign In",
+      "subtitle": "Sign in to manage your research workflows",
+      "email": "Email address",
+      "emailPlaceholder": "Enter your work email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "rememberMe": "Remember me on this device",
+      "forgotPassword": "Forgot password?",
+      "signInButton": "Sign In",
+      "noAccount": "Need an account?",
+      "createAccount": "Create an account",
+      "securityFeatures": "Security Features",
+      "securityFeaturesList": [
+        "Input validation and sanitization",
+        "Rate limiting and brute force protection",
+        "Secure session management",
+        "HTTPS encrypted communication"
+      ],
+      "showSecurity": "Show Security Information",
+      "hideSecurity": "Hide Security Information"
+    },
+    "register": {
+      "title": "Create Account",
+      "subtitle": "Join WorkshopsAI CMS to manage your research workflows",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "Enter your legal name as it appears on official documents",
+      "fullNameHint": "Enter your legal name as it appears on official documents",
+      "email": "Email address",
+      "emailPlaceholder": "Enter your work email address",
+      "emailHint": "We'll use this for account notifications and password recovery",
+      "accountType": "Account Type",
+      "participantType": "Participant - I'll participate in workshops",
+      "facilitatorType": "Facilitator - I'll conduct workshops",
+      "accountTypeHint": "You can change this later with admin approval",
+      "password": "Password",
+      "passwordPlaceholder": "Create a strong password",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Re-enter your password",
+      "terms": {
+        "agreement": "I agree to the",
+        "termsAndConditions": "Terms and Conditions",
+        "privacyPolicy": "Privacy Policy"
+      },
+      "createButton": "Create Account",
+      "hasAccount": "Already have an account?",
+      "signIn": "Sign in",
+      "privacyNotice": {
+        "title": "Your Privacy & Security",
+        "message": "We use industry-standard encryption and never share your data with third parties."
+      },
+      "passwordStrength": {
+        "weak": "Weak",
+        "fair": "Fair",
+        "good": "Good",
+        "strong": "Strong",
+        "requirements": {
+          "title": "Password requirements:",
+          "length": "At least 8 characters",
+          "uppercase": "One uppercase letter",
+          "lowercase": "One lowercase letter",
+          "number": "One number",
+          "special": "One special character"
+        }
+      }
+    },
+    "validation": {
+      "required": "This field is required",
+      "email": "Please enter a valid email address",
+      "password": {
+        "required": "Password is required",
+        "tooShort": "Password must be at least 8 characters long",
+        "tooLong": "Password must be less than 128 characters",
+        "weak": "Password is too weak",
+        "noUppercase": "Password must contain at least one uppercase letter",
+        "noLowercase": "Password must contain at least one lowercase letter",
+        "noNumber": "Password must contain at least one number",
+        "noSpecial": "Password must contain at least one special character",
+        "common": "Password is too common or predictable"
+      },
+      "name": {
+        "required": "Name is required",
+        "tooShort": "Name must be at least 2 characters long",
+        "tooLong": "Name must be less than 100 characters",
+        "invalid": "Name can only contain letters, spaces, hyphens, and apostrophes"
+      },
+      "confirmPassword": {
+        "required": "Please confirm your password",
+        "mismatch": "Passwords do not match"
+      },
+      "terms": {
+        "required": "You must agree to the terms and conditions"
+      },
+      "role": {
+        "required": "Account type is required"
+      }
+    },
+    "errors": {
+      "loginFailed": "Invalid email or password",
+      "accountLocked": "Too many failed login attempts. Please try again later.",
+      "accountLockedTime": "Account temporarily locked due to multiple failed login attempts. Please try again in {{time}}.",
+      "emailExists": "An account with this email already exists",
+      "weakPassword": "Password does not meet security requirements",
+      "invalidCredentials": "Invalid credentials provided",
+      "sessionExpired": "Your session has expired. Please sign in again.",
+      "accessDenied": "Access denied. You don't have permission to perform this action.",
+      "rateLimit": "Too many attempts. Please try again later.",
+      "serverError": "Unable to process your request right now. Please try again.",
+      "networkError": "Network error. Please check your connection and try again.",
+      "unknownError": "An unexpected error occurred. Please try again."
+    },
+    "success": {
+      "loginSuccess": "Signed in successfully! Redirecting...",
+      "registerSuccess": "Registration successful! Redirecting to dashboard...",
+      "passwordReset": "Password reset instructions sent to your email",
+      "accountCreated": "Your account has been created successfully"
+    }
+  },
+  "loading": {
+    "states": {
+      "authenticating": "Authenticating...",
+      "creatingAccount": "Creating account...",
+      "loading": "Loading...",
+      "processing": "Processing...",
+      "saving": "Saving...",
+      "verifying": "Verifying...",
+      "connecting": "Connecting...",
+      "fetching": "Fetching data...",
+      "uploading": "Uploading...",
+      "downloading": "Downloading..."
+    },
+    "messages": {
+      "pleaseWait": "Please wait...",
+      "thisMayTakeMoment": "This may take a moment.",
+      "almostDone": "Almost done...",
+      "finishingUp": "Finishing up...",
+      "secureConnection": "Establishing secure connection...",
+      "validatingData": "Validating your data...",
+      "preparingContent": "Preparing content..."
+    }
+  },
+  "security": {
+    "level": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "notifications": {
+      "suspiciousActivity": "Suspicious activity detected on your account",
+      "securityAlert": "Security alert",
+      "loginFromNewDevice": "New sign-in from {{device}} detected",
+      "multipleFailedAttempts": "Multiple failed sign-in attempts detected",
+      "passwordChanged": "Your password has been changed",
+      "accountLocked": "Your account has been temporarily locked",
+      "accountUnlocked": "Your account has been unlocked"
+    },
+    "actions": {
+      "reviewActivity": "Review activity",
+      "secureAccount": "Secure account",
+      "changePassword": "Change password",
+      "enable2FA": "Enable two-factor authentication",
+      "contactSupport": "Contact support",
+      "dismiss": "Dismiss",
+      "takeAction": "Take Action"
+    },
+    "features": {
+      "encryption": "End-to-end encryption",
+      "twoFactor": "Two-factor authentication",
+      "sessionManagement": "Secure session management",
+      "rateLimiting": "Rate limiting protection",
+      "inputValidation": "Input validation and sanitization",
+      "securityMonitoring": "24/7 security monitoring",
+      "gdprCompliant": "GDPR compliant",
+      "secureBackup": "Secure data backup"
+    }
+  },
+  "accessibility": {
+    "loading": "Loading content",
+    "error": "Error occurred",
+    "required": "required",
+    "optional": "optional",
+    "currentPassword": "Current password",
+    "invalidInput": "Invalid input",
+    "passwordHidden": "Password hidden",
+    "passwordShown": "Password shown",
+    "validationError": "Validation error",
+    "securityFeature": "Security feature",
+    "securityNotice": "Security notice",
+    "statusChanged": "Status changed"
+  }
+}
