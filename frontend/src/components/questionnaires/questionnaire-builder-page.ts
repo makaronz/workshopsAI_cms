@@ -5,7 +5,6 @@
 
 import { LitElement, html, css } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
-import { Router } from '@vaadin/router';
 
 import { QuestionnaireManager } from '../questionnaire/questionnaire-manager.js';
 
@@ -88,21 +87,38 @@ export class QuestionnaireBuilderPage extends LitElement {
   connectedCallback() {
     super.connectedCallback();
 
-    // Extract questionnaire ID from URL
-    const router = (document as any).router as Router;
-    if (router) {
-      const location = router.location;
-      const params = location?.params;
-      if (params?.id) {
-        this.questionnaireId = params.id;
-      }
+    // Extract questionnaire ID from URL path
+    const path = window.location.pathname;
+    const match = path.match(/\/dashboard\/questionnaires\/(?:edit\/)?([^\/]+)/);
+    if (match && match[1]) {
+      this.questionnaireId = match[1];
     }
   }
 
-  private handleNavigateBack() {
-    const router = (document as any).router as Router;
-    if (router) {
-      router.navigate('/questionnaires');
+  private async handleNavigateBack(e: Event) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Navigate back to dashboard using pushState
+    window.history.pushState({}, '', '/dashboard');
+    
+    // Trigger routing update
+    const appElement = document.getElementById('app');
+    if (appElement) {
+      // Import and call initializeRouting dynamically
+      try {
+        const module = await import('../../main-simple');
+        if (module.initializeRouting) {
+          await module.initializeRouting(appElement, '/dashboard');
+        } else {
+          // Fallback: reload page
+          window.location.href = '/dashboard';
+        }
+      } catch (error) {
+        console.error('Error navigating back:', error);
+        // Fallback: reload page
+        window.location.href = '/dashboard';
+      }
     }
   }
 
@@ -112,10 +128,11 @@ export class QuestionnaireBuilderPage extends LitElement {
         <div class="page-header">
           <div class="header-content">
             <div class="breadcrumb">
-              <a href="/questionnaires" class="breadcrumb-link" @click=${(e: Event) => {
-                e.preventDefault();
-                this.handleNavigateBack();
-              }}>
+              <a href="/dashboard" class="breadcrumb-link" @click=${(e: Event) => this.handleNavigateBack(e)}>
+                ${this.language === 'pl' ? 'Dashboard' : 'Dashboard'}
+              </a>
+              <span class="breadcrumb-separator">/</span>
+              <a href="/dashboard/questionnaires" class="breadcrumb-link" @click=${(e: Event) => this.handleNavigateBack(e)}>
                 ${this.language === 'pl' ? 'Kwestionariusze' : 'Questionnaires'}
               </a>
               <span class="breadcrumb-separator">/</span>
@@ -126,6 +143,13 @@ export class QuestionnaireBuilderPage extends LitElement {
                 }
               </span>
             </div>
+            <button 
+              class="back-button" 
+              @click=${(e: Event) => this.handleNavigateBack(e)}
+              style="padding: 0.5rem 1rem; background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; cursor: pointer; font-size: 0.875rem; color: #374151;"
+            >
+              ← ${this.language === 'pl' ? 'Wróć' : 'Back'}
+            </button>
             <h1 class="page-title">
               ${this.language === 'pl' ? 'Edytor kwestionariusza' : 'Questionnaire Builder'}
             </h1>

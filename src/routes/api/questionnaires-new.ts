@@ -839,4 +839,49 @@ router.get(
   },
 );
 
+/**
+ * POST /api/v1/questionnaires/:id/publish
+ * Publish questionnaire
+ */
+router.post(
+  '/:id/publish',
+  authenticateJWT,
+  authorizeRoles(['sociologist-editor', 'admin']),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = req.params;
+
+      // Update questionnaire status to published
+      const questionnaire = await QuestionnaireCrudService.updateQuestionnaire(
+        id,
+        {
+          status: 'published',
+          publishedAt: new Date(),
+        },
+        req,
+      );
+
+      res.status(200).json({
+        success: true,
+        data: questionnaire,
+        message: 'Questionnaire published successfully',
+      });
+    } catch (error) {
+      console.error('Error publishing questionnaire:', error);
+
+      if (error instanceof Error) {
+        if (error.message === 'Questionnaire not found') {
+          return res.status(404).json({
+            success: false,
+            error: 'Not Found',
+            message: error.message,
+          });
+        }
+      }
+
+      next(error);
+    }
+  },
+);
+
 export default router;

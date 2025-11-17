@@ -945,29 +945,39 @@ export class QuestionnaireBuilder extends LitElement {
     placeholder: { pl: string; en: string } = { pl: '', en: '' },
     type: 'input' | 'textarea' = 'input'
   ) {
-    const inputTag = type === 'textarea' ? 'textarea' : 'input';
+    const renderInput = (value: string, placeholderText: string, onChange: (value: string) => void) => {
+      if (type === 'textarea') {
+        return html`
+          <textarea
+            class="${type}"
+            .value=${value}
+            placeholder=${placeholderText}
+            @input=${(e: Event) => onChange((e.target as HTMLTextAreaElement).value)}
+            ?disabled=${this.config.readonly}
+          ></textarea>
+        `;
+      } else {
+        return html`
+          <input
+            class="${type}"
+            .value=${value}
+            placeholder=${placeholderText}
+            @input=${(e: Event) => onChange((e.target as HTMLInputElement).value)}
+            ?disabled=${this.config.readonly}
+          />
+        `;
+      }
+    };
 
     return html`
       <div class="bilingual-inputs">
         <div class="language-input">
           <label class="language-label">Polski</label>
-          <${inputTag}
-            class="${type}"
-            .value=${plValue}
-            placeholder=${placeholder.pl}
-            @input=${(e: Event) => plChange((e.target as HTMLInputElement).value)}
-            ?disabled=${this.config.readonly}
-          />
+          ${renderInput(plValue, placeholder.pl, plChange)}
         </div>
         <div class="language-input">
           <label class="language-label">English</label>
-          <${inputTag}
-            class="${type}"
-            .value=${enValue}
-            placeholder=${placeholder.en}
-            @input=${(e: Event) => enChange((e.target as HTMLInputElement).value)}
-            ?disabled=${this.config.readonly}
-          />
+          ${renderInput(enValue, placeholder.en, enChange)}
         </div>
       </div>
     `;

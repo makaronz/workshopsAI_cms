@@ -66,6 +66,17 @@ class AuthService {
         const token = this.getAccessToken();
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
+          console.log('🔑 [REQUEST] Adding token to request:', {
+            url: config.url,
+            method: config.method,
+            hasToken: !!token,
+            tokenLength: token.length
+          });
+        } else {
+          console.warn('⚠️ [REQUEST] No token available for request:', {
+            url: config.url,
+            method: config.method
+          });
         }
         return config;
       },
@@ -78,6 +89,17 @@ class AuthService {
     this.api.interceptors.response.use(
       (response) => response,
       async (error) => {
+        // Log all Axios errors for comprehensive debugging
+        console.error("[AXIOS ERROR]", {
+          status: error?.response?.status,
+          statusText: error?.response?.statusText,
+          data: error?.response?.data,
+          url: error?.config?.url,
+          method: error?.config?.method,
+          headers: error?.config?.headers,
+          timestamp: new Date().toISOString()
+        });
+
         const originalRequest = error.config;
 
         if (error.response?.status === 401 && !originalRequest._retry) {
@@ -91,6 +113,7 @@ class AuthService {
             }
           } catch (refreshError) {
             // Refresh failed, logout user
+            console.error("[TOKEN REFRESH ERROR]", refreshError);
             await this.logout();
             window.location.href = '/login';
             return Promise.reject(refreshError);
@@ -124,14 +147,42 @@ class AuthService {
 
   private async validateStoredAuth(): Promise<User | null> {
     const token = this.getAccessToken();
-    if (!token) return null;
+    if (!token) {
+      console.log('🔍 [VALIDATE AUTH] No token found in storage');
+      return null;
+    }
+
+    console.log('🔍 [VALIDATE AUTH] Validating stored token...', {
+      tokenLength: token.length,
+      tokenPrefix: token.substring(0, 20) + '...'
+    });
 
     try {
       const response = await this.api.get<User>('/auth/me');
+      console.log('✅ [VALIDATE AUTH] Token is valid, user:', response.data?.email);
       return response.data;
-    } catch (error) {
-      // Token is invalid, clear storage
-      this.clearAuthStorage();
+    } catch (error: any) {
+      console.warn('⚠️ [VALIDATE AUTH] Token validation failed:', {
+        status: error?.response?.status,
+        message: error?.response?.data?.message || error?.message,
+        url: error?.config?.url
+      });
+      
+      // Only clear storage if it's a definitive authentication error
+      // Don't clear on network errors or temporary server issues
+      if (error?.response?.status === 401) {
+        // 401 means token is invalid/expired - clear it
+        console.warn('⚠️ [VALIDATE AUTH] Token is invalid (401), clearing storage');
+        this.clearAuthStorage();
+      } else if (error?.response?.status === 403) {
+        // 403 means token is valid but user doesn't have permission
+        console.warn('⚠️ [VALIDATE AUTH] Token is valid but insufficient permissions (403)');
+        // Don't clear - token is valid, just no permission
+      } else {
+        // Network error or other issue - don't clear token
+        console.warn('⚠️ [VALIDATE AUTH] Validation error but keeping token (might be temporary):', error?.response?.status || 'network error');
+      }
+      
       return null;
     }
   }
@@ -199,9 +250,13 @@ class AuthService {
   }
 
   public async login(credentials: LoginCredentials): Promise<AuthResponse> {
+    console.log('🔐 [LOGIN START] Attempting login with:', {
+      email: credentials.email,
+      rememberMe: credentials.rememberMe,
+      timestamp: new Date().toISOString()
+    });
+
     try {
-      console.log('🔐 Attempting login with:', { email: credentials.email });
-      
       const response = await this.api.post<{
         success: boolean;
         message: string;
@@ -217,39 +272,53 @@ class AuthService {
         };
       }>('/auth/login', credentials);
 
-      console.log('✅ Login response received:', {
+      console.log('✅ [LOGIN SUCCESS] Response received:', {
+        status: response.status,
+        statusText: response.statusText,
         success: response.data.success,
         hasUser: !!response.data.data?.user,
-        hasTokens: !!response.data.data?.tokens
+        hasTokens: !!response.data.data?.tokens,
+        responseTime: new Date().toISOString()
       });
 
-      console.log('📦 Response data structure:', {
+      console.log('📦 [LOGIN DATA] Response data structure:', {
         hasData: !!response.data.data,
         hasUser: !!response.data.data?.user,
         hasTokens: !!response.data.data?.tokens,
-        tokensKeys: response.data.data?.tokens ? Object.keys(response.data.data.tokens) : []
+        tokensKeys: response.data.data?.tokens ? Object.keys(response.data.data.tokens) : [],
+        sessionId: response.data.data?.sessionId
       });
 
       const { user, tokens } = response.data.data;
 
-      console.log('💾 Saving tokens...', {
+      console.log('💾 [TOKEN STORAGE] Saving tokens...', {
         hasAccessToken: !!tokens?.accessToken,
         hasRefreshToken: !!tokens?.refreshToken,
+        tokenType: tokens?.tokenType,
+        expiresIn: tokens?.expiresIn,
         rememberMe: credentials.rememberMe
       });
-      
+
       if (!tokens?.accessToken || !tokens?.refreshToken) {
-        throw new Error('Missing tokens in response');
+        const error = new Error('Missing tokens in response');
+        console.error('❌ [LOGIN ERROR] Token validation failed:', {
+          hasAccessToken: !!tokens?.accessToken,
+          hasRefreshToken: !!tokens?.refreshToken,
+          responseData: response.data
+        });
+        throw error;
       }
-      
+
       this.setAccessToken(tokens.accessToken, credentials.rememberMe);
       this.setRefreshToken(tokens.refreshToken);
       this.currentUser = user;
 
-      console.log('✅ Login successful, tokens saved', {
+      console.log('✅ [LOGIN COMPLETE] Authentication successful', {
         accessTokenSaved: !!this.getAccessToken(),
         refreshTokenSaved: !!this.getRefreshToken(),
-        currentUser: !!this.currentUser
+        currentUser: !!this.currentUser,
+        userRole: user?.role,
+        timestamp: new Date().toISOString()
       });
 
       return {
@@ -259,13 +328,39 @@ class AuthService {
         expiresIn: tokens.expiresIn,
       };
     } catch (error: any) {
-      console.error('❌ Login error:', error);
-      console.error('❌ Error response:', error.response?.data);
-      
-      const message = error.response?.data?.message || 
-                     error.response?.data?.error?.message || 
+      // Comprehensive error logging with full context
+      const errorContext = {
+        message: error?.message,
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        data: error?.response?.data,
+        code: error?.code,
+        config: {
+          url: error?.config?.url,
+          method: error?.config?.method,
+          headers: error?.config?.headers,
+          timeout: error?.config?.timeout
+        },
+        timestamp: new Date().toISOString(),
+        email: credentials.email
+      };
+
+      console.error('❌ [LOGIN ERROR] Authentication failed:', errorContext);
+      console.error('❌ [LOGIN ERROR] Full error object:', error);
+      console.error('❌ [LOGIN ERROR] Error stack trace:', error?.stack);
+
+      // Enhanced error message extraction
+      const message = error?.response?.data?.message ||
+                     error?.response?.data?.error?.message ||
+                     error?.response?.data?.error ||
+                     error?.message ||
                      t('auth.loginError');
-      throw new Error(message);
+
+      const enhancedError = new Error(message);
+      enhancedError.cause = errorContext;
+
+      console.error('❌ [LOGIN ERROR] Rethrowing with message:', message);
+      throw enhancedError;
     }
   }
 

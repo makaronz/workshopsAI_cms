@@ -135,7 +135,33 @@ export class AuthService {
 
   // Verify access token
   static verifyAccessToken(token: string): JWTPayload {
-    return jwt.verify(token, JWT_SECRET) as JWTPayload;
+    try {
+      console.log('🔐 [AUTH SERVICE] Verifying token:', {
+        tokenLength: token.length,
+        tokenPrefix: token.substring(0, 20) + '...',
+        hasJwtSecret: !!JWT_SECRET,
+        jwtSecretLength: JWT_SECRET?.length || 0
+      });
+      
+      const payload = jwt.verify(token, JWT_SECRET) as JWTPayload;
+      
+      console.log('✅ [AUTH SERVICE] Token verified successfully:', {
+        userId: payload.userId,
+        email: payload.email,
+        role: payload.role,
+        sessionId: payload.sessionId
+      });
+      
+      return payload;
+    } catch (error: any) {
+      console.error('❌ [AUTH SERVICE] Token verification failed:', {
+        name: error?.name,
+        message: error?.message,
+        tokenLength: token.length,
+        hasJwtSecret: !!JWT_SECRET
+      });
+      throw error;
+    }
   }
 
   // Verify refresh token format (not JWT, just a random string)

@@ -384,6 +384,7 @@ export class LoginForm extends LitElement {
             id="email"
             name="email"
             type="email"
+            data-testid="email-input"
             class=${classMap({
               'form-input': true,
               'error': !!errors.email
@@ -412,6 +413,7 @@ export class LoginForm extends LitElement {
             id="password"
             name="password"
             type="password"
+            data-testid="password-input"
             class=${classMap({
               'form-input': true,
               'error': !!errors.password
@@ -448,6 +450,7 @@ export class LoginForm extends LitElement {
         <div class="form-actions">
           <button
             type="submit"
+            data-testid="login-button"
             class=${classMap({
               'login-button': true,
               'loading': isLoading

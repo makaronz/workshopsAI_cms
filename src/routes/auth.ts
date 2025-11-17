@@ -181,8 +181,25 @@ router.post(
   '/refresh',
   authLimiter,
   handleAsync(async (req: Request, res: Response) => {
-    const { refreshToken } = req.body;
-    const cookieToken = req.cookies.refreshToken;
+    // Log request details for debugging
+    console.log('🔄 [AUTH/REFRESH] Request received:', {
+      hasBody: !!req.body,
+      bodyType: typeof req.body,
+      bodyKeys: req.body ? Object.keys(req.body) : [],
+      hasCookies: !!req.cookies,
+      cookieKeys: req.cookies ? Object.keys(req.cookies) : [],
+      contentType: req.headers['content-type']
+    });
+
+    // Safely extract refreshToken from body (body might be undefined)
+    const refreshToken = req.body && typeof req.body === 'object' ? req.body.refreshToken : undefined;
+    const cookieToken = req.cookies && typeof req.cookies === 'object' ? req.cookies.refreshToken : undefined;
+
+    console.log('🔑 [AUTH/REFRESH] Tokens extracted:', {
+      hasRefreshToken: !!refreshToken,
+      hasCookieToken: !!cookieToken,
+      refreshTokenLength: refreshToken?.length || 0
+    });
 
     // Use token from body or cookie
     const tokenToUse = refreshToken || cookieToken;
@@ -210,8 +227,16 @@ router.post(
       });
     } catch (error: any) {
       console.error('Token refresh error:', error);
+      console.error('Token refresh error details:', {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack,
+        refreshTokenLength: tokenToUse?.length
+      });
 
-      if (error.message.includes('Invalid refresh token')) {
+      if (error.message?.includes('Invalid refresh token') || 
+          error.message?.includes('expired') ||
+          error.message?.includes('not found')) {
         // Clear invalid cookie
         res.clearCookie('refreshToken', { path: '/api/v1/auth/refresh' });
 
@@ -221,9 +246,17 @@ router.post(
         });
       }
 
+      // Log full error for debugging
+      console.error('Unexpected refresh token error:', {
+        error: error,
+        refreshToken: tokenToUse ? `${tokenToUse.substring(0, 10)}...` : 'missing'
+      });
+
       res.status(500).json({
         error: 'Token refresh failed',
-        message: 'An unexpected error occurred',
+        message: process.env.NODE_ENV === 'development' 
+          ? error.message || 'An unexpected error occurred'
+          : 'An unexpected error occurred',
       });
     }
   }),
@@ -564,23 +597,59 @@ router.post(
 router.get(
   '/me',
   handleAsync(async (req: Request, res: Response) => {
-    if (!req.user) {
+    // Extract and verify token manually since middleware might not be applied
+    const authHeader = req.headers.authorization;
+    
+    console.log('🔍 [AUTH/ME] Request received:', {
+      hasAuthHeader: !!authHeader,
+      authHeaderPrefix: authHeader?.substring(0, 20),
+      method: req.method,
+      url: req.url,
+      headers: {
+        authorization: authHeader ? 'Bearer ***' : 'missing',
+        'content-type': req.headers['content-type'],
+      }
+    });
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.warn('⚠️ [AUTH/ME] No valid auth header');
       return res.status(401).json({
         error: 'Authentication required',
-        message: 'User not authenticated',
+        message: 'No token provided',
       });
     }
 
+    const token = authHeader.substring(7);
+    
+    console.log('🔑 [AUTH/ME] Token extracted:', {
+      tokenLength: token.length,
+      tokenPrefix: token.substring(0, 20) + '...'
+    });
+    
     try {
-      const user = await AuthService.findUserById(req.user.id);
-      if (!user) {
-        return res.status(404).json({
-          error: 'User not found',
-          message: 'User account not found',
+      // Verify token using AuthService
+      console.log('🔐 [AUTH/ME] Verifying token...');
+      const payload = AuthService.verifyAccessToken(token);
+      console.log('✅ [AUTH/ME] Token verified, userId:', payload.userId);
+      
+      // Get user from database
+      const user = await AuthService.findUserById(payload.userId);
+      console.log('👤 [AUTH/ME] User found:', {
+        id: user?.id,
+        email: user?.email,
+        isActive: user?.isActive
+      });
+      
+      if (!user || !user.isActive) {
+        console.warn('⚠️ [AUTH/ME] User not found or inactive');
+        return res.status(401).json({
+          error: 'Invalid token',
+          message: 'User not found or inactive',
         });
       }
 
-      res.status(200).json({
+      console.log('✅ [AUTH/ME] Returning user data');
+      return res.status(200).json({
         success: true,
         data: {
           id: user.id,
@@ -594,11 +663,16 @@ router.get(
         },
       });
     } catch (error: any) {
-      console.error('Get user error:', error);
+      console.error('❌ [AUTH/ME] Token verification failed:', error);
+      console.error('❌ [AUTH/ME] Error details:', {
+        name: error?.name,
+        message: error?.message,
+        stack: error?.stack?.split('\n').slice(0, 5) // First 5 lines of stack
+      });
 
-      res.status(500).json({
-        error: 'Failed to retrieve user information',
-        message: 'An unexpected error occurred',
+      return res.status(401).json({
+        error: 'Authentication failed',
+        message: error.message || 'Invalid or expired token',
       });
     }
   }),

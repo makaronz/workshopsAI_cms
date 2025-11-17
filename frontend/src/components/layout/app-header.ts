@@ -1,7 +1,7 @@
 import { LitElement, html, css, CSSResultGroup, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
-import i18nService from '../../services/i18n';
+import i18nService, { t } from '../../services/i18n';
 import authService from '../../services/auth';
 
 @customElement('app-header')

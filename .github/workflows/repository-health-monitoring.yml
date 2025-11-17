@@ -611,10 +611,19 @@ jobs:
     if: always() && (needs.comprehensive-health.result == 'success' || needs.quick-health.result == 'success')
 
     steps:
+      - name: Set health score
+        id: set-health-score
+        run: |
+          if [ "${{ needs.comprehensive-health.result }}" == "success" ]; then
+            echo "health_score=${{ needs.comprehensive-health.outputs.health_score }}" >> $GITHUB_OUTPUT
+          else
+            echo "health_score=0" >> $GITHUB_OUTPUT
+          fi
+
       - name: Update repository health status
         uses: actions/github-script@v7
         env:
-          HEALTH_SCORE: ${{ needs.comprehensive-health.result == 'success' && needs.comprehensive-health.outputs.health_score || '0' }}
+          HEALTH_SCORE: ${{ steps.set-health-score.outputs.health_score }}
         with:
           script: |
             const healthScore = Number(process.env.HEALTH_SCORE || 0);

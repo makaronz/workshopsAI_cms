@@ -11,6 +11,7 @@ import hpp from 'hpp';
 import mongoSanitize from 'express-mongo-sanitize';
 import xss from 'xss';
 import { createServer } from 'http';
+import { join } from 'path';
 
 // Import routes
 import workshopRoutes from './routes/workshops';
@@ -203,6 +204,11 @@ async function checkLLMServicesHealth() {
   }
 }
 
+// Static file serving for frontend
+app.use(express.static(join(__dirname, '../public'), {
+  index: ['index.html', 'index.htm'],
+}));
+
 // API routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/workshops', workshopRoutes);
@@ -216,6 +222,11 @@ app.use('/api/v1/public', publicRoutes);
 // Performance monitoring routes (will be initialized after services are set up)
 
 // Preview routes will be initialized dynamically after services are set up
+
+// Login page route
+app.get('/login', (_req, res) => {
+  res.sendFile(join(__dirname, '../public/login.html'));
+});
 
 // Root endpoint
 app.get('/', (_req, res) => {
