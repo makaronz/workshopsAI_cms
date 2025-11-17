@@ -20,7 +20,7 @@ async function globalSetup(config: FullConfig) {
 
     while (retries < maxRetries && !isReady) {
       try {
-        await page.goto(process.env.BASE_URL || 'http://localhost:3000', {
+        await page.goto(process.env.BASE_URL || 'http://localhost:3010', {
           waitUntil: 'networkidle',
           timeout: 5000
         });

@@ -11,6 +11,7 @@ import hpp from 'hpp';
 import mongoSanitize from 'express-mongo-sanitize';
 import xss from 'xss';
 import { createServer } from 'http';
+import { join } from 'path';
 
 // Import routes
 import workshopRoutes from './routes/workshops';
@@ -56,7 +57,7 @@ let dbOptimization: DatabaseOptimizationIntegration;
 let streamingWorker: StreamingLLMAnalysisWorker;
 
 // Environment variables - Fix index signature access
-const PORT = process.env['PORT'] || 3001;
+const PORT = process.env['PORT'] || 3010;
 const NODE_ENV = process.env['NODE_ENV'] || 'development';
 const CORS_ORIGIN = process.env['CORS_ORIGIN'] || 'http://localhost:3000';
 
@@ -203,6 +204,11 @@ async function checkLLMServicesHealth() {
   }
 }
 
+// Static file serving for frontend
+app.use(express.static(join(__dirname, '../public'), {
+  index: ['index.html', 'index.htm'],
+}));
+
 // API routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/workshops', workshopRoutes);
@@ -216,6 +222,11 @@ app.use('/api/v1/public', publicRoutes);
 // Performance monitoring routes (will be initialized after services are set up)
 
 // Preview routes will be initialized dynamically after services are set up
+
+// Login page route
+app.get('/login', (_req, res) => {
+  res.sendFile(join(__dirname, '../public/login.html'));
+});
 
 // Root endpoint
 app.get('/', (_req, res) => {

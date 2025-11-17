@@ -62,6 +62,7 @@ export class LoginForm extends LitElement {
       font-size: 1rem;
       transition: border-color 0.15s, box-shadow 0.15s;
       background: var(--input-bg, #ffffff);
+      color: var(--text-color, #1f2937);
     }
 
     .form-input:focus {
@@ -383,6 +384,7 @@ export class LoginForm extends LitElement {
             id="email"
             name="email"
             type="email"
+            data-testid="email-input"
             class=${classMap({
               'form-input': true,
               'error': !!errors.email
@@ -411,6 +413,7 @@ export class LoginForm extends LitElement {
             id="password"
             name="password"
             type="password"
+            data-testid="password-input"
             class=${classMap({
               'form-input': true,
               'error': !!errors.password
@@ -447,6 +450,7 @@ export class LoginForm extends LitElement {
         <div class="form-actions">
           <button
             type="submit"
+            data-testid="login-button"
             class=${classMap({
               'login-button': true,
               'loading': isLoading
@@ -474,7 +478,7 @@ export class LoginForm extends LitElement {
             e.preventDefault();
             this.dispatchEvent(new CustomEvent('navigate-to-register', { bubbles: true }));
           }}>
-            Contact the admin team
+            Create an account
           </a>
         </div>
       </div>

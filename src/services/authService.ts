@@ -5,7 +5,7 @@ import { Request } from 'express';
 import { db, RLSHelper } from '../config/postgresql-database';
 import { redisService } from '../config/redis';
 import { users, auditLogs, consents } from '../models/postgresql-schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, isNull } from 'drizzle-orm';
 
 // JWT configuration
 const JWT_SECRET =
@@ -135,7 +135,33 @@ export class AuthService {
 
   // Verify access token
   static verifyAccessToken(token: string): JWTPayload {
-    return jwt.verify(token, JWT_SECRET) as JWTPayload;
+    try {
+      console.log('🔐 [AUTH SERVICE] Verifying token:', {
+        tokenLength: token.length,
+        tokenPrefix: token.substring(0, 20) + '...',
+        hasJwtSecret: !!JWT_SECRET,
+        jwtSecretLength: JWT_SECRET?.length || 0
+      });
+      
+      const payload = jwt.verify(token, JWT_SECRET) as JWTPayload;
+      
+      console.log('✅ [AUTH SERVICE] Token verified successfully:', {
+        userId: payload.userId,
+        email: payload.email,
+        role: payload.role,
+        sessionId: payload.sessionId
+      });
+      
+      return payload;
+    } catch (error: any) {
+      console.error('❌ [AUTH SERVICE] Token verification failed:', {
+        name: error?.name,
+        message: error?.message,
+        tokenLength: token.length,
+        hasJwtSecret: !!JWT_SECRET
+      });
+      throw error;
+    }
   }
 
   // Verify refresh token format (not JWT, just a random string)
@@ -151,7 +177,7 @@ export class AuthService {
       .where(
         and(
           eq(users.email, email.toLowerCase()),
-          eq(users.deletedAt, null as any),
+          isNull(users.deletedAt),
         ),
       )
       .limit(1);
@@ -163,7 +189,7 @@ export class AuthService {
     const user = await db
       .select()
       .from(users)
-      .where(and(eq(users.id, id), eq(users.deletedAt, null as any)))
+      .where(and(eq(users.id, id), isNull(users.deletedAt)))
       .limit(1);
     return user[0] || null;
   }

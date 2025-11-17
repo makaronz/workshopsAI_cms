@@ -5,6 +5,7 @@
 
 import { LitElement, html, css, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { classMap } from 'lit/directives/class-map.js';
 
 import type {
   Questionnaire,
@@ -306,7 +307,8 @@ export class QuestionnaireManager extends LitElement {
   connectedCallback() {
     super.connectedCallback();
 
-    if (this.questionnaireId) {
+    // Only load if questionnaireId is provided and not 'new'
+    if (this.questionnaireId && this.questionnaireId !== 'new') {
       this.loadQuestionnaire();
     } else {
       this.createNewQuestionnaire();
@@ -317,7 +319,21 @@ export class QuestionnaireManager extends LitElement {
     this.isLoading = true;
 
     try {
-      const response = await fetch(`${this.apiBaseUrl}/${this.questionnaireId}`);
+      // Get access token from storage
+      const token = localStorage.getItem('workshopsai-access-token') || 
+                    sessionStorage.getItem('workshopsai-access-token');
+      
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${this.apiBaseUrl}/${this.questionnaireId}`, {
+        headers
+      });
 
       if (!response.ok) {
         throw new Error('Failed to load questionnaire');
@@ -345,19 +361,27 @@ export class QuestionnaireManager extends LitElement {
     this.saveStatus = 'saving';
 
     try {
-      const url = this.questionnaireId ?
+      // Get access token from storage
+      const token = localStorage.getItem('workshopsai-access-token') || 
+                    sessionStorage.getItem('workshopsai-access-token');
+      
+      const url = this.questionnaireId && this.questionnaireId !== 'new' ?
         `${this.apiBaseUrl}/${this.questionnaireId}` :
         this.apiBaseUrl;
 
-      const method = this.questionnaireId ? 'PUT' : 'POST';
+      const method = (this.questionnaireId && this.questionnaireId !== 'new') ? 'PUT' : 'POST';
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
 
       const response = await fetch(url, {
         method,
-        headers: {
-          'Content-Type': 'application/json',
-          // Add auth headers here if needed
-          // 'Authorization': `Bearer ${token}`
-        },
+        headers,
         body: JSON.stringify(questionnaire)
       });
 
@@ -406,12 +430,21 @@ export class QuestionnaireManager extends LitElement {
     this.isLoading = true;
 
     try {
+      // Get access token from storage
+      const token = localStorage.getItem('workshopsai-access-token') || 
+                    sessionStorage.getItem('workshopsai-access-token');
+      
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const response = await fetch(`${this.apiBaseUrl}/${this.questionnaire.id}/publish`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Add auth headers here if needed
-        }
+        headers
       });
 
       if (!response.ok) {
