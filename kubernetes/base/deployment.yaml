@@ -31,7 +31,7 @@ spec:
 
       containers:
       - name: app
-        image: workshopsai/cms:latest
+        image: workshopsai-cms:latest
         imagePullPolicy: Always
 
         ports:

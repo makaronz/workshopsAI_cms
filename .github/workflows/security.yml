@@ -180,13 +180,13 @@ jobs:
           target: production
           push: false
           load: true
-          tags: workshopsai/cms:security-scan
+          tags: workshopsai-cms:security-scan
           cache-from: type=gha
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'workshopsai/cms:security-scan'
+          image-ref: 'workshopsai-cms:security-scan'
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH,MEDIUM'
@@ -199,7 +199,7 @@ jobs:
       - name: Run Grype vulnerability scanner
         uses: anchore/scan-action@v3
         with:
-          image: 'workshopsai/cms:security-scan'
+          image: 'workshopsai-cms:security-scan'
           fail-build: false
           output-format: 'sarif'
           output-file: 'grype-results.sarif'
@@ -215,7 +215,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          image: 'workshopsai/cms:security-scan'
+          image: 'workshopsai-cms:security-scan'
           args: --severity-threshold=high
 
       - name: Dockerfile linting with Hadolint

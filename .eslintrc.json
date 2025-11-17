@@ -1,12 +1,17 @@
 {
   "env": {
     "browser": true,
-    "es2021": true,
+    "es2022": true,
     "node": true,
     "jest": true
   },
   "extends": [
-    "eslint:recommended"
+    "eslint:recommended",
+    "plugin:security/recommended"
+  ],
+  "plugins": [
+    "@typescript-eslint",
+    "security"
   ],
   "overrides": [
     {
@@ -15,7 +20,8 @@
       "plugins": ["@typescript-eslint"],
       "extends": [
         "eslint:recommended",
-        "plugin:@typescript-eslint/recommended"
+        "plugin:@typescript-eslint/recommended",
+        "plugin:security/recommended"
       ],
       "rules": {
         "@typescript-eslint/no-unused-vars": [
@@ -25,20 +31,36 @@
         "@typescript-eslint/explicit-function-return-type": "off",
         "@typescript-eslint/explicit-module-boundary-types": "off",
         "@typescript-eslint/no-explicit-any": "warn",
-        "@typescript-eslint/no-non-null-assertion": "off"
+        "@typescript-eslint/no-non-null-assertion": "off",
+        "@typescript-eslint/prefer-nullish-coalescing": "error",
+        "@typescript-eslint/prefer-optional-chain": "error",
+        "@typescript-eslint/no-unnecessary-condition": "warn",
+        "@typescript-eslint/no-floating-promises": "error",
+        "security/detect-object-injection": "warn",
+        "security/detect-non-literal-fs-filename": "off"
       }
     },
     {
       "files": ["**/*.test.ts", "**/*.spec.ts"],
       "rules": {
         "@typescript-eslint/no-explicit-any": "off",
-        "no-console": "off"
+        "no-console": "off",
+        "security/detect-object-injection": "off"
+      }
+    },
+    {
+      "files": ["scripts/**/*.js"],
+      "rules": {
+        "no-console": "off",
+        "@typescript-eslint/no-var-requires": "off",
+        "security/detect-object-injection": "warn"
       }
     }
   ],
   "parserOptions": {
-    "ecmaVersion": "latest",
-    "sourceType": "module"
+    "ecmaVersion": 2022,
+    "sourceType": "module",
+    "project": "./tsconfig.json"
   },
   "rules": {
     "no-console": "warn",
@@ -47,13 +69,46 @@
     "no-unused-expressions": "error",
     "prefer-const": "error",
     "no-var": "error",
-    "indent": ["error", 2],
-    "quotes": ["error", "single"],
+    "indent": ["error", 2, { "SwitchCase": 1 }],
+    "quotes": ["error", "single", { "avoidEscape": true }],
     "semi": ["error", "always"],
     "comma-dangle": ["error", "always-multiline"],
     "eol-last": ["error", "always"],
     "no-trailing-spaces": "error",
-    "no-control-regex": "off"
+    "no-control-regex": "off",
+    "eqeqeq": ["error", "always"],
+    "curly": ["error", "all"],
+    "brace-style": ["error", "1tbs"],
+    "max-len": ["warn", { "code": 120, "ignoreUrls": true }],
+    "no-multiple-empty-lines": ["error", { "max": 2 }],
+    "object-shorthand": "error",
+    "prefer-arrow-callback": "error",
+    "prefer-template": "error",
+    "arrow-spacing": "error",
+    "comma-spacing": "error",
+    "key-spacing": "error",
+    "keyword-spacing": "error",
+    "space-before-blocks": "error",
+    "space-before-function-paren": ["error", {
+      "anonymous": "always",
+      "named": "never",
+      "asyncArrow": "always"
+    }],
+    "space-in-parens": "error",
+    "space-infix-ops": "error",
+    "space-unary-ops": "error",
+    "spaced-comment": "error"
   },
-  "ignorePatterns": ["dist/", "node_modules/", "coverage/", "*.js", "*.mjs"]
+  "ignorePatterns": [
+    "dist/",
+    "dist-secure/",
+    "node_modules/",
+    "coverage/",
+    "test-results/",
+    "playwright-report/",
+    "*.js",
+    "*.mjs",
+    ".eslintcache"
+  ],
+  "reportUnusedDisableDirectives": true
 }

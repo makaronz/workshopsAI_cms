@@ -3,7 +3,7 @@ import { optimizedRedisService } from '../config/optimized-redis';
 import { logger } from '../utils/logger';
 
 // Performance monitoring middleware
-interface PerformanceMetrics {
+export interface PerformanceMetrics {
   requestCount: number;
   totalResponseTime: number;
   averageResponseTime: number;

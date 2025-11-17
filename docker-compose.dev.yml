@@ -1,5 +1,4 @@
 # Development Docker Compose configuration for workshopsAI CMS
-version: '3.8'
 
 services:
   # Main application service
@@ -8,7 +7,7 @@ services:
       context: .
       target: development
       dockerfile: Dockerfile
-    image: workshopsai/cms:dev
+    image: workshopsai-cms:dev
     container_name: workshopsai-cms-dev
     restart: unless-stopped
     ports:
@@ -31,6 +30,9 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-debug}
       - SKIP_AUTH=${SKIP_AUTH:-false}
       - ENABLE_SWAGGER_DOCS=${ENABLE_SWAGGER_DOCS:-true}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-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}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-AIzaSyCyX2BHe4v_wH_a6Twd--bVVr8cnmvrl-o}
     volumes:
       - .:/app
       - /app/node_modules

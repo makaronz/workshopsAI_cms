@@ -11,14 +11,11 @@ class RedisClient {
   static getInstance(): Redis {
     if (!RedisClient.instance) {
       RedisClient.instance = new Redis(REDIS_URL, {
-        retryDelayOnFailover: 100,
         enableReadyCheck: false,
         maxRetriesPerRequest: null,
         lazyConnect: true,
         // Enable offline queue for resilience
         enableOfflineQueue: true,
-        // Default key expiration
-        defaultExpiration: parseInt(REDIS_TTL),
       });
 
       RedisClient.instance.on('error', err => {

@@ -69,7 +69,7 @@ workshopsAI CMS is a specialized content management system that enables sociolog
 - **TypeScript** - Typowanie statyczne
 - **Express.js** - Framework webowy
 - **Drizzle ORM** - Obsługa bazy danych
-- **MySQL** - Baza danych
+- **PostgreSQL** - Baza danych
 - **JWT** - Autentykacja
 - **Winston** - Logowanie
 - **Multer** - Przesyłanie plików
@@ -91,7 +91,7 @@ workshopsAI CMS is a specialized content management system that enables sociolog
 ### Wymagania systemowe
 - Node.js >= 18.0.0
 - npm >= 8.0.0
-- MySQL >= 8.0
+- PostgreSQL >= 15.0
 - Git
 
 ### Klonowanie projektu
@@ -106,9 +106,9 @@ npm install
 ```
 
 ### Konfiguracja bazy danych
-1. Stwórz bazę danych MySQL:
+1. Stwórz bazę danych PostgreSQL:
 ```sql
-CREATE DATABASE workshopsai_cms CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE workshopsai_cms;
 ```
 
 2. Skonfiguruj zmienne środowiskowe (patrz sekcja [Konfiguracja](#konfiguracja))
@@ -148,8 +148,8 @@ W pliku `src/config/database.ts` dostosuj połączenie z bazą danych:
 ```typescript
 const dbConfig = {
   host: process.env.DB_HOST || "localhost",
-  port: parseInt(process.env.DB_PORT || "3306"),
-  user: process.env.DB_USER || "root",
+  port: parseInt(process.env.DB_PORT || "5433"),
+  user: process.env.DB_USER || "postgres",
   password: process.env.DB_PASSWORD || "",
   database: process.env.DB_NAME || "workshopsai_cms",
 };

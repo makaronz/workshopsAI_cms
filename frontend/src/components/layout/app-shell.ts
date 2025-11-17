@@ -2,7 +2,7 @@ import { LitElement, html, css, CSSResultGroup, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { Router } from '@vaadin/router';
 import authService from '../../services/auth';
-import t from '../../services/i18n';
+import i18nService from '../../services/i18n';
 import './app-header';
 import './app-footer';
 
@@ -275,7 +275,7 @@ export class AppShell extends LitElement {
     return html`
       <div class="loading-container" role="status" aria-live="polite">
         <div class="loading-spinner" aria-hidden="true"></div>
-        <p class="loading-text">${t('common.loading')}</p>
+        <p class="loading-text">Loading...</p>
       </div>
     `;
   }
@@ -286,15 +286,15 @@ export class AppShell extends LitElement {
         <svg class="error-icon" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
           <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
         </svg>
-        <h2 class="error-title">${t('app.error')}</h2>
-        <p class="error-message">${this.error || t('common.error')}</p>
+        <h2 class="error-title">Error</h2>
+        <p class="error-message">${this.error || 'An error occurred'}</p>
         <div class="error-actions">
           <button class="error-button primary" @click=${this.handleRetry}>
-            ${t('app.retry')}
+            Retry
           </button>
           ${this.isAuthenticated ? html`
             <button class="error-button" @click=${this.handleLogout}>
-              ${t('auth.logout')}
+              Logout
             </button>
           ` : ''}
         </div>
@@ -305,7 +305,7 @@ export class AppShell extends LitElement {
   private renderContent(): TemplateResult {
     return html`
       <div class="app-container">
-        <a href="#main" class="skip-link">${t('accessibility.skipToContent')}</a>
+        <a href="#main" class="skip-link">Skip to content</a>
 
         <app-header ?isAuthenticated=${this.isAuthenticated} .user=${this.currentUser}></app-header>
 

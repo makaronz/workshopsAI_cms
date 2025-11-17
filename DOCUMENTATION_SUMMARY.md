@@ -269,7 +269,7 @@ Przygotowałem kompleksowy system dokumentacji dla WorkshopsAI CMS, który umoż
 
 ### 👥 **Community:**
 - **Forum:** https://community.workshopsai.com
-- **GitHub:** https://github.com/workshopsai/cms/discussions
+- **GitHub:** https://github.com/workshopsai-cms/discussions
 - **Discord:** Server for real-time support
 
 ### 📚 **Resources:**

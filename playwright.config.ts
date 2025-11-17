@@ -30,7 +30,7 @@ export default defineConfig({
 
   // Reporter configuration
   reporter: [
-    ['html', { outputFolder: './test-results/playwright' }],
+    ['html', { outputFolder: './test-results/playwright-report' }],
     ['json', { outputFile: './test-results/playwright/results.json' }],
     ['junit', { outputFile: './test-results/playwright/results.xml' }],
     ['list'],
@@ -40,7 +40,7 @@ export default defineConfig({
   // Global test configuration
   use: {
     // Base URL to use in actions like `await page.goto('/')`
-    baseURL: process.env.BASE_URL || 'http://localhost:3000',
+    baseURL: process.env.BASE_URL || 'http://localhost:3001',
 
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
@@ -82,28 +82,28 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testMatch: '**/chrome/**/*.spec.ts',
+      testMatch: '**/e2e/**/*.spec.ts',
       dependencies: ['setup']
     },
 
     {
       name: 'firefox',
       use: { ...devices['Desktop Firefox'] },
-      testMatch: '**/firefox/**/*.spec.ts',
+      testMatch: '**/e2e/**/*.spec.ts',
       dependencies: ['setup']
     },
 
     {
       name: 'webkit',
       use: { ...devices['Desktop Safari'] },
-      testMatch: '**/safari/**/*.spec.ts',
+      testMatch: '**/e2e/**/*.spec.ts',
       dependencies: ['setup']
     },
 
     {
       name: 'edge',
       use: { ...devices['Desktop Edge'] },
-      testMatch: '**/edge/**/*.spec.ts',
+      testMatch: '**/e2e/**/*.spec.ts',
       dependencies: ['setup']
     },
 
@@ -111,14 +111,14 @@ export default defineConfig({
     {
       name: 'Mobile Chrome',
       use: { ...devices['Pixel 5'] },
-      testMatch: '**/mobile/**/*.spec.ts',
+      testMatch: '**/e2e/**/*.spec.ts',
       dependencies: ['setup']
     },
 
     {
       name: 'Mobile Safari',
       use: { ...devices['iPhone 12'] },
-      testMatch: '**/mobile/**/*.spec.ts',
+      testMatch: '**/e2e/**/*.spec.ts',
       dependencies: ['setup']
     },
 
@@ -126,7 +126,7 @@ export default defineConfig({
     {
       name: 'Tablet',
       use: { ...devices['iPad Pro'] },
-      testMatch: '**/tablet/**/*.spec.ts',
+      testMatch: '**/e2e/**/*.spec.ts',
       dependencies: ['setup']
     },
 
@@ -138,7 +138,7 @@ export default defineConfig({
         // Enable accessibility testing
         // This will be used by our accessibility fixtures
       },
-      testMatch: '**/accessibility/**/*.spec.ts',
+      testMatch: '**/e2e/**/*.spec.ts',
       dependencies: ['setup']
     },
 
@@ -150,7 +150,7 @@ export default defineConfig({
         // Enable performance testing
         // This will be used by our performance fixtures
       },
-      testMatch: '**/performance/**/*.spec.ts',
+      testMatch: '**/e2e/**/*.spec.ts',
       dependencies: ['setup']
     },
 
@@ -162,7 +162,7 @@ export default defineConfig({
         // Headless for API testing
         headless: true
       },
-      testMatch: '**/api/**/*.spec.ts',
+      testMatch: '**/e2e/**/*.spec.ts',
       dependencies: ['setup']
     },
 
@@ -183,7 +183,7 @@ export default defineConfig({
   // Web server configuration
   webServer: {
     command: 'npm run dev',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:3001',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
     stdout: 'ignore',

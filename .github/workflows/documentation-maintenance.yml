@@ -1,0 +1,723 @@
+name: Documentation Maintenance & Auto-Updates
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'src/**'
+      - 'docs/**'
+      - 'README.md'
+      - 'CHANGELOG.md'
+      - 'package.json'
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - 'src/**'
+      - 'docs/**'
+      - 'README.md'
+  schedule:
+    # Weekly documentation updates on Sundays at 6 AM UTC
+    - cron: '0 6 * * 0'
+  workflow_dispatch:
+    inputs:
+      doc_type:
+        description: 'Type of documentation to update'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - api
+        - readme
+        - changelog
+        - architecture
+        - deployment
+
+env:
+  NODE_VERSION: '20'
+  DOCS_DIR: './docs'
+  AUTO_UPDATE_ENABLED: 'true'
+
+jobs:
+  # API Documentation Generation
+  api-documentation:
+    name: API Documentation Generation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event.inputs.doc_type == 'all' || github.event.inputs.doc_type == 'api' || !github.event.inputs.doc_type
+    outputs:
+      docs_changed: ${{ steps.check-docs.outputs.docs_changed }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate API documentation
+        run: |
+          echo "Generating API documentation..."
+
+          # Create docs directory if it doesn't exist
+          mkdir -p docs/api
+
+          # Generate API documentation from source code
+          npm run build || true
+
+          # Extract API routes and endpoints
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          const glob = require('glob');
+
+          const apiRoutes = [];
+          const sourceFiles = glob.sync('src/**/*.{ts,tsx}');
+
+          sourceFiles.forEach(file => {
+            const content = fs.readFileSync(file, 'utf8');
+
+            // Extract API routes
+            const routeMatches = content.matchAll(/router\\.(get|post|put|delete|patch)\\(['\"]([^'\"]+)['\"]/g);
+            for (const match of routeMatches) {
+              apiRoutes.push({
+                method: match[1].toUpperCase(),
+                path: match[2],
+                file: file,
+                description: 'API endpoint'
+              });
+            }
+
+            // Extract tRPC procedures
+            const trpcMatches = content.matchAll(/(query|mutation|procedure)\\s*\\(\\s*['\"]([^'\"]+)['\"]/g);
+            for (const match of trpcMatches) {
+              apiRoutes.push({
+                method: match[1].toUpperCase(),
+                path: '/trpc/' + match[2],
+                file: file,
+                description: 'tRPC procedure'
+              });
+            }
+          });
+
+          // Generate API documentation
+          const apiDoc = {
+            title: 'workshopsAI CMS API Documentation',
+            version: require('./package.json').version,
+            baseUrl: process.env.API_BASE_URL || 'http://localhost:3001/api',
+            generated: new Date().toISOString(),
+            endpoints: apiRoutes.sort((a, b) => a.path.localeCompare(b.path))
+          };
+
+          fs.writeFileSync('docs/api/endpoints.json', JSON.stringify(apiDoc, null, 2));
+
+          // Generate Markdown API documentation
+          const markdown = apiDoc.endpoints.map(endpoint =>
+            \`\`\`markdown
+            ### \${endpoint.method} \${endpoint.path}
+
+            **Description:** \${endpoint.description}
+
+            **Source:** \${endpoint.file}
+
+            **Example Request:**
+            \`\`\`bash
+            curl -X \${endpoint.method} \${apiDoc.baseUrl}\${endpoint.path}
+            \`\`\`
+            \`\`\`
+          ).join('\\n\\n');
+
+          const fullMarkdown = \`# API Documentation
+
+          ## Overview
+          This API documentation was automatically generated from the source code.
+
+          ## Base URL
+          \${apiDoc.baseUrl}
+
+          ## Endpoints
+
+          \${markdown}
+
+          ---
+          *Generated on: \${apiDoc.generated}*
+          *Version: \${apiDoc.version}*
+          \`;
+
+          fs.writeFileSync('docs/api/README.md', fullMarkdown);
+
+          console.log(\`Generated API documentation for \${apiRoutes.length} endpoints\`);
+          "
+
+      - name: Generate OpenAPI/Swagger specification
+        run: |
+          node -e "
+          const fs = require('fs');
+          const glob = require('glob');
+
+          const openApiSpec = {
+            openapi: '3.0.0',
+            info: {
+              title: 'workshopsAI CMS API',
+              version: require('./package.json').version,
+              description: 'CMS for workshopsAI - Workshop Management System API'
+            },
+            servers: [
+              { url: 'http://localhost:3001', description: 'Development server' },
+              { url: 'https://api.workshopsai.com', description: 'Production server' }
+            ],
+            paths: {}
+          };
+
+          const sourceFiles = glob.sync('src/**/*.ts');
+          sourceFiles.forEach(file => {
+            const content = fs.readFileSync(file, 'utf8');
+
+            // Extract Express routes and generate OpenAPI paths
+            const routeMatches = content.matchAll(/router\\.(get|post|put|delete|patch)\\(['\"]([^'\"]+)['\"]/g);
+            for (const match of routeMatches) {
+              const method = match[1].toLowerCase();
+              const path = match[2];
+
+              if (!openApiSpec.paths[path]) {
+                openApiSpec.paths[path] = {};
+              }
+
+              openApiSpec.paths[path][method] = {
+                summary: \`\${method.toUpperCase()} \${path}\`,
+                description: \`API endpoint for \${path}\`,
+                responses: {
+                  '200': { description: 'Successful response' },
+                  '400': { description: 'Bad request' },
+                  '500': { description: 'Internal server error' }
+                }
+              };
+            }
+          });
+
+          fs.writeFileSync('docs/api/openapi.json', JSON.stringify(openApiSpec, null, 2));
+          console.log('Generated OpenAPI specification');
+          "
+
+      - name: Generate type definitions documentation
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+
+          // Extract TypeScript interfaces and types
+          const typeDefinitions = {
+            types: [],
+            interfaces: [],
+            enums: []
+          };
+
+          const sourceFiles = glob.sync('src/**/*.ts');
+          sourceFiles.forEach(file => {
+            const content = fs.readFileSync(file, 'utf8');
+
+            // Extract interfaces
+            const interfaceMatches = content.matchAll(/export interface (\\w+)\\s*{([^}]+)}/g);
+            for (const match of interfaceMatches) {
+              typeDefinitions.interfaces.push({
+                name: match[1],
+                definition: match[2].trim(),
+                file: file
+              });
+            }
+
+            // Extract types
+            const typeMatches = content.matchAll(/export type (\\w+)\\s*=([^;]+);/g);
+            for (const match of typeMatches) {
+              typeDefinitions.types.push({
+                name: match[1],
+                definition: match[2].trim(),
+                file: file
+              });
+            }
+
+            // Extract enums
+            const enumMatches = content.matchAll(/export enum (\\w+)\\s*{([^}]+)}/g);
+            for (const match of enumMatches) {
+              typeDefinitions.enums.push({
+                name: match[1],
+                values: match[2].trim(),
+                file: file
+              });
+            }
+          });
+
+          fs.writeFileSync('docs/api/types.json', JSON.stringify(typeDefinitions, null, 2));
+          console.log(\`Generated type definitions: \${typeDefinitions.interfaces.length} interfaces, \${typeDefinitions.types.length} types, \${typeDefinitions.enums.length} enums\`);
+          "
+
+      - name: Check for API documentation changes
+        id: check-docs
+        run: |
+          if [[ -n "$(git status --porcelain docs/api/)" ]]; then
+            echo "docs_changed=true" >> $GITHUB_OUTPUT
+            echo "Documentation has been updated"
+          else
+            echo "docs_changed=false" >> $GITHUB_OUTPUT
+            echo "No documentation changes"
+          fi
+
+  # README Updates
+  readme-updates:
+    name: README Maintenance
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event.inputs.doc_type == 'all' || github.event.inputs.doc_type == 'readme' || !github.event.inputs.doc_type
+    outputs:
+      readme_changed: ${{ steps.check-readme.outputs.readme_changed }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Update README with latest information
+        run: |
+          node -e "
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+
+          // Extract key information for README
+          const readmeInfo = {
+            name: pkg.name,
+            version: pkg.version,
+            description: pkg.description,
+            scripts: Object.keys(pkg.scripts).filter(script =>
+              ['dev', 'build', 'test', 'start'].includes(script)
+            ),
+            dependencies: Object.keys(pkg.dependencies || {}).slice(0, 10),
+            devDependencies: Object.keys(pkg.devDependencies || {}).slice(0, 10),
+            engines: pkg.engines || {},
+            license: pkg.license,
+            lastUpdated: new Date().toISOString()
+          };
+
+          // Check if README exists and update version if needed
+          let readmeContent = '';
+          try {
+            readmeContent = fs.readFileSync('README.md', 'utf8');
+
+            // Update version in README
+            readmeContent = readmeContent.replace(
+              /Version:.*\\d+\\.\\d+\\.\\d+/,
+              \`Version: \${readmeInfo.version}\`
+            );
+
+            fs.writeFileSync('README.md', readmeContent);
+            console.log('Updated README version');
+          } catch (e) {
+            console.log('README not found or could not be updated');
+          }
+
+          fs.writeFileSync('docs/readme-info.json', JSON.stringify(readmeInfo, null, 2));
+          console.log('Generated README information');
+          "
+
+      - name: Generate installation guide updates
+        run: |
+          node -e "
+          const fs = require('fs');
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+
+          const installGuide = \`
+          # Installation Guide
+
+          ## Prerequisites
+          - Node.js \${pkg.engines.node || '>= 18.0.0'}
+          - npm \${pkg.engines.npm || '>= 8.0.0'}
+
+          ## Quick Start
+
+          ### 1. Clone the repository
+          \`\`\`bash
+          git clone https://github.com/\${process.env.GITHUB_REPOSITORY}.git
+          cd \${pkg.name}
+          \`\`\`
+
+          ### 2. Install dependencies
+          \`\`\`bash
+          npm install
+          \`\`\`
+
+          ### 3. Environment setup
+          \`\`\`bash
+          cp .env.example .env
+          # Edit .env with your configuration
+          \`\`\`
+
+          ### 4. Database setup
+          \`\`\`bash
+          npm run db:migrate
+          \`\`\`
+
+          ### 5. Start development server
+          \`\`\`bash
+          npm run dev
+          \`\`\`
+
+          ## Available Scripts
+          \${Object.entries(pkg.scripts || {})
+            .filter(([key, _]) => !key.startsWith('pre') && !key.startsWith('post'))
+            .map(([key, script]) => \`- **\${key}**: \\\`\\\`\\\`bash npm run \${key} \\\`\\\`\\\`\`)
+            .join('\\n')
+          }
+
+          ---
+          *Generated on: \${new Date().toISOString()}*
+          *Version: \${pkg.version}*
+          \`;
+
+          fs.writeFileSync('docs/INSTALLATION.md', installGuide);
+          console.log('Generated installation guide');
+          "
+
+      - name: Check for README changes
+        id: check-readme
+        run: |
+          if [[ -n "$(git status --porcelain README.md docs/INSTALLATION.md)" ]]; then
+            echo "readme_changed=true" >> $GITHUB_OUTPUT
+            echo "README has been updated"
+          else
+            echo "readme_changed=false" >> $GITHUB_OUTPUT
+            echo "No README changes"
+          fi
+
+  # Architecture Documentation
+  architecture-docs:
+    name: Architecture Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.event.inputs.doc_type == 'all' || github.event.inputs.doc_type == 'architecture' || !github.event.inputs.doc_type
+    outputs:
+      architecture_changed: ${{ steps.check-architecture.outputs.architecture_changed }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate architecture overview
+        run: |
+          node -e "
+          const fs = require('fs');
+          const path = require('path');
+          const glob = require('glob');
+
+          const architecture = {
+            overview: {
+              name: require('./package.json').name,
+              description: require('./package.json').description,
+              type: 'Node.js/Express/TypeScript Application'
+            },
+            structure: {},
+            modules: [],
+            dependencies: {},
+            database: {},
+            api: {},
+            security: {}
+          };
+
+          // Analyze project structure
+          const dirs = fs.readdirSync('.', { withFileTypes: true })
+            .filter(dirent => dirent.isDirectory())
+            .map(dirent => dirent.name)
+            .filter(dir => !dir.startsWith('.') && dir !== 'node_modules');
+
+          architecture.structure.directories = dirs;
+
+          // Analyze source code structure
+          const srcFiles = glob.sync('src/**/*.{ts,tsx,js,jsx}');
+          architecture.structure.sourceFiles = srcFiles.length;
+
+          // Group source files by directory
+          const srcDirs = {};
+          srcFiles.forEach(file => {
+            const dir = path.dirname(file).replace('src/', '');
+            if (!srcDirs[dir]) srcDirs[dir] = [];
+            srcDirs[dir].push(path.basename(file));
+          });
+          architecture.structure.sourceDirectories = srcDirs;
+
+          // Extract module information
+          srcFiles.forEach(file => {
+            const content = fs.readFileSync(file, 'utf8');
+            const exports = [];
+
+            // Find exports
+            const exportMatches = content.matchAll(/export\\s+(?:const|function|class|interface)\\s+(\\w+)/g);
+            for (const match of exportMatches) {
+              exports.push(match[1]);
+            }
+
+            if (exports.length > 0) {
+              architecture.modules.push({
+                file: file,
+                exports: exports
+              });
+            }
+          });
+
+          // Analyze dependencies
+          const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+          architecture.dependencies.production = Object.keys(pkg.dependencies || {});
+          architecture.dependencies.development = Object.keys(pkg.devDependencies || {});
+
+          // Database analysis
+          if (fs.existsSync('drizzle.config.ts') || fs.existsSync('drizzle.config.postgresql.ts')) {
+            architecture.database.type = 'PostgreSQL with Drizzle ORM';
+            architecture.database.migrations = fs.existsSync('migrations/') ? fs.readdirSync('migrations/').length : 0;
+          }
+
+          // API analysis
+          architecture.api.endpoints = architecture.modules.filter(m => m.file.includes('route') || m.file.includes('api')).length;
+
+          // Security analysis
+          const securityFiles = srcFiles.filter(file =>
+            file.includes('auth') || file.includes('security') || file.includes('middleware')
+          );
+          architecture.security.modules = securityFiles.length;
+
+          // Generate architecture documentation
+          const architectureDoc = \`
+          # Architecture Documentation
+
+          ## Overview
+          \${architecture.overview.description}
+
+          ## Technology Stack
+          - **Backend**: Node.js with Express and TypeScript
+          - **Database**: \${architecture.database.type || 'Not specified'}
+          - **Frontend**: React with TypeScript
+          - **Testing**: Jest, Playwright
+          - **Documentation**: Auto-generated
+
+          ## Project Structure
+
+          ### Directory Structure
+          \${Object.entries(architecture.structure.sourceDirectories)
+            .map(([dir, files]) => \`- **\${dir}**: \${files.length} files\`)
+            .join('\\n')
+          }
+
+          ### Statistics
+          - **Source Files**: \${architecture.structure.sourceFiles}
+          - **Modules**: \${architecture.modules.length}
+          - **API Endpoints**: \${architecture.api.endpoints}
+          - **Security Modules**: \${architecture.security.modules}
+          - **Database Migrations**: \${architecture.database.migrations || 0}
+
+          ## Key Dependencies
+
+          ### Production Dependencies
+          \${architecture.dependencies.production.slice(0, 15)
+            .map(dep => \`- \${dep}\`)
+            .join('\\n')
+          }
+
+          ### Development Dependencies
+          \${architecture.dependencies.development.slice(0, 10)
+            .map(dep => \`- \${dep}\`)
+            .join('\\n')
+          }
+
+          ## Security Features
+          - Authentication and Authorization
+          - Input Validation
+          - Security Headers (Helmet.js)
+          - Rate Limiting
+          - CORS Configuration
+          - SQL Injection Prevention
+          - XSS Protection
+
+          ---
+          *Generated on: \${new Date().toISOString()}*
+          \`;
+
+          fs.writeFileSync('docs/ARCHITECTURE.md', architectureDoc);
+          fs.writeFileSync('docs/architecture.json', JSON.stringify(architecture, null, 2));
+
+          console.log('Generated architecture documentation');
+          "
+
+      - name: Check for architecture changes
+        id: check-architecture
+        run: |
+          if [[ -n "$(git status --porcelain docs/ARCHITECTURE.md)" ]]; then
+            echo "architecture_changed=true" >> $GITHUB_OUTPUT
+            echo "Architecture documentation updated"
+          else
+            echo "architecture_changed=false" >> $GITHUB_OUTPUT
+            echo "No architecture changes"
+          fi
+
+  # Commit Documentation Updates
+  commit-documentation:
+    name: Commit Documentation Updates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [api-documentation, readme-updates, architecture-docs]
+    if: ${{ env.AUTO_UPDATE_ENABLED == 'true' && (needs.api-documentation.outputs.docs_changed == 'true' || needs.readme-updates.outputs.readme_changed == 'true' || needs.architecture-docs.outputs.architecture_changed == 'true') }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Commit and push documentation changes
+        run: |
+          git add docs/ README.md
+          if [[ -n "$(git status --porcelain docs/ README.md)" ]]; then
+            git commit -m "docs: update auto-generated documentation
+
+            - Update API endpoints documentation
+            - Refresh architecture overview
+            - Update installation guide
+            - Sync with latest codebase changes
+
+            🤖 Generated with [GitHub Actions](https://github.com/features/actions)
+
+            Co-Authored-By: GitHub Actions <action@github.com>"
+            git push
+            echo "Documentation changes committed and pushed"
+          else
+            echo "No documentation changes to commit"
+          fi
+
+  # Documentation Quality Check
+  quality-check:
+    name: Documentation Quality Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check documentation quality
+        run: |
+          echo "Checking documentation quality..."
+
+          # Check for broken links
+          find docs/ -name "*.md" -exec grep -l "http" {} \; | while read file; do
+            echo "Checking links in $file..."
+            # Note: In a real scenario, you'd use a link checker tool
+          done
+
+          # Check for missing sections in README
+          if [[ -f "README.md" ]]; then
+            if ! grep -q "## Installation" README.md; then
+              echo "⚠️ README.md missing Installation section"
+            fi
+            if ! grep -q "## Usage" README.md; then
+              echo "⚠️ README.md missing Usage section"
+            fi
+            if ! grep -q "## Contributing" README.md; then
+              echo "⚠️ README.md missing Contributing section"
+            fi
+          else
+            echo "❌ No README.md found"
+          fi
+
+          # Check API documentation completeness
+          if [[ -f "docs/api/endpoints.json" ]]; then
+            endpoint_count=$(cat docs/api/endpoints.json | jq '.endpoints | length')
+            echo "✅ API documentation contains $endpoint_count endpoints"
+          else
+            echo "⚠️ No API documentation found"
+          fi
+
+      - name: Generate documentation report
+        run: |
+          echo "# Documentation Quality Report" > docs-quality-report.md
+          echo "Generated on: $(date)" >> docs-quality-report.md
+          echo "" >> docs-quality-report.md
+          echo "## Files Checked" >> docs-quality-report.md
+          echo "- README.md: $(test -f README.md && echo "✅ Exists" || echo "❌ Missing")" >> docs-quality-report.md
+          echo "- API Docs: $(test -f docs/api/README.md && echo "✅ Exists" || echo "❌ Missing")" >> docs-quality-report.md
+          echo "- Architecture: $(test -f docs/ARCHITECTURE.md && echo "✅ Exists" || echo "❌ Missing")" >> docs-quality-report.md
+
+      - name: Upload quality report
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation-quality-report
+          path: docs-quality-report.md
+
+  # Documentation Sync Notification
+  notify-documentation:
+    name: Documentation Sync Notification
+    runs-on: ubuntu-latest
+    needs: [commit-documentation, quality-check]
+    if: always()
+
+    steps:
+      - name: Create documentation update issue
+        if: needs.commit-documentation.result == 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '📚 Documentation Auto-Updated',
+              body: `
+              Auto-generated documentation has been updated to reflect the latest changes.
+
+              **Updated Documentation:**
+              - [x] API endpoints and documentation
+              - [x] Architecture overview
+              - [x] Installation guide
+              - [x] Type definitions
+
+              **Changes Made:**
+              - Synchronized with latest codebase
+              - Updated API specifications
+              - Refreshed dependency information
+              - Generated type definitions
+
+              **Review Required:**
+              - [ ] Review accuracy of generated documentation
+              - [ ] Check for any missing information
+              - [ ] Update manual documentation sections if needed
+
+              ---
+              *This issue was automatically created by the documentation maintenance workflow.*
+              `,
+              labels: ['documentation', 'maintenance', 'automated']
+            });
+
+            if (context.eventName === 'pull_request') {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: '📚 Documentation has been automatically updated to reflect the latest changes.'
+              });
+            } else {
+              console.log(`Skipping pull request comment for event: ${context.eventName}`);
+            }

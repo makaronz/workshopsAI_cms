@@ -8,7 +8,6 @@ interface RedisConfig {
   password?: string;
   db: number;
   maxRetriesPerRequest: number;
-  retryDelayOnFailover: number;
   enableOfflineQueue: boolean;
   connectTimeout: number;
   commandTimeout: number;
@@ -56,7 +55,6 @@ export class OptimizedRedisService {
       password: process.env.REDIS_PASSWORD,
       db: parseInt(process.env.REDIS_DB || '0'),
       maxRetriesPerRequest: 3,
-      retryDelayOnFailover: 100,
       enableOfflineQueue: false, // Disable for better performance
       connectTimeout: 10000,
       commandTimeout: 5000,
@@ -71,7 +69,6 @@ export class OptimizedRedisService {
       password: this.config.password,
       db: this.config.db,
       maxRetriesPerRequest: this.config.maxRetriesPerRequest,
-      retryDelayOnFailover: this.config.retryDelayOnFailover,
       enableOfflineQueue: this.config.enableOfflineQueue,
       connectTimeout: this.config.connectTimeout,
       commandTimeout: this.config.commandTimeout,
@@ -83,8 +80,6 @@ export class OptimizedRedisService {
       maxLoadingTimeout: 5000,
       // Connection pool optimization
       connectionName: 'workshopsai-cms',
-      // Performance optimizations
-      lazyConnect: true,
       keyPrefix: 'workshopsai:',
       // Pipeline optimization
       enableAutoPipelining: true,
@@ -277,6 +272,11 @@ export class OptimizedRedisService {
         return 0;
       }
     });
+  }
+
+  // Get underlying Redis client for advanced operations
+  getClient(): Redis {
+    return this.client;
   }
 
   // Get cache statistics

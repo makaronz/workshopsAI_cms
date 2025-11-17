@@ -128,8 +128,8 @@ WCAG 2.2 AA compliance i inclusive design
 
 ### 📧 **Kontakt**:
 - **Email Support**: support@workshopsai.com
-- **GitHub Issues**: [Bug Reports](https://github.com/workshopsai/cms/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/workshopsai/cms/discussions)
+- **GitHub Issues**: [Bug Reports](https://github.com/workshopsai-cms/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/workshopsai-cms/discussions)
 
 ## 🔄 Aktualizacje i maintenance
 

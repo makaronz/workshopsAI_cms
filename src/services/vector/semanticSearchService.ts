@@ -8,7 +8,7 @@ import {
   vectorDatabaseManager,
   type VectorSearchOptions,
 } from './vectorDatabaseManager';
-import { db } from '../../config/database';
+import { client, db } from '../../config/postgresql-database';
 import {
   document_embeddings,
   vector_search_queries,
@@ -633,22 +633,19 @@ export class SemanticSearchService {
   ): Promise<SemanticSearchResult[]> {
     // Implement keyword search using PostgreSQL text search
     // This is a simplified implementation
-    const client = await this.pool.connect();
     try {
-      const result = await client.query(
-        `
+      const limit = options.pagination?.limit || 20;
+      const result = await client`
         SELECT
           id, document_id, document_type, content, language,
-          ts_rank(to_tsvector('english', content), plainto_tsquery($1)) as rank
+          ts_rank(to_tsvector('english', content), plainto_tsquery(${query})) as rank
         FROM document_embeddings
-        WHERE to_tsvector('english', content) @@ plainto_tsquery($1)
+        WHERE to_tsvector('english', content) @@ plainto_tsquery(${query})
         ORDER BY rank DESC
-        LIMIT $2
-      `,
-        [query, options.pagination?.limit || 20],
-      );
+        LIMIT ${limit}
+      `;
 
-      return result.rows.map((row: any) => ({
+      return result.map((row: any) => ({
         id: row.id,
         documentId: row.document_id,
         documentType: row.document_type,
@@ -662,8 +659,9 @@ export class SemanticSearchService {
           createdAt: new Date(),
         },
       }));
-    } finally {
-      client.release();
+    } catch (error) {
+      logger.error('Keyword search failed:', error);
+      throw error;
     }
   }
 
@@ -729,22 +727,20 @@ export class SemanticSearchService {
   ): Promise<string[]> {
     // Get suggestions based on document content
     // This is a simplified implementation
-    const client = await this.pool.connect();
     try {
-      const result = await client.query(
-        `
+      const searchTerm = `%${partialQuery}%`;
+      const result = await client`
         SELECT DISTINCT
           LEFT(content, 100) as suggestion
         FROM document_embeddings
-        WHERE content ILIKE ${'%' + partialQuery + '%'}
-        LIMIT $1
-      `,
-        [limit],
-      );
+        WHERE content ILIKE ${searchTerm}
+        LIMIT ${limit}
+      `;
 
-      return result.rows.map((row: any) => row.suggestion);
-    } finally {
-      client.release();
+      return result.map((row: any) => row.suggestion);
+    } catch (error) {
+      logger.error('Failed to get content suggestions:', error);
+      throw error;
     }
   }
 

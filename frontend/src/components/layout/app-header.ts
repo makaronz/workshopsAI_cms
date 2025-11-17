@@ -1,7 +1,7 @@
 import { LitElement, html, css, CSSResultGroup, TemplateResult } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
-import t from '../../services/i18n';
+import i18nService from '../../services/i18n';
 import authService from '../../services/auth';
 
 @customElement('app-header')
@@ -357,16 +357,16 @@ export class AppHeader extends LitElement {
         <div class="header-left">
           <a href="/" class="logo" @click=${this.handleNavigation}>
             <div class="logo-icon">W</div>
-            <span>${t('app.title')}</span>
+            <span>WorkshopsAI CMS</span>
           </a>
 
-          <nav class="navigation" role="navigation" aria-label="${t('accessibility.openMenu')}">
+          <nav class="navigation" role="navigation" aria-label="Navigation">
             <a
               href="/dashboard"
               class="nav-link ${classMap({ active: this.isActivePath('/dashboard') })}"
               @click=${this.handleNavigation}
             >
-              ${t('navigation.dashboard')}
+              Dashboard
             </a>
             ${isAuthenticated ? html`
               <a
@@ -374,14 +374,14 @@ export class AppHeader extends LitElement {
                 class="nav-link ${classMap({ active: this.isActivePath('/workshops') })}"
                 @click=${this.handleNavigation}
               >
-                ${t('navigation.workshops')}
+                Workshops
               </a>
               <a
                 href="/questionnaires"
                 class="nav-link ${classMap({ active: this.isActivePath('/questionnaires') })}"
                 @click=${this.handleNavigation}
               >
-                ${t('navigation.questionnaires')}
+                Questionnaires
               </a>
               ${user && authService.canViewAnalytics() ? html`
                 <a
@@ -389,7 +389,7 @@ export class AppHeader extends LitElement {
                   class="nav-link ${classMap({ active: this.isActivePath('/analysis') })}"
                   @click=${this.handleNavigation}
                 >
-                  ${t('navigation.analysis')}
+                  Analysis
                 </a>
               ` : ''}
             ` : ''}
@@ -402,7 +402,7 @@ export class AppHeader extends LitElement {
               <select
                 class="language-button"
                 @change=${this.handleLanguageChange}
-                aria-label="${t('accessibility.toggleLanguage')}"
+                aria-label="Navigation"
               >
                 <option value="en">English</option>
                 <option value="pl">Polski</option>
@@ -425,7 +425,7 @@ export class AppHeader extends LitElement {
               <select
                 class="language-button"
                 @change=${this.handleLanguageChange}
-                aria-label="${t('accessibility.toggleLanguage')}"
+                aria-label="Navigation"
               >
                 <option value="en">English</option>
                 <option value="pl">Polski</option>
@@ -436,7 +436,7 @@ export class AppHeader extends LitElement {
           <button
             class="mobile-menu-button"
             @click=${this.toggleMobileMenu}
-            aria-label="${t('accessibility.openMenu')}"
+            aria-label="Navigation"
             aria-expanded=${isMobileMenuOpen}
             aria-controls="mobile-menu"
           >
@@ -453,7 +453,7 @@ export class AppHeader extends LitElement {
         id="mobile-menu"
         class="mobile-menu ${classMap({ open: isMobileMenuOpen })}"
         role="navigation"
-        aria-label="${t('accessibility.openMenu')}"
+        aria-label="Navigation"
       >
         <nav class="mobile-navigation">
           ${isAuthenticated ? html`
@@ -462,21 +462,21 @@ export class AppHeader extends LitElement {
               class="mobile-nav-link ${classMap({ active: this.isActivePath('/dashboard') })}"
               @click=${this.handleNavigation}
             >
-              ${t('navigation.dashboard')}
+              Dashboard
             </a>
             <a
               href="/workshops"
               class="mobile-nav-link ${classMap({ active: this.isActivePath('/workshops') })}"
               @click=${this.handleNavigation}
             >
-              ${t('navigation.workshops')}
+              Workshops
             </a>
             <a
               href="/questionnaires"
               class="mobile-nav-link ${classMap({ active: this.isActivePath('/questionnaires') })}"
               @click=${this.handleNavigation}
             >
-              ${t('navigation.questionnaires')}
+              Questionnaires
             </a>
             ${user && authService.canViewAnalytics() ? html`
               <a
@@ -484,7 +484,7 @@ export class AppHeader extends LitElement {
                 class="mobile-nav-link ${classMap({ active: this.isActivePath('/analysis') })}"
                 @click=${this.handleNavigation}
               >
-                ${t('navigation.analysis')}
+                Analysis
               </a>
             ` : ''}
             <a

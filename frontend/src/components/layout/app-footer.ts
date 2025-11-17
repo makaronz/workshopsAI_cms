@@ -1,6 +1,6 @@
 import { LitElement, html, css, CSSResultGroup, TemplateResult } from 'lit';
 import { customElement } from 'lit/decorators.js';
-import t from '../../services/i18n';
+// import t from '../../services/i18n';
 
 @customElement('app-footer')
 export class AppFooter extends LitElement {
@@ -170,51 +170,51 @@ export class AppFooter extends LitElement {
         <div class="footer-section">
           <a href="/" class="footer-logo" @click=${this.handleNavigation}>
             <div class="footer-logo-icon">W</div>
-            <span>${t('app.title')}</span>
+            <span></span>
           </a>
           <p class="footer-copyright">
-            © ${this.currentYear} WorkshopsAI. ${t('footer.allRightsReserved')}
+            © ${this.currentYear} WorkshopsAI. 
           </p>
         </div>
 
         <div class="footer-section">
-          <h3 class="footer-title">${t('footer.product')}</h3>
-          <nav class="footer-links" aria-label="${t('footer.product')}">
+          <h3 class="footer-title"></h3>
+          <nav class="footer-links" aria-label="">
             <a href="/features" class="footer-link" @click=${this.handleNavigation}>
-              ${t('footer.features')}
+              
             </a>
             <a href="/workshops" class="footer-link" @click=${this.handleNavigation}>
-              ${t('navigation.workshops')}
+              
             </a>
             <a href="/pricing" class="footer-link" @click=${this.handleNavigation}>
-              ${t('footer.pricing')}
+              
             </a>
             <a href="/api" class="footer-link" @click=${this.handleNavigation}>
-              ${t('footer.api')}
+              
             </a>
           </nav>
         </div>
 
         <div class="footer-section">
-          <h3 class="footer-title">${t('footer.resources')}</h3>
-          <nav class="footer-links" aria-label="${t('footer.resources')}">
+          <h3 class="footer-title"></h3>
+          <nav class="footer-links" aria-label="">
             <a href="/docs" class="footer-link" @click=${this.handleNavigation}>
-              ${t('footer.documentation')}
+              
             </a>
             <a href="/help" class="footer-link" @click=${this.handleNavigation}>
-              ${t('footer.help')}
+              
             </a>
             <a href="/blog" class="footer-link" @click=${this.handleNavigation}>
-              ${t('footer.blog')}
+              
             </a>
             <a href="/tutorials" class="footer-link" @click=${this.handleNavigation}>
-              ${t('footer.tutorials')}
+              
             </a>
           </nav>
         </div>
 
         <div class="footer-section">
-          <h3 class="footer-title">${t('footer.contact')}</h3>
+          <h3 class="footer-title"></h3>
           <div class="footer-contact">
             <a href="mailto:support@workshopsai.example.com" class="footer-contact-item">
               <svg class="footer-contact-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -232,18 +232,18 @@ export class AppFooter extends LitElement {
         </div>
 
         <div class="footer-bottom">
-          <nav class="footer-legal-links" aria-label="${t('footer.legal')}">
+          <nav class="footer-legal-links" aria-label="">
             <a href="/privacy" class="footer-link" @click=${this.handleNavigation}>
-              ${t('footer.privacy')}
+              
             </a>
             <a href="/terms" class="footer-link" @click=${this.handleNavigation}>
-              ${t('footer.terms')}
+              
             </a>
             <a href="/cookies" class="footer-link" @click=${this.handleNavigation}>
-              ${t('footer.cookies')}
+              
             </a>
             <a href="/accessibility" class="footer-link" @click=${this.handleNavigation}>
-              ${t('footer.accessibility')}
+              
             </a>
           </nav>
         </div>

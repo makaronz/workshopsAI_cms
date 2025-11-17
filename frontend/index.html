@@ -30,7 +30,7 @@
   <meta name="msapplication-TileColor" content="#2563eb" />
 
   <!-- Progressive Enhancement -->
-  <script type="module" src="/src/main.ts" defer></script>
+  <script type="module" src="/src/main-simple.ts" defer></script>
   <script nomodule>
     // Fallback for browsers without ES modules support
     console.warn('Your browser does not support modern JavaScript. Please upgrade to a modern browser.');
@@ -40,12 +40,14 @@
   <link rel="preload" href="/src/styles/global.css" as="style" />
   <link rel="stylesheet" href="/src/styles/global.css" />
 
-  <!-- PWA Icons -->
+  <!-- PWA Icons - Commented out until icons are generated -->
+  <!--
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
   <link rel="manifest" href="/site.webmanifest" />
   <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#2563eb" />
+  -->
 
   <!-- Fonts (Google Fonts - Performance Optimized) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -147,7 +149,8 @@
     </noscript>
   </main>
 
-  <!-- Service Worker Registration (PWA) -->
+  <!-- Service Worker Registration (PWA) - Disabled until sw.js is created -->
+  <!--
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -161,5 +164,6 @@
       });
     }
   </script>
+  -->
 </body>
 </html>

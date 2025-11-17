@@ -1,9 +1,8 @@
-import { Pool, PoolClient } from 'pg';
+import { client, db } from '../../config/postgresql-database';
 import {
   vectorDatabaseManager,
   type VectorIndexConfig,
 } from './vectorDatabaseManager';
-import { db } from '../../config/database';
 import {
   vector_index_configs,
   document_embeddings,
@@ -55,19 +54,10 @@ export interface IndexHealthStatus {
  * Manages creation, maintenance, and optimization of vector indexes
  */
 export class VectorIndexManager {
-  private pool: Pool;
   private indexMaintenanceInterval: NodeJS.Timeout | null = null;
 
   constructor() {
-    this.pool = new Pool({
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      max: 5,
-      idleTimeoutMillis: 30000,
-    });
+    // postgres-js client is already configured in postgresql-database.ts
   }
 
   /**
@@ -113,11 +103,10 @@ export class VectorIndexManager {
       return indexName;
     }
 
-    const client = await this.pool.connect();
     try {
       // Drop existing index if forcing recreation
       if (existingIndex && forceRecreate) {
-        await client.query(`DROP INDEX CONCURRENTLY IF EXISTS ${indexName}`);
+        await client`DROP INDEX CONCURRENTLY IF EXISTS ${client(indexName)}`;
         logger.info(`Dropped existing index: ${indexName}`);
       }
 
@@ -149,7 +138,7 @@ export class VectorIndexManager {
       }
 
       logger.info(`Creating index: ${indexName} (type: ${indexType})`);
-      await client.query(createIndexSQL);
+      await client.unsafe(createIndexSQL);
 
       const buildTime = (Date.now() - startTime) / 1000;
 
@@ -176,12 +165,13 @@ export class VectorIndexManager {
       });
 
       // Analyze the new index
-      await this.analyzeIndex(client, indexName);
+      await this.analyzeIndex(indexName);
 
       logger.info(`Index ${indexName} created successfully in ${buildTime}s`);
       return indexName;
-    } finally {
-      client.release();
+    } catch (error) {
+      logger.error('Failed to create optimal index:', error);
+      throw error;
     }
   }
 
@@ -365,7 +355,6 @@ export class VectorIndexManager {
       this.indexMaintenanceInterval = null;
     }
 
-    await this.pool.end();
     logger.info('Vector index manager shutdown completed');
   }
 
@@ -420,37 +409,37 @@ export class VectorIndexManager {
     avgDimensions: number;
     hasVectors: boolean;
   }> {
-    const client = await this.pool.connect();
     try {
       // Get row count and table size
-      const sizeResult = await client.query(`
+      const sizeResult = await client`
         SELECT
-          (SELECT COUNT(*) FROM ${tableName}) as row_count,
-          pg_size_pretty(pg_total_relation_size('${tableName}')) as table_size_pretty,
-          pg_total_relation_size('${tableName}') as table_size_bytes
-      `);
+          (SELECT COUNT(*) FROM ${client(tableName)}) as row_count,
+          pg_size_pretty(pg_total_relation_size(${client(tableName)})) as table_size_pretty,
+          pg_total_relation_size(${client(tableName)}) as table_size_bytes
+      `;
 
       // Get average vector dimensions
-      const dimensionsResult = await client.query(`
+      const dimensionsResult = await client`
         SELECT AVG(array_length(embedding, 1)) as avg_dimensions,
                COUNT(*) as vector_count
-        FROM ${tableName}
+        FROM ${client(tableName)}
         WHERE embedding IS NOT NULL
         LIMIT 1000
-      `);
+      `;
 
       return {
-        rowCount: parseInt(sizeResult.rows[0].row_count),
+        rowCount: parseInt(sizeResult[0].row_count),
         tableSize: Math.round(
-          sizeResult.rows[0].table_size_bytes / (1024 * 1024),
+          sizeResult[0].table_size_bytes / (1024 * 1024),
         ),
         avgDimensions: Math.round(
-          parseFloat(dimensionsResult.rows[0].avg_dimensions) || 0,
+          parseFloat(dimensionsResult[0].avg_dimensions) || 0,
         ),
-        hasVectors: parseInt(dimensionsResult.rows[0].vector_count) > 0,
+        hasVectors: parseInt(dimensionsResult[0].vector_count) > 0,
       };
-    } finally {
-      client.release();
+    } catch (error) {
+      logger.error('Failed to get table statistics:', error);
+      throw error;
     }
   }
 
@@ -502,26 +491,27 @@ export class VectorIndexManager {
     await db.insert(vector_index_configs).values(config);
   }
 
-  private async analyzeIndex(
-    client: PoolClient,
-    indexName: string,
-  ): Promise<void> {
-    await client.query(`ANALYZE ${indexName}`);
+  private async analyzeIndex(indexName: string): Promise<void> {
+    try {
+      await client`ANALYZE ${client(indexName)}`;
+    } catch (error) {
+      logger.error('Failed to analyze index:', error);
+      throw error;
+    }
   }
 
   private async analyzeTableStatistics(): Promise<void> {
-    const client = await this.pool.connect();
     try {
-      await client.query('ANALYZE document_embeddings');
-    } finally {
-      client.release();
+      await client`ANALYZE document_embeddings`;
+    } catch (error) {
+      logger.error('Failed to analyze table statistics:', error);
+      throw error;
     }
   }
 
   private async updateIndexSizes(): Promise<void> {
-    const client = await this.pool.connect();
     try {
-      const indexes = await client.query(`
+      const indexes = await client`
         SELECT
           schemaname,
           tablename,
@@ -530,9 +520,9 @@ export class VectorIndexManager {
           pg_relation_size(indexname::regclass) as size_bytes
         FROM pg_indexes
         WHERE tablename = 'document_embeddings'
-      `);
+      `;
 
-      for (const index of indexes.rows) {
+      for (const index of indexes) {
         await db
           .update(vector_index_configs)
           .set({
@@ -540,22 +530,23 @@ export class VectorIndexManager {
           })
           .where(eq(vector_index_configs.indexName, index.indexname));
       }
-    } finally {
-      client.release();
+    } catch (error) {
+      logger.error('Failed to update index sizes:', error);
+      throw error;
     }
   }
 
   private async cleanupOldIndexes(): Promise<void> {
-    const client = await this.pool.connect();
     try {
       // Drop indexes that haven't been used in 30 days
-      await client.query(`
+      await client`
         DELETE FROM vector_index_configs
         WHERE is_active = false
         AND updated_at < NOW() - INTERVAL '30 days'
-      `);
-    } finally {
-      client.release();
+      `;
+    } catch (error) {
+      logger.error('Failed to cleanup old indexes:', error);
+      throw error;
     }
   }
 
