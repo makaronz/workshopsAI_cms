@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { db, users } from '../config/postgresql-database';
+import { eq, and } from 'drizzle-orm';
 
 // Extend Express Request type to include user
 declare global {
@@ -68,7 +69,7 @@ export const authenticateJWT = async (
         name: users.name,
       })
       .from(users)
-      .where((users, { eq, and }) =>
+      .where(
         and(
           eq(users.id, decoded.userId),
           eq(users.email, decoded.email),
@@ -87,8 +88,8 @@ export const authenticateJWT = async (
 
     // Attach user to request
     req.user = user[0];
-
     next();
+    return;
   } catch (error) {
     console.error('JWT authentication error:', error);
 
@@ -107,6 +108,14 @@ export const authenticateJWT = async (
         message: 'Token expired',
       });
     }
+
+    // Log detailed error for debugging
+    const err = error as any;
+    console.error('Detailed Auth Error:', {
+      message: err.message,
+      stack: err.stack,
+      secretAvailable: !!process.env.JWT_SECRET
+    });
 
     return res.status(500).json({
       success: false,
@@ -178,7 +187,7 @@ export const optionalAuth = async (
         name: users.name,
       })
       .from(users)
-      .where((users, { eq, and }) =>
+      .where(
         and(
           eq(users.id, decoded.userId),
           eq(users.email, decoded.email),

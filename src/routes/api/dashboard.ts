@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { dashboardController } from '../../controllers/dashboard-controller';
-import { authenticateToken } from '../../middleware/auth';
+import { authenticateJWT } from '../../middleware/auth';
 import { rateLimit } from 'express-rate-limit';
 
 const router = Router();
@@ -15,7 +15,7 @@ const dashboardRateLimit = rateLimit({
 });
 
 // Apply authentication and rate limiting to all routes
-router.use(authenticateToken);
+router.use(authenticateJWT);
 router.use(dashboardRateLimit);
 
 /**

@@ -23,6 +23,7 @@ import authRoutes from './routes/auth';
 import fileRoutes from './routes/api/files';
 import { initializePreviewRoutes } from './routes/api/preview';
 import fileSignedRoutes from './routes/api/files-signed';
+import dashboardRoutes from './routes/api/dashboard';
 
 // Import configuration
 import {
@@ -32,7 +33,8 @@ import {
 import { redisService } from './config/redis';
 
 // Import LLM services
-import { llmAnalysisWorker } from './services/llm-worker';
+import { getLLMAnalysisWorker } from './services/llm-worker';
+const llmAnalysisWorker = getLLMAnalysisWorker();
 import { embeddingsService } from './services/embeddings';
 
 // Import WebSocket and Preview services
@@ -181,7 +183,7 @@ async function checkLLMServicesHealth() {
   try {
     const health = await embeddingsService.healthCheck();
     const queueStats = await llmAnalysisWorker.getQueueStats();
-    const streamingStats = streamingWorker ? await streamingWorker.getStats() : { status: 'initializing' };
+    const streamingStats = streamingWorker ? await streamingWorker.getQueueStats() : { status: 'initializing' };
 
     return {
       embeddings: health,
@@ -218,6 +220,7 @@ app.use('/api/v1/responses', responseRoutes);
 app.use('/api/v1/files', fileRoutes);
 app.use('/api/v1/files/signed', fileSignedRoutes);
 app.use('/api/v1/public', publicRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
 
 // Performance monitoring routes (will be initialized after services are set up)
 
@@ -271,7 +274,7 @@ process.on('SIGTERM', async () => {
 
     // Shutdown performance optimization services
     // Performance system shutdown is handled by setupGracefulShutdown() in performance-integration.ts
-    
+
     if (dbOptimization) {
       await dbOptimization.shutdown();
     }
@@ -294,7 +297,7 @@ process.on('SIGINT', async () => {
 
     // Shutdown performance optimization services  
     // Performance system shutdown is handled by setupGracefulShutdown() in performance-integration.ts
-    
+
     if (dbOptimization) {
       await dbOptimization.shutdown();
     }

@@ -672,7 +672,7 @@ CREATE INDEX "idx_sessions_location_id" ON "sessions" USING btree ("locationId")
 CREATE INDEX "idx_sessions_start_time" ON "sessions" USING btree ("startTime");--> statement-breakpoint
 CREATE INDEX "idx_tags_slug" ON "tags" USING btree ("slug");--> statement-breakpoint
 CREATE INDEX "idx_tags_category" ON "tags" USING btree ("category");--> statement-breakpoint
-CREATE INDEX "idx_users_email" ON "users" USING btree ("email") WHERE deleted_at IS NULL;--> statement-breakpoint
+CREATE INDEX "idx_users_email" ON "users" USING btree ("email") WHERE "deletedAt" IS NULL;--> statement-breakpoint
 CREATE INDEX "idx_users_role" ON "users" USING btree ("role");--> statement-breakpoint
 CREATE INDEX "idx_users_open_id" ON "users" USING btree ("openId");--> statement-breakpoint
 CREATE INDEX "idx_workshop_facilitators_workshop_id" ON "workshop_facilitators" USING btree ("workshopId");--> statement-breakpoint

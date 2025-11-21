@@ -55,9 +55,10 @@ export class RLSHelper {
     isAdmin: boolean = false,
   ): Promise<void> {
     await client`
-      SET LOCAL app.current_user_id = ${userId};
-      SET LOCAL app.current_user_role = ${userRole};
-      SET LOCAL app.is_admin = ${isAdmin ? 'true' : 'false'};
+      SELECT
+        set_config('app.current_user_id', ${userId}, true),
+        set_config('app.current_user_role', ${userRole}, true),
+        set_config('app.is_admin', ${isAdmin ? 'true' : 'false'}, true)
     `;
   }
 
@@ -66,9 +67,10 @@ export class RLSHelper {
    */
   static async clearCurrentUser(): Promise<void> {
     await client`
-      RESET app.current_user_id;
-      RESET app.current_user_role;
-      RESET app.is_admin;
+      SELECT 
+        set_config('app.current_user_id', '', true),
+        set_config('app.current_user_role', '', true),
+        set_config('app.is_admin', '', true)
     `;
   }
 
@@ -84,11 +86,11 @@ export class RLSHelper {
     try {
       const result = await client`
         SELECT has_table_privilege(
-          current_user,
-          ${tableName},
-          ${operation}
-        ) as has_privilege;
-      `;
+      current_user,
+      ${tableName},
+      ${operation}
+    ) as has_privilege;
+    `;
       return result[0]?.has_privilege || false;
     } catch (error) {
       console.error('Permission check failed:', error);
@@ -111,17 +113,17 @@ export class RLSHelper {
   ): Promise<void> {
     try {
       await client`
-        INSERT INTO audit_logs (
-          user_id,
-          table_name,
-          record_id,
-          operation,
-          old_values,
-          new_values,
-          ip_address,
-          user_agent
-        ) VALUES (
-          ${userId || null},
+        INSERT INTO audit_logs(
+      user_id,
+      table_name,
+      record_id,
+      operation,
+      old_values,
+      new_values,
+      ip_address,
+      user_agent
+    ) VALUES(
+      ${userId || null},
           ${tableName},
           ${recordId},
           ${operation},
@@ -130,7 +132,7 @@ export class RLSHelper {
           ${ipAddress || null},
           ${userAgent || null}
         );
-      `;
+`;
     } catch (error) {
       console.error('Failed to create audit log:', error);
     }

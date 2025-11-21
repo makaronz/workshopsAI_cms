@@ -167,7 +167,13 @@ export class WorkshopCrudService {
         .leftJoin(sessions, eq(workshops.id, sessions.workshopId))
         .leftJoin(questionnaires, eq(workshops.id, questionnaires.workshopId))
         .leftJoin(users, eq(workshops.createdBy, users.id))
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
+        .where(
+          conditions.length > 1
+            ? and(...conditions)
+            : conditions.length === 1
+              ? conditions[0]
+              : undefined,
+        )
         .groupBy(workshops.id, users.id)
         .orderBy(desc(workshops.createdAt))
         .limit(limit)
@@ -281,16 +287,16 @@ export class WorkshopCrudService {
     request?: Request,
   ): Promise<
     | (Workshop & {
-        sessions: Session[];
-        questionnaires: Questionnaire[];
-        creator: { id: string; name: string; email: string };
-        tags: Array<{
-          id: string;
-          name: string;
-          category: string;
-          color: string;
-        }>;
-      })
+      sessions: Session[];
+      questionnaires: Questionnaire[];
+      creator: { id: string; name: string; email: string };
+      tags: Array<{
+        id: string;
+        name: string;
+        category: string;
+        color: string;
+      }>;
+    })
     | null
   > {
     const workshopResult = await db
