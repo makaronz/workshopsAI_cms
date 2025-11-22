@@ -17,7 +17,7 @@ export class DashboardOverview extends LitElement {
     @state() private loading = true;
     @state() private error: string | null = null;
 
-    static styles = css`
+    static override styles = css`
     :host {
       display: block;
       padding: 2rem;
@@ -161,7 +161,7 @@ export class DashboardOverview extends LitElement {
     }
   `;
 
-    connectedCallback() {
+    override connectedCallback() {
         super.connectedCallback();
         this.loadDashboardData();
     }
@@ -255,7 +255,7 @@ export class DashboardOverview extends LitElement {
     `;
     }
 
-    render() {
+    override render() {
         return html`
       <h1>Dashboard</h1>
       <p class="subtitle">
@@ -269,6 +269,9 @@ export class DashboardOverview extends LitElement {
         <div class="actions-container">
           <a href="/dashboard/workshops/new" class="action-button primary">
             + Create Workshop
+          </a>
+          <a href="/dashboard/workshops" class="action-button primary">
+            📋 View All Workshops  
           </a>
           <a href="/dashboard/questionnaires/new" class="action-button success">
             + Create Questionnaire

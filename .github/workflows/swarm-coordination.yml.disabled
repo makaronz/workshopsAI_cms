@@ -41,7 +41,7 @@ on:
 jobs:
   swarm-health-check:
     runs-on: ubuntu-latest
-    if: github.event.action == 'health-check' || github.event_name == 'schedule'
+    if: false  # Disabled - complex AI coordination not needed for basic CI
 
     steps:
       - name: Initialize Swarm Health Check
@@ -250,7 +250,7 @@ ${healthCheck.metrics.totalIssues > 50
 
   issue-analysis-coordination:
     runs-on: ubuntu-latest
-    if: github.event_name == 'repository_dispatch' && github.event.client_payload.action == 'issue_triage'
+    if: false  # Disabled - complex AI coordination not needed for basic CI
 
     steps:
       - name: Coordinate Issue Analysis
@@ -385,7 +385,7 @@ ${coordinationTask.complexity === 'high' ? '2-3 business days' :
 
   performance-optimization-coordination:
     runs-on: ubuntu-latest
-    if: github.event.inputs?.action == 'performance-optimization'
+    if: false  # Disabled - complex AI coordination not needed for basic CI
 
     steps:
       - name: Initialize Performance Optimization
@@ -510,7 +510,7 @@ ${analysis.issues.map(issue =>
 
   cleanup-old-coordination-data:
     runs-on: ubuntu-latest
-    if: github.event_name == 'schedule'
+    if: false  # Disabled - complex AI coordination not needed for basic CI
 
     steps:
       - name: Cleanup Old Coordination Data

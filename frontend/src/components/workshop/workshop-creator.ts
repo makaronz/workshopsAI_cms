@@ -34,7 +34,7 @@ export class WorkshopCreator extends LitElement {
     @state() private error: string | null = null;
     @state() private success = false;
 
-    static styles = css`
+    static override styles = css`
     :host {
       display: block;
       padding: 2rem;
@@ -264,7 +264,7 @@ export class WorkshopCreator extends LitElement {
         };
     }
 
-    render() {
+    override render() {
         return html`
       <h1>Create New Workshop</h1>
       <p class="subtitle">Fill in the details to create a new workshop for sociologists</p>

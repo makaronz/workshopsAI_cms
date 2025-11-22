@@ -6,7 +6,7 @@ import authService from '../../services/auth';
 
 @customElement('app-header')
 export class AppHeader extends LitElement {
-  static styles: CSSResultGroup = css`
+  static override styles: CSSResultGroup = css`
     :host {
       display: block;
       background: var(--color-surface);
@@ -272,13 +272,13 @@ export class AppHeader extends LitElement {
   @state()
   private currentPath: string = window.location.pathname;
 
-  connectedCallback() {
+  override connectedCallback() {
     super.connectedCallback();
     this.updateCurrentPath();
     window.addEventListener('popstate', this.updateCurrentPath.bind(this));
   }
 
-  disconnectedCallback() {
+  override disconnectedCallback() {
     super.disconnectedCallback();
     window.removeEventListener('popstate', this.updateCurrentPath.bind(this));
   }
@@ -349,7 +349,7 @@ export class AppHeader extends LitElement {
     return this.currentPath === path;
   }
 
-  render(): TemplateResult {
+  override render(): TemplateResult {
     const { isAuthenticated, user, isMobileMenuOpen } = this;
 
     return html`
@@ -370,15 +370,15 @@ export class AppHeader extends LitElement {
             </a>
             ${isAuthenticated ? html`
               <a
-                href="/workshops"
-                class="nav-link ${classMap({ active: this.isActivePath('/workshops') })}"
+                href="/dashboard/workshops"
+                class="nav-link ${classMap({ active: this.currentPath.startsWith('/dashboard/workshops') })}"
                 @click=${this.handleNavigation}
               >
                 Workshops
               </a>
               <a
-                href="/questionnaires"
-                class="nav-link ${classMap({ active: this.isActivePath('/questionnaires') })}"
+                href="/dashboard/questionnaires"
+                class="nav-link ${classMap({ active: this.currentPath.startsWith('/dashboard/questionnaires') })}"
                 @click=${this.handleNavigation}
               >
                 Questionnaires
@@ -465,15 +465,15 @@ export class AppHeader extends LitElement {
               Dashboard
             </a>
             <a
-              href="/workshops"
-              class="mobile-nav-link ${classMap({ active: this.isActivePath('/workshops') })}"
+              href="/dashboard/workshops"
+              class="mobile-nav-link ${classMap({ active: this.currentPath.startsWith('/dashboard/workshops') })}"
               @click=${this.handleNavigation}
             >
               Workshops
             </a>
             <a
-              href="/questionnaires"
-              class="mobile-nav-link ${classMap({ active: this.isActivePath('/questionnaires') })}"
+              href="/dashboard/questionnaires"
+              class="mobile-nav-link ${classMap({ active: this.currentPath.startsWith('/dashboard/questionnaires') })}"
               @click=${this.handleNavigation}
             >
               Questionnaires

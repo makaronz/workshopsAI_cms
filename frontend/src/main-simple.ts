@@ -19,13 +19,20 @@ import './components/layout/app-footer';
 import './components/questionnaires/questionnaire-builder-page';
 import './components/questionnaire/questionnaire-manager';
 
+// Import dashboard components
+import './components/dashboard/dashboard-overview';
+
+// Import workshop components  
+import './components/workshop/workshop-creator';
+import './components/workshop/workshop-list';
+
 // Import auth service
 import authService from './services/auth';
 
 // Remove loading screen and show login form
 document.addEventListener('DOMContentLoaded', () => {
   console.log('✅ DOM Content Loaded');
-  
+
   const loadingElement = document.getElementById('app-loading');
   const appElement = document.getElementById('app');
 
@@ -37,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (appElement) {
     // Check current route and authentication
     const currentPath = window.location.pathname;
-    
+
     // Initialize routing based on path and auth status
     initializeRouting(appElement, currentPath);
   }
@@ -46,13 +53,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // Initialize routing based on path and authentication
 export async function initializeRouting(appElement: HTMLElement, path: string) {
   console.log('🔄 Initializing routing for path:', path);
-  
+
   // Check if tokens exist in storage first (faster check)
-  const hasToken = !!(localStorage.getItem('workshopsai-access-token') || 
-                     sessionStorage.getItem('workshopsai-access-token'));
-  
+  const hasToken = !!(localStorage.getItem('workshopsai-access-token') ||
+    sessionStorage.getItem('workshopsai-access-token'));
+
   console.log('🔑 Token check:', { hasToken, path });
-  
+
   // Check authentication status
   let isAuthenticated = false;
   try {
@@ -63,86 +70,38 @@ export async function initializeRouting(appElement: HTMLElement, path: string) {
     // If auth check fails but we have a token, assume authenticated
     isAuthenticated = hasToken;
   }
-  
+
   if (path === '/register') {
     appElement.innerHTML = '<register-form></register-form>';
     console.log('✅ Register form rendered');
   } else if (path === '/dashboard' || path.startsWith('/dashboard')) {
     if (isAuthenticated || hasToken) {
       // Handle different dashboard sub-routes
-      if (path === '/dashboard/questionnaires/new') {
+      if (path === '/dashboard/workshops/new') {
+        appElement.innerHTML = `
+          \u003capp-shell\u003e
+            \u003cworkshop-creator\u003e\u003c/workshop-creator\u003e
+          \u003c/app-shell\u003e
+        `;
+        console.log('✅ Workshop creator rendered');
+      } else if (path === '/dashboard/questionnaires/new') {
         appElement.innerHTML = '<questionnaire-builder-page></questionnaire-builder-page>';
         console.log('✅ Questionnaire builder page rendered');
-      } else if (path === '/dashboard') {
-        // Main dashboard
+      } else if (path === '/dashboard/workshops') {
         appElement.innerHTML = `
-          <app-shell>
-            <div style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
-              <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 1rem; color: #1f2937;">
-                Dashboard
-              </h1>
-              <p style="color: #6b7280; margin-bottom: 2rem;">
-                Welcome to WorkshopsAI CMS - Content Management System for Sociologists
-              </p>
-              
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-                <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                  <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280; margin: 0 0 0.5rem 0;">WORKSHOPS</h3>
-                  <p style="font-size: 2.5rem; font-weight: 700; color: #2563eb; margin: 0;">0</p>
-                  <p style="font-size: 0.875rem; color: #6b7280; margin: 0.5rem 0 0 0;">Total workshops</p>
-                </div>
-                
-                <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                  <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280; margin: 0 0 0.5rem 0;">QUESTIONNAIRES</h3>
-                  <p style="font-size: 2.5rem; font-weight: 700; color: #10b981; margin: 0;">0</p>
-                  <p style="font-size: 0.875rem; color: #6b7280; margin: 0.5rem 0 0 0;">Active questionnaires</p>
-                </div>
-                
-                <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                  <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280; margin: 0 0 0.5rem 0;">RESPONSES</h3>
-                  <p style="font-size: 2.5rem; font-weight: 700; color: #f59e0b; margin: 0;">0</p>
-                  <p style="font-size: 0.875rem; color: #6b7280; margin: 0.5rem 0 0 0;">Total responses</p>
-                </div>
-                
-                <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                  <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280; margin: 0 0 0.5rem 0;">ANALYSIS JOBS</h3>
-                  <p style="font-size: 2.5rem; font-weight: 700; color: #8b5cf6; margin: 0;">0</p>
-                  <p style="font-size: 0.875rem; color: #6b7280; margin: 0.5rem 0 0 0;">Completed analyses</p>
-                </div>
-              </div>
-              
-              <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                <h2 style="font-size: 1.25rem; font-weight: 600; margin: 0 0 1rem 0; color: #1f2937;">
-                  Quick Actions
-                </h2>
-                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                  <a href="/dashboard/workshops/new" class="dashboard-link" style="padding: 0.75rem 1.5rem; background: #2563eb; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">
-                    + Create Workshop
-                  </a>
-                  <a href="/dashboard/questionnaires/new" class="dashboard-link" style="padding: 0.75rem 1.5rem; background: #10b981; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">
-                    + Create Questionnaire
-                  </a>
-                  <a href="/api/v1" target="_blank" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">
-                    API Documentation
-                  </a>
-                </div>
-              </div>
-              
-              <div style="margin-top: 2rem; padding: 1.5rem; background: #dbeafe; border-left: 4px solid #2563eb; border-radius: 4px;">
-                <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.5rem 0; color: #1e40af;">
-                  🎉 System Status: Fully Operational
-                </h3>
-                <ul style="margin: 0; padding-left: 1.5rem; color: #1e40af;">
-                  <li>✅ Backend API: Connected</li>
-                  <li>✅ Database: PostgreSQL connected</li>
-                  <li>✅ Redis Cache: Active</li>
-                  <li>✅ Frontend: Running</li>
-                </ul>
-              </div>
-            </div>
-          </app-shell>
+          \u003capp-shell\u003e
+            \u003cworkshop-list\u003e\u003c/workshop-list\u003e
+          \u003c/app-shell\u003e
         `;
-        console.log('✅ Dashboard rendered');
+        console.log('✅ Workshop list rendered');
+      } else if (path === '/dashboard') {
+        // Main dashboard - use the dashboard-overview component
+        appElement.innerHTML = `
+          \u003capp-shell\u003e
+            \u003cdashboard-overview\u003e\u003c/dashboard-overview\u003e
+          \u003c/app-shell\u003e
+        `;
+        console.log('✅ Dashboard overview component rendered');
       } else {
         // Other dashboard sub-routes - show dashboard with message
         appElement.innerHTML = `
@@ -182,7 +141,7 @@ export async function initializeRouting(appElement: HTMLElement, path: string) {
     appElement.innerHTML = '<login-form></login-form>';
     console.log('✅ Login form rendered');
   }
-  
+
   appElement.style.display = 'block';
 }
 
@@ -235,16 +194,16 @@ window.addEventListener('navigate', async (e: CustomEvent) => {
 // Handle clicks on internal links (prevent full page reload)
 document.addEventListener('click', async (e: MouseEvent) => {
   const target = e.target as HTMLElement;
-  
+
   // Find the closest anchor element
   const link = target.closest('a') as HTMLAnchorElement;
-  
+
   if (!link || !link.href) return;
-  
+
   // Skip external links, links with target, download links, and mailto/tel links
-  if (link.target || link.hasAttribute('download') || 
-      link.href.startsWith('mailto:') || link.href.startsWith('tel:') ||
-      link.href.startsWith('http://') || link.href.startsWith('https://')) {
+  if (link.target || link.hasAttribute('download') ||
+    link.href.startsWith('mailto:') || link.href.startsWith('tel:') ||
+    link.href.startsWith('http://') || link.href.startsWith('https://')) {
     // Only skip if it's a full external URL (not relative)
     if (link.href.startsWith('http://') || link.href.startsWith('https://')) {
       const linkUrl = new URL(link.href);
@@ -256,25 +215,25 @@ document.addEventListener('click', async (e: MouseEvent) => {
       return; // mailto, tel, or other non-navigation links
     }
   }
-  
+
   // Check if it's an internal navigation link
   const href = link.getAttribute('href');
   if (!href) return;
-  
+
   // Handle relative paths
   if (href.startsWith('/dashboard') || href.startsWith('/login') || href.startsWith('/register')) {
     e.preventDefault();
     e.stopPropagation();
-    
+
     console.log('🔗 [NAVIGATION] Intercepting link click:', {
       href,
       currentPath: window.location.pathname,
       hasToken: !!(localStorage.getItem('workshopsai-access-token') || sessionStorage.getItem('workshopsai-access-token'))
     });
-    
+
     // Update URL without reload
     window.history.pushState({}, '', href);
-    
+
     // Update content
     const appElement = document.getElementById('app');
     if (appElement) {
@@ -293,21 +252,21 @@ document.addEventListener('register-success', () => {
 document.addEventListener('login-success', (async (e: CustomEvent) => {
   console.log('✅ Login successful, redirecting to dashboard...');
   console.log('📦 Event detail:', e.detail);
-  
+
   // Wait for tokens to be saved to storage
   await new Promise(resolve => setTimeout(resolve, 200));
-  
+
   // Check if tokens are actually in storage
-  const accessToken = localStorage.getItem('workshopsai-access-token') || 
-                      sessionStorage.getItem('workshopsai-access-token');
+  const accessToken = localStorage.getItem('workshopsai-access-token') ||
+    sessionStorage.getItem('workshopsai-access-token');
   const refreshToken = localStorage.getItem('workshopsai-refresh-token');
-  
+
   console.log('🔑 Token check:', {
     hasAccessToken: !!accessToken,
     hasRefreshToken: !!refreshToken,
     accessTokenLength: accessToken?.length || 0
   });
-  
+
   // Verify authentication before redirect
   let isAuthenticated = false;
   try {
@@ -316,7 +275,7 @@ document.addEventListener('login-success', (async (e: CustomEvent) => {
   } catch (error) {
     console.error('❌ Error checking authentication:', error);
   }
-  
+
   if (isAuthenticated || accessToken) {
     // Redirect to dashboard
     console.log('🚀 Redirecting to dashboard...');
@@ -325,17 +284,17 @@ document.addEventListener('login-success', (async (e: CustomEvent) => {
     console.warn('⚠️ Not authenticated after login, waiting a bit more...');
     // Wait a bit more and try again
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     try {
       const isAuthRetry = await authService.isAuthenticated();
-      const retryAccessToken = localStorage.getItem('workshopsai-access-token') || 
-                               sessionStorage.getItem('workshopsai-access-token');
-      
+      const retryAccessToken = localStorage.getItem('workshopsai-access-token') ||
+        sessionStorage.getItem('workshopsai-access-token');
+
       console.log('🔄 Retry check:', {
         isAuthenticated: isAuthRetry,
         hasToken: !!retryAccessToken
       });
-      
+
       if (isAuthRetry || retryAccessToken) {
         console.log('🚀 Retry successful, redirecting to dashboard...');
         window.location.href = '/dashboard';
