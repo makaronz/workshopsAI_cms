@@ -234,9 +234,9 @@ router.post(
         refreshTokenLength: tokenToUse?.length
       });
 
-      if (error.message?.includes('Invalid refresh token') || 
-          error.message?.includes('expired') ||
-          error.message?.includes('not found')) {
+      if (error.message?.includes('Invalid refresh token') ||
+        error.message?.includes('expired') ||
+        error.message?.includes('not found')) {
         // Clear invalid cookie
         res.clearCookie('refreshToken', { path: '/api/v1/auth/refresh' });
 
@@ -254,7 +254,7 @@ router.post(
 
       res.status(500).json({
         error: 'Token refresh failed',
-        message: process.env.NODE_ENV === 'development' 
+        message: process.env.NODE_ENV === 'development'
           ? error.message || 'An unexpected error occurred'
           : 'An unexpected error occurred',
       });
@@ -599,7 +599,7 @@ router.get(
   handleAsync(async (req: Request, res: Response) => {
     // Extract and verify token manually since middleware might not be applied
     const authHeader = req.headers.authorization;
-    
+
     console.log('🔍 [AUTH/ME] Request received:', {
       hasAuthHeader: !!authHeader,
       authHeaderPrefix: authHeader?.substring(0, 20),
@@ -610,7 +610,7 @@ router.get(
         'content-type': req.headers['content-type'],
       }
     });
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       console.warn('⚠️ [AUTH/ME] No valid auth header');
       return res.status(401).json({
@@ -620,18 +620,18 @@ router.get(
     }
 
     const token = authHeader.substring(7);
-    
+
     console.log('🔑 [AUTH/ME] Token extracted:', {
       tokenLength: token.length,
       tokenPrefix: token.substring(0, 20) + '...'
     });
-    
+
     try {
       // Verify token using AuthService
       console.log('🔐 [AUTH/ME] Verifying token...');
       const payload = AuthService.verifyAccessToken(token);
       console.log('✅ [AUTH/ME] Token verified, userId:', payload.userId);
-      
+
       // Get user from database
       const user = await AuthService.findUserById(payload.userId);
       console.log('👤 [AUTH/ME] User found:', {
@@ -639,7 +639,7 @@ router.get(
         email: user?.email,
         isActive: user?.isActive
       });
-      
+
       if (!user || !user.isActive) {
         console.warn('⚠️ [AUTH/ME] User not found or inactive');
         return res.status(401).json({
