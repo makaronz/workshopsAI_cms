@@ -269,8 +269,7 @@ export class PromptQualityValidator {
           category: rule.category,
           severity: rule.severity,
           message: result.message,
-          suggestions: result.suggestions || [],
-          details: result.details,
+          suggestions: result.suggestions ?? [],
         };
 
         if (result.passed) {
@@ -376,7 +375,7 @@ export class PromptQualityValidator {
           category: 'structure',
           severity: 'error',
           message: schemaValidation.message,
-          suggestions: schemaValidation.suggestions,
+          suggestions: schemaValidation.suggestions ?? [],
         });
       }
     }
@@ -393,7 +392,7 @@ export class PromptQualityValidator {
         category: 'compliance',
         severity: 'error',
         message: 'Output contains potential PII',
-        suggestions: piiCheck.suggestions,
+        suggestions: piiCheck.suggestions ?? [],
       });
     }
 
@@ -410,7 +409,7 @@ export class PromptQualityValidator {
           category: 'content',
           severity: 'error',
           message: qualityCheck.message,
-          suggestions: qualityCheck.suggestions,
+          suggestions: qualityCheck.suggestions ?? [],
         });
       } else {
         warnings.push({
@@ -418,7 +417,7 @@ export class PromptQualityValidator {
           category: 'content',
           severity: 'warning',
           message: qualityCheck.message,
-          suggestions: qualityCheck.suggestions,
+          suggestions: qualityCheck.suggestions ?? [],
         });
       }
     }
@@ -448,12 +447,13 @@ export class PromptQualityValidator {
     content: string,
     context: any,
   ): ValidationResult {
+    // Use Polish sections by default (can be extended to support multiple languages)
     const requiredSections = [
       'ZADANIE',
       'INSTRUKCJE',
       'FORMAT',
       'WSKAZÓWKI',
-    ] || ['TASK', 'INSTRUCTIONS', 'FORMAT', 'GUIDELINES'];
+    ];
     const missingSections = requiredSections.filter(
       section => !content.includes(section),
     );
@@ -743,12 +743,8 @@ export class PromptQualityValidator {
     content: string,
     context: any,
   ): ValidationResult {
-    // Check if output specification is complete
-    const requiredOutputFields = ['format', 'struktura', 'wymagane pola'] || [
-      'format',
-      'structure',
-      'required fields',
-    ];
+    // Check if output specification is complete (using Polish fields)
+    const requiredOutputFields = ['format', 'struktura', 'wymagane pola'];
 
     const foundFields = requiredOutputFields.filter(field =>
       content.toLowerCase().includes(field.toLowerCase()),

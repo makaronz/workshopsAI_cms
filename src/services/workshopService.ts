@@ -6,7 +6,6 @@ import {
   users,
   workshopTags,
   workshopFacilitators,
-  workshopLocations,
   tags,
   facilitators,
   locations,
@@ -29,8 +28,10 @@ import slugify from 'slugify';
 import type {
   CreateWorkshopInput,
   UpdateWorkshopInput,
-  WorkshopFilter,
 } from '../types/validation';
+
+// Define WorkshopFilter type locally since it's not exported from validation
+type WorkshopFilter = 'status' | 'createdBy' | 'startDate' | 'endDate' | 'price' | 'seatLimit';
 
 export class WorkshopService {
   // Create workshop
