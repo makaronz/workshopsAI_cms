@@ -251,8 +251,9 @@ tail -f /home/ubuntu/workshopsAI_cms/logs/app.log
    - Recommended: 6.2.0+
    - Impact: Minor performance and feature limitations
 
-2. **Missing Tables**
-   - Some optional tables (llmanalyses, embeddings) were not created
+2. **Optional Tables Status**
+   - Table `llm_analyses` (item 17 in list above) was created successfully
+   - Some other optional tables (e.g., embeddings-specific tables) may not be created if not needed
    - These are for advanced LLM features and can be ignored if not needed
 
 3. **Email Service**

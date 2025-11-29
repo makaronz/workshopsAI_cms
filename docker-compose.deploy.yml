@@ -12,13 +12,13 @@ services:
       - PORT=3010
       - DB_HOST=postgres
       - DB_PORT=5432
-      - DB_USER=workshopsai
-      - DB_PASSWORD=workshopsai_secure_2024
-      - DB_NAME=workshopsai_cms
-      - DATABASE_URL=postgresql://workshopsai:workshopsai_secure_2024@postgres:5432/workshopsai_cms
-      - JWT_SECRET=workshopsai-jwt-secret-key-for-production-deployment-2024-min-32-chars
+      - DB_USER=${DB_USER:-workshopsai}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-workshopsai_cms}
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=7d
-      - REFRESH_TOKEN_SECRET=workshopsai-refresh-token-secret-key-production-2024-min-32-chars
+      - REFRESH_TOKEN_SECRET=${REFRESH_TOKEN_SECRET}
       - REFRESH_TOKEN_EXPIRES_IN=30d
       - CORS_ORIGIN=*
       - REDIS_HOST=redis
@@ -47,9 +47,9 @@ services:
   postgres:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_DB=workshopsai_cms
-      - POSTGRES_USER=workshopsai
-      - POSTGRES_PASSWORD=workshopsai_secure_2024
+      - POSTGRES_DB=${DB_NAME:-workshopsai_cms}
+      - POSTGRES_USER=${DB_USER:-workshopsai}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8
     ports:
       - "5433:5432"

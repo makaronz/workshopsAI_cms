@@ -240,7 +240,15 @@ app.get('/login', (_req, res) => {
   res.sendFile(join(__dirname, '../public/login.html'));
 });
 
-// API 404 handler - only for /api routes
+// API 404 handler - handle exact /api path (before catch-all)
+app.all('/api', (_req, res) => {
+  res.status(404).json({
+    error: 'Route not found',
+    message: 'The requested resource does not exist',
+  });
+});
+
+// API 404 handler - handle all other /api/* routes that don't match
 app.use('/api/*', (_req, res) => {
   res.status(404).json({
     error: 'Route not found',

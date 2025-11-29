@@ -528,7 +528,7 @@ export class QuestionnaireCrudService {
         workshopTitleI18n: workshops.titleI18n,
 
         // Aggregated counts
-        questionGroupCount: count(questionGroups.id),
+        questionGroupCount: sql<number>`COUNT(DISTINCT ${questionGroups.id})`.as('questionGroupCount'),
         questionCount: count(questions.id),
       })
       .from(questionnaires)
@@ -645,7 +645,7 @@ export class QuestionnaireCrudService {
         creatorEmail: users.email,
 
         // Aggregated counts
-        questionGroupCount: count(questionGroups.id),
+        questionGroupCount: sql<number>`COUNT(DISTINCT ${questionGroups.id})`.as('questionGroupCount'),
         questionCount: count(questions.id),
       })
       .from(questionnaires)

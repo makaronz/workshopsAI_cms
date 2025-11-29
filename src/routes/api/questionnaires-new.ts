@@ -241,10 +241,31 @@ router.get(
     try {
       const { limit, offset, status, workshopId } = req.query;
 
+      // Validate and parse limit with defaults
+      const defaultLimit = 20;
+      const maxLimit = 100;
+      let limitParsed = defaultLimit;
+      if (limit) {
+        const parsed = parseInt(limit as string, 10);
+        if (Number.isInteger(parsed) && parsed > 0) {
+          limitParsed = Math.min(parsed, maxLimit);
+        }
+      }
+
+      // Validate and parse offset with defaults
+      const defaultOffset = 0;
+      let offsetParsed = defaultOffset;
+      if (offset) {
+        const parsed = parseInt(offset as string, 10);
+        if (Number.isInteger(parsed) && parsed >= 0) {
+          offsetParsed = parsed;
+        }
+      }
+
       const result = await QuestionnaireCrudService.getQuestionnaires(
         {
-          limit: limit ? parseInt(limit as string) : undefined,
-          offset: offset ? parseInt(offset as string) : undefined,
+          limit: limitParsed,
+          offset: offsetParsed,
           status: status as string,
           workshopId: workshopId as string,
         },
@@ -257,8 +278,8 @@ router.get(
           questionnaires: result.questionnaires,
           pagination: {
             total: result.total,
-            limit: limit ? parseInt(limit as string) : 20,
-            offset: offset ? parseInt(offset as string) : 0,
+            limit: limitParsed,
+            offset: offsetParsed,
             hasMore: (offset ? parseInt(offset as string) : 0) + result.questionnaires.length < result.total,
           },
         },

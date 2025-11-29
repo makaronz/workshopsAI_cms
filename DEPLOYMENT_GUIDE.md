@@ -127,20 +127,24 @@ The application is configured with the following settings:
 ```bash
 NODE_ENV=production
 PORT=3010
-DATABASE_URL=postgresql://workshopsai:workshopsai123@localhost:5432/workshopsai
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=your-secret-key-change-in-production
-JWT_REFRESH_SECRET=your-refresh-secret-change-in-production
+DATABASE_URL=${DATABASE_URL}  # Set this in .env or environment - DO NOT commit real credentials
+REDIS_URL=${REDIS_URL}  # Set this in .env or environment
+JWT_SECRET=${JWT_SECRET}  # CHANGE THIS - use strong random value in production
+JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}  # CHANGE THIS - use strong random value in production
 ```
+
+⚠️ **WARNING: Never commit real database credentials to the repository!**
 
 ### Database Connection
 
+⚠️ **IMPORTANT: Configure database credentials in `.env` file or environment variables before deployment.**
+
 ```
-Host: localhost
-Port: 5432
-Database: workshopsai
-User: workshopsai
-Password: workshopsai123
+Host: ${DB_HOST}  # Configure in .env
+Port: ${DB_PORT}  # Configure in .env
+Database: ${DB_NAME}  # Configure in .env
+User: ${DB_USER}  # Configure in .env
+Password: ${DB_PASSWORD}  # Configure in .env - NEVER commit real password
 ```
 
 ### Redis Connection
