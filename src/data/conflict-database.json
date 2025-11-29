@@ -1,0 +1,114 @@
+[
+    {
+        "id": "conflict_space_vs_individual",
+        "category": "Space vs Individual",
+        "description": "Tension between maximizing private space and fostering community interaction.",
+        "trigger": {
+            "metric": "private_space_m2",
+            "condition": "<",
+            "value": 12
+        },
+        "consequence": {
+            "description": "Residents feel cramped and overwhelmed, leading to sensory overload and withdrawal.",
+            "impact": {
+                "satisfaction": -15,
+                "privacy": -20,
+                "noise_risk": 10
+            }
+        },
+        "mitigation_options": [
+            {
+                "id": "soundproof_pods",
+                "label": "Install Soundproof Pods",
+                "cost_impact": 5000,
+                "effect": {
+                    "privacy": 10,
+                    "satisfaction": 5
+                }
+            },
+            {
+                "id": "strict_quiet_hours",
+                "label": "Enforce Strict Quiet Hours",
+                "cost_impact": 0,
+                "effect": {
+                    "privacy": 5,
+                    "satisfaction": -5
+                }
+            }
+        ]
+    },
+    {
+        "id": "conflict_integration_vs_autonomy",
+        "category": "Integration vs Autonomy",
+        "description": "Forced integration vs. the need for optional social interaction.",
+        "trigger": {
+            "metric": "integration_level",
+            "condition": ">",
+            "value": 80
+        },
+        "consequence": {
+            "description": "Introverted residents feel pressured and alienated by mandatory social activities.",
+            "impact": {
+                "satisfaction": -20,
+                "community_strength": -10
+            }
+        },
+        "mitigation_options": [
+            {
+                "id": "opt_out_policy",
+                "label": "Allow 'Opt-Out' for Events",
+                "cost_impact": 0,
+                "effect": {
+                    "satisfaction": 10,
+                    "community_strength": 5
+                }
+            },
+            {
+                "id": "quiet_zones",
+                "label": "Designate 'Anti-Social' Zones",
+                "cost_impact": 2000,
+                "effect": {
+                    "satisfaction": 15,
+                    "privacy": 10
+                }
+            }
+        ]
+    },
+    {
+        "id": "conflict_cost_vs_standard",
+        "category": "Cost vs Standard",
+        "description": "Balancing affordability with high-quality amenities.",
+        "trigger": {
+            "metric": "rent_price",
+            "condition": ">",
+            "value": 2500
+        },
+        "consequence": {
+            "description": "High rent excludes key demographics (students, seniors), reducing diversity.",
+            "impact": {
+                "diversity": -30,
+                "feasiability": -10
+            }
+        },
+        "mitigation_options": [
+            {
+                "id": "subsidized_units",
+                "label": "Offer Subsidized Units",
+                "cost_impact": 10000,
+                "effect": {
+                    "diversity": 20,
+                    "feasiability": -5
+                }
+            },
+            {
+                "id": "shared_amenities_reduction",
+                "label": "Reduce Shared Amenities",
+                "cost_impact": -5000,
+                "effect": {
+                    "rent_price": -200,
+                    "satisfaction": -10
+                }
+            }
+        ]
+    }
+]

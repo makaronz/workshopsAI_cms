@@ -23,6 +23,7 @@ import authRoutes from './routes/auth';
 import fileRoutes from './routes/api/files';
 import { initializePreviewRoutes } from './routes/api/preview';
 import fileSignedRoutes from './routes/api/files-signed';
+import workshopV2Routes from './routes/workshop-v2';
 import dashboardRoutes from './routes/api/dashboard';
 
 // Import configuration
@@ -112,7 +113,7 @@ app.use(hpp());
 
 // XSS Protection middleware
 app.use((req, res, next) => {
-  const sanitizeObject = (obj: any) => {
+  const sanitizeObject = (obj: any): any => {
     if (typeof obj !== 'object' || obj === null) {
       return obj;
     }
@@ -195,7 +196,7 @@ async function checkLLMServicesHealth() {
       performanceSystem: performanceSystem ? { status: 'active' } : { status: 'initializing' },
       dbOptimization: dbOptimization ? { status: 'active' } : { status: 'initializing' },
     };
-  } catch (error) {
+  } catch (error: any) {
     return {
       embeddings: { status: 'error', error: error.message },
       analysisWorker: { status: 'error', error: error.message },
@@ -214,6 +215,7 @@ app.use(express.static(join(__dirname, '../public'), {
 // API routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/workshops', workshopRoutes);
+app.use('/api/v2/workshop', workshopV2Routes); // New V2 routes
 app.use('/api/v1/enrollments', enrollmentRoutes);
 app.use('/api/v1/questionnaires', questionnaireRoutes);
 app.use('/api/v1/responses', responseRoutes);
@@ -238,6 +240,21 @@ app.get('/', (_req, res) => {
     version: '1.0.0',
     environment: NODE_ENV,
   });
+});
+
+// SPA Catch-all handler (must be before 404 handler)
+// Serve index.html for any non-API routes to support client-side routing
+app.get('*', (req, res, next) => {
+  // Skip API routes, static files, and specific extensions
+  if (
+    req.path.startsWith('/api/') ||
+    req.path.includes('.') ||
+    req.path === '/health'
+  ) {
+    return next();
+  }
+
+  res.sendFile(join(__dirname, '../public/index.html'));
 });
 
 // 404 handler
@@ -356,7 +373,7 @@ const startServer = async () => {
       console.log('📱 Real-time preview functionality available');
       console.log('📈 Performance monitoring available at /api/v1/performance');
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to start server:', error);
     process.exit(1);
   }

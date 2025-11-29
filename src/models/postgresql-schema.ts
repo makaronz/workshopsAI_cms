@@ -1657,3 +1657,28 @@ export const emailBlacklistRelations = relations(emailBlacklist, ({ one }) => ({
 
 // SQL for import (when we need to use raw SQL)
 export { sql } from 'drizzle-orm';
+
+/**
+ * Designs table - for saving workshop simulation designs
+ */
+export const designs = pgTable(
+  'designs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    description: text('description'),
+    parameters: jsonb('parameters').notNull(), // Stores DesignParams
+    thumbnailUrl: text('thumbnailUrl'),
+    isPublic: boolean('isPublic').default(false).notNull(),
+    createdBy: uuid('createdBy')
+      .references(() => users.id, { onDelete: 'set null' }), // Optional: link to user if auth exists
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  },
+  table => ({
+    createdByIdx: index('idx_designs_created_by').on(table.createdBy),
+  }),
+);
+
+export type Design = typeof designs.$inferSelect;
+export type InsertDesign = typeof designs.$inferInsert;
