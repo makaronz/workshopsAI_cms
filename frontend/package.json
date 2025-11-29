@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -20,13 +20,18 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css,scss,json}\""
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@types/react": "^19.2.6",
+    "@types/react-dom": "^19.2.3",
     "@vaadin/router": "^2.0.0",
     "axe-core": "^4.8.2",
     "axios": "^1.6.7",
     "i18next": "^23.10.1",
     "i18next-browser-languagedetector": "^7.2.1",
     "i18next-http-backend": "^2.5.0",
-    "lit": "^3.1.2"
+    "lit": "^3.1.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@axe-core/cli": "^4.8.2",

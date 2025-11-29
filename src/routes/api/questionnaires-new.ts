@@ -229,6 +229,48 @@ router.post(
 );
 
 /**
+ * GET /api/v1/questionnaires
+ * Get all questionnaires with pagination and filtering
+ */
+router.get(
+  '/',
+  authenticateJWT,
+  authorizeRoles(['sociologist-editor', 'admin', 'moderator', 'facilitator']),
+  async (req: Request, res: Response, next: NextFunction) => {
+    console.log('🔍 GET / questionnaires route HIT!');
+    try {
+      const { limit, offset, status, workshopId } = req.query;
+
+      const result = await QuestionnaireCrudService.getQuestionnaires(
+        {
+          limit: limit ? parseInt(limit as string) : undefined,
+          offset: offset ? parseInt(offset as string) : undefined,
+          status: status as string,
+          workshopId: workshopId as string,
+        },
+        req,
+      );
+
+      res.status(200).json({
+        success: true,
+        data: {
+          questionnaires: result.questionnaires,
+          pagination: {
+            total: result.total,
+            limit: limit ? parseInt(limit as string) : 20,
+            offset: offset ? parseInt(offset as string) : 0,
+            hasMore: (offset ? parseInt(offset as string) : 0) + result.questionnaires.length < result.total,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching questionnaires:', error);
+      next(error);
+    }
+  },
+);
+
+/**
  * GET /api/v1/questionnaires/:id
  * Get questionnaire by ID with all questions and groups
  */

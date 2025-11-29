@@ -206,6 +206,15 @@ async function checkLLMServicesHealth() {
   }
 }
 
+// API path rewrite middleware for frontend compatibility
+// Frontend may call /api/auth/*, rewrite to /api/v1/auth/*
+app.use('/api', (req, res, next) => {
+  if (!req.path.startsWith('/v1/')) {
+    req.url = '/v1' + req.url;
+  }
+  next();
+});
+
 // Static file serving for frontend
 app.use(express.static(join(__dirname, '../public'), {
   index: ['index.html', 'index.htm'],
@@ -231,21 +240,18 @@ app.get('/login', (_req, res) => {
   res.sendFile(join(__dirname, '../public/login.html'));
 });
 
-// Root endpoint
-app.get('/', (_req, res) => {
-  res.json({
-    message: 'WorkshopsAI CMS API',
-    version: '1.0.0',
-    environment: NODE_ENV,
-  });
-});
-
-// 404 handler
-app.use('*', (_req, res) => {
+// API 404 handler - only for /api routes
+app.use('/api/*', (_req, res) => {
   res.status(404).json({
     error: 'Route not found',
     message: 'The requested resource does not exist',
   });
+});
+
+// SPA fallback - serve index.html for all other routes
+// This allows client-side routing to work properly
+app.get('*', (_req, res) => {
+  res.sendFile(join(__dirname, '../public/index.html'));
 });
 
 // Global error handler
