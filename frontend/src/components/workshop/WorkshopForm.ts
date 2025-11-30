@@ -955,44 +955,6 @@ export class WorkshopForm extends LitElement {
         </div>
       </div>
     `;
-  }
-
-  private renderPricing(): TemplateResult {
-    return html`
-      <div class="form-section">
-        <h2 class="section-title">${i18n.t('workshop.sections.pricing')}</h2>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>${i18n.t('workshop.price')}</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              .value=${this.formData.price || ''}
-              @input=${(e: any) => this.handleInputChange('price', parseFloat(e.target.value) || 0)}
-              placeholder="0.00"
-              ?disabled=${this.readonly}
-            >
-          </div>
-
-          <div class="form-group">
-            <label>${i18n.t('workshop.currency')}</label>
-            <select
-              .value=${this.formData.currency || 'PLN'}
-              @change=${(e: any) => this.handleInputChange('currency', e.target.value)}
-              ?disabled=${this.readonly}
-            >
-              <option value="PLN">PLN (zł)</option>
-              <option value="EUR">EUR (€)</option>
-              <option value="USD">USD ($)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
   private renderThemeSelection(): TemplateResult {
     return html`
       <div class="form-section">
