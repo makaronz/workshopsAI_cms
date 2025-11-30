@@ -354,4 +354,238 @@ router.get(
   },
 );
 
+/**
+ * LLM Analysis Routes
+ */
+
+/**
+ * POST /api/workshop-intelligence/workshops/:workshopId/analyses
+ * Trigger new analysis (queues BullMQ job)
+ */
+router.post(
+  '/workshops/:workshopId/analyses',
+  async (req: Request, res: Response) => {
+    try {
+      const { workshopId } = req.params;
+      const { modelName, promptTemplateId, customInstructions } = req.body;
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      // Validate model name
+      if (!modelName) {
+        return res.status(400).json({ error: 'modelName is required' });
+      }
+
+      const validModels = [
+        'gpt-4',
+        'gpt-4-turbo',
+        'gpt-4o',
+        'gpt-4o-mini',
+        'claude-3-opus',
+        'claude-3-sonnet',
+        'gemini-pro',
+      ];
+
+      if (!validModels.includes(modelName)) {
+        return res.status(400).json({
+          error: 'Invalid model name',
+          validModels,
+        });
+      }
+
+      // Check if form exists and has contributions
+      const contributions = await workshopIntelligenceService.getWorkshopContributions(
+        workshopId,
+      );
+
+      if (contributions.length === 0) {
+        return res.status(400).json({
+          error: 'No participant contributions found for this workshop',
+        });
+      }
+
+      // Create analysis and queue job
+      const analysis = await workshopIntelligenceService.createAnalysis(
+        workshopId,
+        userId,
+        modelName,
+        promptTemplateId,
+        customInstructions,
+      );
+
+      res.status(201).json({
+        message: 'Analysis queued successfully',
+        analysis,
+      });
+    } catch (error) {
+      console.error('Error creating analysis:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+);
+
+/**
+ * GET /api/workshop-intelligence/analyses/:analysisId
+ * Get analysis results
+ */
+router.get('/analyses/:analysisId', async (req: Request, res: Response) => {
+  try {
+    const { analysisId } = req.params;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const analysis = await workshopIntelligenceService.getAnalysis(analysisId);
+
+    if (!analysis) {
+      return res.status(404).json({ error: 'Analysis not found' });
+    }
+
+    // TODO: Check if user has permission to view this analysis
+    // (owner, admin, or participant if shared)
+
+    res.json(analysis);
+  } catch (error) {
+    console.error('Error fetching analysis:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * GET /api/workshop-intelligence/workshops/:workshopId/analyses
+ * Get all analyses for workshop (admin only)
+ */
+router.get(
+  '/workshops/:workshopId/analyses',
+  async (req: Request, res: Response) => {
+    try {
+      const { workshopId } = req.params;
+      const userId = (req as any).user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+
+      // TODO: Add role-based access control (admin/facilitator only)
+
+      const analyses = await workshopIntelligenceService.getAllAnalyses(workshopId);
+
+      res.json(analyses);
+    } catch (error) {
+      console.error('Error fetching analyses:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  },
+);
+
+/**
+ * PUT /api/workshop-intelligence/analyses/:analysisId/share
+ * Share analysis with participants
+ */
+router.put('/analyses/:analysisId/share', async (req: Request, res: Response) => {
+  try {
+    const { analysisId } = req.params;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // TODO: Check if user is admin/facilitator
+
+    const analysis = await workshopIntelligenceService.shareAnalysis(analysisId);
+
+    res.json({
+      message: 'Analysis shared with participants',
+      analysis,
+    });
+  } catch (error) {
+    console.error('Error sharing analysis:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * PUT /api/workshop-intelligence/analyses/:analysisId/hide
+ * Hide analysis from participants
+ */
+router.put('/analyses/:analysisId/hide', async (req: Request, res: Response) => {
+  try {
+    const { analysisId } = req.params;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // TODO: Check if user is admin/facilitator
+
+    const analysis = await workshopIntelligenceService.hideAnalysis(analysisId);
+
+    res.json({
+      message: 'Analysis hidden from participants',
+      analysis,
+    });
+  } catch (error) {
+    console.error('Error hiding analysis:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * Prompt Template Routes
+ */
+
+/**
+ * GET /api/workshop-intelligence/prompt-templates
+ * Get all prompt templates
+ */
+router.get('/prompt-templates', async (req: Request, res: Response) => {
+  try {
+    const templates = await workshopIntelligenceService.getPromptTemplates();
+    res.json(templates);
+  } catch (error) {
+    console.error('Error fetching prompt templates:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/workshop-intelligence/prompt-templates
+ * Create custom prompt template
+ */
+router.post('/prompt-templates', async (req: Request, res: Response) => {
+  try {
+    const { name, description, templateText } = req.body;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!name || !templateText) {
+      return res.status(400).json({
+        error: 'name and templateText are required',
+      });
+    }
+
+    const template = await workshopIntelligenceService.createPromptTemplate(
+      name,
+      description || '',
+      templateText,
+      userId,
+    );
+
+    res.status(201).json(template);
+  } catch (error) {
+    console.error('Error creating prompt template:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 export default router;

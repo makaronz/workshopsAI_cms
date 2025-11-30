@@ -305,6 +305,155 @@ export class WorkshopIntelligenceService {
     const form = await this.getFormByWorkshopId(workshopId);
     return form?.isEditable ?? false;
   }
+
+  /**
+   * LLM Analysis Management
+   */
+
+  /**
+   * Create a new analysis and queue processing job
+   */
+  async createAnalysis(
+    workshopId: string,
+    userId: string,
+    modelName: string,
+    promptTemplateId?: string,
+    customInstructions?: string,
+  ) {
+    // Create analysis record
+    const [analysis] = await db
+      .insert(workshopLlmAnalyses)
+      .values({
+        workshopId,
+        userId,
+        modelName,
+        promptTemplateId,
+        customInstructions,
+        status: 'pending',
+        isSharedWithParticipants: false,
+      })
+      .returning();
+
+    // Queue the analysis job (imported from workshopAnalysisQueue)
+    const { queueAnalysisJob } = await import('../queues/workshopAnalysisQueue.js');
+    await queueAnalysisJob({
+      analysisId: analysis.id,
+      workshopId,
+      modelName: modelName as any,
+      promptTemplateId,
+      customInstructions,
+    });
+
+    return analysis;
+  }
+
+  /**
+   * Get analysis by ID with results
+   */
+  async getAnalysis(analysisId: string) {
+    const [analysis] = await db
+      .select()
+      .from(workshopLlmAnalyses)
+      .where(eq(workshopLlmAnalyses.id, analysisId))
+      .limit(1);
+
+    if (!analysis) return null;
+
+    // Get all results for this analysis
+    const results = await db
+      .select()
+      .from(analysisResults)
+      .where(eq(analysisResults.analysisId, analysisId));
+
+    // Organize results by type
+    const organizedResults = {
+      summary: results.find((r) => r.resultType === 'summary')?.content,
+      insights: results.find((r) => r.resultType === 'insights')?.content,
+      themes: results.find((r) => r.resultType === 'themes')?.content,
+      recommendations: results.find((r) => r.resultType === 'recommendations')?.content,
+      plan: results.find((r) => r.resultType === 'plan')?.content,
+      rawResponse: results.find((r) => r.resultType === 'summary')?.rawResponse,
+    };
+
+    return {
+      ...analysis,
+      results: organizedResults,
+    };
+  }
+
+  /**
+   * Get all analyses for a workshop
+   */
+  async getAllAnalyses(workshopId: string) {
+    const analyses = await db
+      .select()
+      .from(workshopLlmAnalyses)
+      .where(eq(workshopLlmAnalyses.workshopId, workshopId))
+      .orderBy(desc(workshopLlmAnalyses.createdAt));
+
+    return analyses;
+  }
+
+  /**
+   * Share analysis with participants
+   */
+  async shareAnalysis(analysisId: string) {
+    const [updated] = await db
+      .update(workshopLlmAnalyses)
+      .set({
+        isSharedWithParticipants: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(workshopLlmAnalyses.id, analysisId))
+      .returning();
+
+    return updated;
+  }
+
+  /**
+   * Hide analysis from participants
+   */
+  async hideAnalysis(analysisId: string) {
+    const [updated] = await db
+      .update(workshopLlmAnalyses)
+      .set({
+        isSharedWithParticipants: false,
+        updatedAt: new Date(),
+      })
+      .where(eq(workshopLlmAnalyses.id, analysisId))
+      .returning();
+
+    return updated;
+  }
+
+  /**
+   * Get prompt templates
+   */
+  async getPromptTemplates() {
+    return await db.select().from(promptTemplates).orderBy(promptTemplates.name);
+  }
+
+  /**
+   * Create custom prompt template
+   */
+  async createPromptTemplate(
+    name: string,
+    description: string,
+    templateText: string,
+    userId: string,
+  ) {
+    const [template] = await db
+      .insert(promptTemplates)
+      .values({
+        name,
+        description,
+        templateText,
+        createdBy: userId,
+      })
+      .returning();
+
+    return template;
+  }
 }
 
 export const workshopIntelligenceService = new WorkshopIntelligenceService();
