@@ -67,6 +67,7 @@ export class WorkshopList extends LitElement {
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       transition: shadow 0.2s;
+      cursor: pointer;
     }
 
     .workshop-card:hover {
@@ -135,6 +136,10 @@ export class WorkshopList extends LitElement {
         }
     }
 
+    private navigateToWorkshop(workshopId: string) {
+        window.location.href = `/dashboard/workshops/${workshopId}/edit`;
+    }
+
     override render() {
         return html`
       <div class="header">
@@ -156,7 +161,7 @@ export class WorkshopList extends LitElement {
       ` : html`
         <div class="workshops-grid">
           ${this.workshops.map(workshop => html`
-            <div class="workshop-card">
+            <div class="workshop-card" @click="${() => this.navigateToWorkshop(workshop.id)}">
               <h2 class="workshop-title">${workshop.titleI18n?.pl || workshop.titleI18n?.en || 'Untitled'}</h2>
               <p class="workshop-description">
                 ${workshop.descriptionI18n?.pl || workshop.descriptionI18n?.en || 'No description'}
