@@ -946,9 +946,6 @@ export const llmAnalyses = pgTable(
   }),
 );
 
-export type LLMAnalysis = typeof llmAnalyses.$inferSelect;
-export type InsertLLMAnalysis = typeof llmAnalyses.$inferInsert;
-
 /**
  * Workshop Tags junction table
  */
@@ -1657,3 +1654,310 @@ export const emailBlacklistRelations = relations(emailBlacklist, ({ one }) => ({
 
 // SQL for import (when we need to use raw SQL)
 export { sql } from 'drizzle-orm';
+
+// ===== WORKSHOP INTELLIGENCE SYSTEM =====
+
+/**
+ * Workshop Forms table - stores form configuration for each workshop
+ * Admins can create custom forms with dynamic questions
+ */
+export const workshopForms = pgTable(
+  'workshop_forms',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    workshopId: uuid('workshopId')
+      .notNull()
+      .references(() => workshops.id, { onDelete: 'cascade' })
+      .unique(),
+    isEditable: boolean('isEditable').default(true).notNull(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  },
+  table => ({
+    workshopIdIdx: index('idx_workshop_forms_workshop_id').on(table.workshopId),
+  }),
+);
+
+export type WorkshopForm = typeof workshopForms.$inferSelect;
+export type InsertWorkshopForm = typeof workshopForms.$inferInsert;
+
+/**
+ * Form Questions table - stores individual questions within a workshop form
+ * Supports multiple question types (text, textarea, multiple choice, etc.)
+ */
+export const formQuestions = pgTable(
+  'form_questions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    formId: uuid('formId')
+      .notNull()
+      .references(() => workshopForms.id, { onDelete: 'cascade' }),
+    questionText: text('questionText').notNull(),
+    questionType: text('questionType').notNull(), // 'text', 'textarea', 'multiple_choice', 'single_choice', 'rating', 'yes_no'
+    options: jsonb('options').$type<{ options?: string[] }>(), // For multiple_choice and single_choice
+    isRequired: boolean('isRequired').default(false).notNull(),
+    displayOrder: decimal('displayOrder', { precision: 10, scale: 0 }).notNull(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+  },
+  table => ({
+    formIdIdx: index('idx_form_questions_form_id').on(table.formId),
+    displayOrderIdx: index('idx_form_questions_display_order').on(
+      table.displayOrder,
+    ),
+  }),
+);
+
+export type FormQuestion = typeof formQuestions.$inferSelect;
+export type InsertFormQuestion = typeof formQuestions.$inferInsert;
+
+/**
+ * Participant Contributions table - stores the contribution record for each participant
+ * Links to the workshop and user
+ */
+export const participantContributions = pgTable(
+  'participant_contributions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    workshopId: uuid('workshopId')
+      .notNull()
+      .references(() => workshops.id, { onDelete: 'cascade' }),
+    userId: uuid('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    status: text('status').default('draft').notNull(), // 'draft' | 'submitted'
+    submittedAt: timestamp('submittedAt'),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  },
+  table => ({
+    workshopUserIdx: index('idx_participant_contributions_workshop_user').on(
+      table.workshopId,
+      table.userId,
+    ),
+    workshopIdIdx: index('idx_participant_contributions_workshop_id').on(
+      table.workshopId,
+    ),
+    userIdIdx: index('idx_participant_contributions_user_id').on(table.userId),
+  }),
+);
+
+export type ParticipantContribution =
+  typeof participantContributions.$inferSelect;
+export type InsertParticipantContribution =
+  typeof participantContributions.$inferInsert;
+
+/**
+ * Participant Answers table - stores individual answers to form questions
+ * Linked to both the contribution and the specific question
+ */
+export const participantAnswers = pgTable(
+  'participant_answers',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    contributionId: uuid('contributionId')
+      .notNull()
+      .references(() => participantContributions.id, { onDelete: 'cascade' }),
+    questionId: uuid('questionId')
+      .notNull()
+      .references(() => formQuestions.id, { onDelete: 'cascade' }),
+    answerData: jsonb('answerData').notNull(), // Flexible answer storage
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  },
+  table => ({
+    contributionQuestionIdx: index(
+      'idx_participant_answers_contribution_question',
+    ).on(table.contributionId, table.questionId),
+    contributionIdIdx: index('idx_participant_answers_contribution_id').on(
+      table.contributionId,
+    ),
+    questionIdIdx: index('idx_participant_answers_question_id').on(
+      table.questionId,
+    ),
+  }),
+);
+
+export type ParticipantAnswer = typeof participantAnswers.$inferSelect;
+export type InsertParticipantAnswer = typeof participantAnswers.$inferInsert;
+
+/**
+ * Prompt Templates table - stores reusable prompt templates for LLM analysis
+ * Admins can create custom templates or use default ones
+ */
+export const promptTemplates = pgTable(
+  'prompt_templates',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    description: text('description'),
+    templateText: text('templateText').notNull(),
+    variables: jsonb('variables').$type<string[]>(), // List of variables used in the template
+    category: text('category'), // 'insights' | 'planning' | 'analysis' | 'custom'
+    isDefault: boolean('isDefault').default(false).notNull(),
+    createdBy: uuid('createdBy').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  },
+  table => ({
+    categoryIdx: index('idx_prompt_templates_category').on(table.category),
+    isDefaultIdx: index('idx_prompt_templates_is_default').on(table.isDefault),
+    createdByIdx: index('idx_prompt_templates_created_by').on(table.createdBy),
+  }),
+);
+
+export type PromptTemplate = typeof promptTemplates.$inferSelect;
+export type InsertPromptTemplate = typeof promptTemplates.$inferInsert;
+
+/**
+ * LLM Analyses table - tracks each LLM analysis run for a workshop
+ * Stores metadata about the analysis (model, prompt, status)
+ */
+export const workshopLLMAnalyses = pgTable(
+  'workshop_llm_analyses',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    workshopId: uuid('workshopId')
+      .notNull()
+      .references(() => workshops.id, { onDelete: 'cascade' }),
+    triggeredBy: uuid('triggeredBy')
+      .notNull()
+      .references(() => users.id, { onDelete: 'set null' }),
+    modelName: text('modelName').notNull(), // e.g., 'gpt-4o-mini', 'claude-3.5-sonnet'
+    promptTemplateId: uuid('promptTemplateId').references(
+      () => promptTemplates.id,
+      { onDelete: 'set null' },
+    ),
+    customInstructions: text('customInstructions'),
+    status: text('status').default('pending').notNull(), // 'pending' | 'processing' | 'completed' | 'failed'
+    isVisibleToParticipants: boolean('isVisibleToParticipants')
+      .default(false)
+      .notNull(),
+    startedAt: timestamp('startedAt'),
+    completedAt: timestamp('completedAt'),
+    errorMessage: text('errorMessage'),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+  },
+  table => ({
+    workshopIdIdx: index('idx_workshop_llm_analyses_workshop_id').on(table.workshopId),
+    triggeredByIdx: index('idx_workshop_llm_analyses_triggered_by').on(
+      table.triggeredBy,
+    ),
+    statusIdx: index('idx_workshop_llm_analyses_status').on(table.status),
+    createdAtIdx: index('idx_workshop_llm_analyses_created_at').on(table.createdAt),
+  }),
+);
+
+export type WorkshopLLMAnalysis = typeof workshopLLMAnalyses.$inferSelect;
+export type InsertWorkshopLLMAnalysis = typeof workshopLLMAnalyses.$inferInsert;
+
+/**
+ * Analysis Results table - stores the actual results generated by LLM for each analysis
+ * Multiple result types can be stored for a single analysis
+ */
+export const workshopAnalysisResults = pgTable(
+  'workshop_analysis_results',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    analysisId: uuid('analysisId')
+      .notNull()
+      .references(() => workshopLLMAnalyses.id, { onDelete: 'cascade' }),
+    resultType: text('resultType').notNull(), // 'summary' | 'insights' | 'themes' | 'recommendations' | 'plan'
+    content: jsonb('content').notNull(), // Structured content in JSON format
+    rawResponse: text('rawResponse'), // Full raw response from LLM API
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+  },
+  table => ({
+    analysisIdIdx: index('idx_workshop_analysis_results_analysis_id').on(
+      table.analysisId,
+    ),
+    resultTypeIdx: index('idx_workshop_analysis_results_result_type').on(
+      table.resultType,
+    ),
+  }),
+);
+
+export type WorkshopAnalysisResult = typeof workshopAnalysisResults.$inferSelect;
+export type InsertWorkshopAnalysisResult = typeof workshopAnalysisResults.$inferInsert;
+
+// Relations for Workshop Intelligence tables
+
+export const workshopFormsRelations = relations(workshopForms, ({ one, many }) => ({
+  workshop: one(workshops, {
+    fields: [workshopForms.workshopId],
+    references: [workshops.id],
+  }),
+  questions: many(formQuestions),
+}));
+
+export const formQuestionsRelations = relations(formQuestions, ({ one, many }) => ({
+  form: one(workshopForms, {
+    fields: [formQuestions.formId],
+    references: [workshopForms.id],
+  }),
+  answers: many(participantAnswers),
+}));
+
+export const participantContributionsRelations = relations(
+  participantContributions,
+  ({ one, many }) => ({
+    workshop: one(workshops, {
+      fields: [participantContributions.workshopId],
+      references: [workshops.id],
+    }),
+    user: one(users, {
+      fields: [participantContributions.userId],
+      references: [users.id],
+    }),
+    answers: many(participantAnswers),
+  }),
+);
+
+export const participantAnswersRelations = relations(
+  participantAnswers,
+  ({ one }) => ({
+    contribution: one(participantContributions, {
+      fields: [participantAnswers.contributionId],
+      references: [participantContributions.id],
+    }),
+    question: one(formQuestions, {
+      fields: [participantAnswers.questionId],
+      references: [formQuestions.id],
+    }),
+  }),
+);
+
+export const promptTemplatesRelations = relations(
+  promptTemplates,
+  ({ one, many }) => ({
+    createdByUser: one(users, {
+      fields: [promptTemplates.createdBy],
+      references: [users.id],
+    }),
+    analyses: many(workshopLLMAnalyses),
+  }),
+);
+
+export const workshopLLMAnalysesRelations = relations(workshopLLMAnalyses, ({ one, many }) => ({
+  workshop: one(workshops, {
+    fields: [workshopLLMAnalyses.workshopId],
+    references: [workshops.id],
+  }),
+  triggeredByUser: one(users, {
+    fields: [workshopLLMAnalyses.triggeredBy],
+    references: [users.id],
+  }),
+  promptTemplate: one(promptTemplates, {
+    fields: [workshopLLMAnalyses.promptTemplateId],
+    references: [promptTemplates.id],
+  }),
+  results: many(workshopAnalysisResults),
+}));
+
+export const workshopAnalysisResultsRelations = relations(workshopAnalysisResults, ({ one }) => ({
+  analysis: one(workshopLLMAnalyses, {
+    fields: [workshopAnalysisResults.analysisId],
+    references: [workshopLLMAnalyses.id],
+  }),
+}));
