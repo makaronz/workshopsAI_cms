@@ -16,6 +16,9 @@ services:
       - DB_PASSWORD=secure_password_here
       - DB_NAME=workshopsai_cms
       - DATABASE_URL=postgresql://workshopsai:secure_password_here@postgres:5433/workshopsai_cms
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - OPENAI_API_KEY=your-openai-api-key-here
       - JWT_SECRET=your-super-secret-jwt-key-change-in-production-min-32-chars
       - JWT_EXPIRES_IN=7d
       - CORS_ORIGIN=http://localhost:3000
@@ -42,6 +45,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations/001_initial_postgresql_schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
       - ./migrations/002_data_migration_mysql_to_postgresql.sql:/docker-entrypoint-initdb.d/02_migration.sql:ro
+      - ./migrations/0002_workshop_intelligence.sql:/docker-entrypoint-initdb.d/03_workshop_intelligence.sql:ro
+      - ./migrations/0003_default_prompt_template.sql:/docker-entrypoint-initdb.d/04_default_prompt.sql:ro
     restart: unless-stopped
     networks:
       - workshopsai-network
