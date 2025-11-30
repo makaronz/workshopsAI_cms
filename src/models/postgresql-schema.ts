@@ -1682,3 +1682,336 @@ export const designs = pgTable(
 
 export type Design = typeof designs.$inferSelect;
 export type InsertDesign = typeof designs.$inferInsert;
+
+// ============================================================================
+// WORKSHOP INTELLIGENCE SYSTEM
+// ============================================================================
+
+/**
+ * Enums for Workshop Intelligence
+ */
+export const questionTypeEnumWI = pgEnum('wi_question_type', [
+  'text',
+  'textarea',
+  'multiple_choice',
+  'single_choice',
+  'rating',
+  'yes_no',
+]);
+
+export const contributionStatusEnum = pgEnum('wi_contribution_status', [
+  'draft',
+  'submitted',
+]);
+
+export const analysisStatusEnum = pgEnum('wi_analysis_status', [
+  'pending',
+  'processing',
+  'completed',
+  'failed',
+]);
+
+export const resultTypeEnum = pgEnum('wi_result_type', [
+  'summary',
+  'insights',
+  'themes',
+  'recommendations',
+  'plan',
+]);
+
+/**
+ * Workshop Forms - Dynamic form configuration for each workshop
+ */
+export const workshopForms = pgTable(
+  'workshop_forms',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    workshopId: uuid('workshop_id')
+      .notNull()
+      .references(() => workshops.id, { onDelete: 'cascade' }),
+    isEditable: boolean('is_editable').notNull().default(true),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  table => ({
+    workshopIdIdx: index('idx_workshop_forms_workshop_id').on(table.workshopId),
+  }),
+);
+
+export type WorkshopForm = typeof workshopForms.$inferSelect;
+export type InsertWorkshopForm = typeof workshopForms.$inferInsert;
+
+/**
+ * Form Questions - Individual questions within a workshop form
+ */
+export const formQuestions = pgTable(
+  'form_questions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    formId: uuid('form_id')
+      .notNull()
+      .references(() => workshopForms.id, { onDelete: 'cascade' }),
+    questionText: text('question_text').notNull(),
+    questionType: questionTypeEnumWI('question_type').notNull(),
+    options: jsonb('options').$type<string[]>(),
+    isRequired: boolean('is_required').notNull().default(false),
+    displayOrder: decimal('display_order', { precision: 10, scale: 0 }).notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  table => ({
+    formIdIdx: index('idx_form_questions_form_id').on(table.formId),
+    displayOrderIdx: index('idx_form_questions_display_order').on(
+      table.displayOrder,
+    ),
+  }),
+);
+
+export type FormQuestion = typeof formQuestions.$inferSelect;
+export type InsertFormQuestion = typeof formQuestions.$inferInsert;
+
+/**
+ * Participant Contributions - Contribution record for each participant
+ */
+export const participantContributions = pgTable(
+  'participant_contributions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    workshopId: uuid('workshop_id')
+      .notNull()
+      .references(() => workshops.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    status: contributionStatusEnum('status').notNull().default('draft'),
+    submittedAt: timestamp('submitted_at'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  table => ({
+    workshopIdIdx: index('idx_participant_contributions_workshop_id').on(
+      table.workshopId,
+    ),
+    userIdIdx: index('idx_participant_contributions_user_id').on(table.userId),
+  }),
+);
+
+export type ParticipantContribution =
+  typeof participantContributions.$inferSelect;
+export type InsertParticipantContribution =
+  typeof participantContributions.$inferInsert;
+
+/**
+ * Participant Answers - Individual answers to form questions
+ */
+export const participantAnswers = pgTable(
+  'participant_answers',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    contributionId: uuid('contribution_id')
+      .notNull()
+      .references(() => participantContributions.id, { onDelete: 'cascade' }),
+    questionId: uuid('question_id')
+      .notNull()
+      .references(() => formQuestions.id, { onDelete: 'cascade' }),
+    answerData: jsonb('answer_data').notNull(),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  table => ({
+    contributionIdIdx: index('idx_participant_answers_contribution_id').on(
+      table.contributionId,
+    ),
+    questionIdIdx: index('idx_participant_answers_question_id').on(
+      table.questionId,
+    ),
+  }),
+);
+
+export type ParticipantAnswer = typeof participantAnswers.$inferSelect;
+export type InsertParticipantAnswer = typeof participantAnswers.$inferInsert;
+
+/**
+ * Workshop LLM Analyses - Tracks each LLM analysis run for a workshop
+ */
+export const workshopLlmAnalyses = pgTable(
+  'workshop_llm_analyses',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    workshopId: uuid('workshop_id')
+      .notNull()
+      .references(() => workshops.id, { onDelete: 'cascade' }),
+    triggeredBy: uuid('triggered_by')
+      .notNull()
+      .references(() => users.id),
+    modelName: text('model_name').notNull(),
+    promptTemplateId: uuid('prompt_template_id').references(
+      () => promptTemplates.id,
+    ),
+    customInstructions: text('custom_instructions'),
+    status: analysisStatusEnum('status').notNull().default('pending'),
+    isVisibleToParticipants: boolean('is_visible_to_participants')
+      .notNull()
+      .default(false),
+    startedAt: timestamp('started_at'),
+    completedAt: timestamp('completed_at'),
+    errorMessage: text('error_message'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  table => ({
+    workshopIdIdx: index('idx_workshop_llm_analyses_workshop_id').on(
+      table.workshopId,
+    ),
+    triggeredByIdx: index('idx_workshop_llm_analyses_triggered_by').on(
+      table.triggeredBy,
+    ),
+    statusIdx: index('idx_workshop_llm_analyses_status').on(table.status),
+  }),
+);
+
+export type WorkshopLlmAnalysis = typeof workshopLlmAnalyses.$inferSelect;
+export type InsertWorkshopLlmAnalysis = typeof workshopLlmAnalyses.$inferInsert;
+
+/**
+ * Analysis Results - Structured results generated by LLM
+ */
+export const analysisResults = pgTable(
+  'analysis_results',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    analysisId: uuid('analysis_id')
+      .notNull()
+      .references(() => workshopLlmAnalyses.id, { onDelete: 'cascade' }),
+    resultType: resultTypeEnum('result_type').notNull(),
+    content: jsonb('content').notNull(),
+    rawResponse: text('raw_response'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+  },
+  table => ({
+    analysisIdIdx: index('idx_analysis_results_analysis_id').on(
+      table.analysisId,
+    ),
+    resultTypeIdx: index('idx_analysis_results_result_type').on(
+      table.resultType,
+    ),
+  }),
+);
+
+export type AnalysisResult = typeof analysisResults.$inferSelect;
+export type InsertAnalysisResult = typeof analysisResults.$inferInsert;
+
+/**
+ * Prompt Templates - Reusable prompt templates for LLM analysis
+ */
+export const promptTemplates = pgTable(
+  'prompt_templates',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    description: text('description'),
+    templateText: text('template_text').notNull(),
+    variables: jsonb('variables').$type<string[]>(),
+    category: text('category'),
+    isDefault: boolean('is_default').default(false),
+    createdBy: uuid('created_by').references(() => users.id),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  },
+  table => ({
+    nameIdx: index('idx_prompt_templates_name').on(table.name),
+    createdByIdx: index('idx_prompt_templates_created_by').on(table.createdBy),
+    isDefaultIdx: index('idx_prompt_templates_is_default').on(table.isDefault),
+  }),
+);
+
+export type PromptTemplate = typeof promptTemplates.$inferSelect;
+export type InsertPromptTemplate = typeof promptTemplates.$inferInsert;
+
+// ===== WORKSHOP INTELLIGENCE RELATIONS =====
+
+export const workshopFormsRelations = relations(
+  workshopForms,
+  ({ one, many }) => ({
+    workshop: one(workshops, {
+      fields: [workshopForms.workshopId],
+      references: [workshops.id],
+    }),
+    questions: many(formQuestions),
+  }),
+);
+
+export const formQuestionsRelations = relations(
+  formQuestions,
+  ({ one, many }) => ({
+    form: one(workshopForms, {
+      fields: [formQuestions.formId],
+      references: [workshopForms.id],
+    }),
+    answers: many(participantAnswers),
+  }),
+);
+
+export const participantContributionsRelations = relations(
+  participantContributions,
+  ({ one, many }) => ({
+    workshop: one(workshops, {
+      fields: [participantContributions.workshopId],
+      references: [workshops.id],
+    }),
+    user: one(users, {
+      fields: [participantContributions.userId],
+      references: [users.id],
+    }),
+    answers: many(participantAnswers),
+  }),
+);
+
+export const participantAnswersRelations = relations(
+  participantAnswers,
+  ({ one }) => ({
+    contribution: one(participantContributions, {
+      fields: [participantAnswers.contributionId],
+      references: [participantContributions.id],
+    }),
+    question: one(formQuestions, {
+      fields: [participantAnswers.questionId],
+      references: [formQuestions.id],
+    }),
+  }),
+);
+
+export const workshopLlmAnalysesRelations = relations(
+  workshopLlmAnalyses,
+  ({ one, many }) => ({
+    workshop: one(workshops, {
+      fields: [workshopLlmAnalyses.workshopId],
+      references: [workshops.id],
+    }),
+    triggeredByUser: one(users, {
+      fields: [workshopLlmAnalyses.triggeredBy],
+      references: [users.id],
+    }),
+    promptTemplate: one(promptTemplates, {
+      fields: [workshopLlmAnalyses.promptTemplateId],
+      references: [promptTemplates.id],
+    }),
+    results: many(analysisResults),
+  }),
+);
+
+export const analysisResultsRelations = relations(analysisResults, ({ one }) => ({
+  analysis: one(workshopLlmAnalyses, {
+    fields: [analysisResults.analysisId],
+    references: [workshopLlmAnalyses.id],
+  }),
+}));
+
+export const promptTemplatesRelations = relations(
+  promptTemplates,
+  ({ one, many }) => ({
+    createdByUser: one(users, {
+      fields: [promptTemplates.createdBy],
+      references: [users.id],
+    }),
+    analyses: many(workshopLlmAnalyses),
+  }),
+);

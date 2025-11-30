@@ -25,6 +25,7 @@ import { initializePreviewRoutes } from './routes/api/preview';
 import fileSignedRoutes from './routes/api/files-signed';
 import workshopV2Routes from './routes/workshop-v2';
 import dashboardRoutes from './routes/api/dashboard';
+import workshopIntelligenceRoutes from './routes/api/workshop-intelligence';
 
 // Import configuration
 import {
@@ -223,6 +224,7 @@ app.use('/api/v1/files', fileRoutes);
 app.use('/api/v1/files/signed', fileSignedRoutes);
 app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/workshop-intelligence', workshopIntelligenceRoutes); // Workshop Intelligence routes
 
 // Performance monitoring routes (will be initialized after services are set up)
 
