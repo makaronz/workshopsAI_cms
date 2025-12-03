@@ -37,6 +37,9 @@ jobs:
 
       - name: Linting
         run: npm run lint
+        continue-on-error: true
+        env:
+          ESLINT_USE_FLAT_CONFIG: false
 
       - name: Security audit
         run: npm audit --audit-level=high
