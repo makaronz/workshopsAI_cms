@@ -1,0 +1,21 @@
+# Railway.app Configuration
+# Automatyczny deployment z PostgreSQL i Redis
+
+[build]
+builder = "nixpacks"
+buildCommand = "npm install && npm run build"
+
+[deploy]
+startCommand = "npm start"
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 10
+
+# Automatyczne uruchomienie migracji
+[deploy.migrations]
+command = "npm run db:migrate"
+
+# Zmienne środowiskowe (Railway automatycznie dodaje DATABASE_URL i REDIS_URL)
+[[services]]
+name = "app"
