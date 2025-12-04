@@ -809,30 +809,7 @@ export class WorkshopEditor extends LitElement {
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>${i18n.t('workshop.price')}</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value="${this.formData.price || ''}"
-              @input=${(e: any) => this.handleFieldChange('price', parseFloat(e.target.value) || 0)}
-            />
-          </div>
 
-          <div class="form-group">
-            <label>${i18n.t('workshop.currency')}</label>
-            <select
-              value="${this.formData.currency || 'PLN'}"
-              @change=${(e: any) => this.handleFieldChange('currency', e.target.value)}
-            >
-              <option value="PLN">PLN (zł)</option>
-              <option value="EUR">EUR (€)</option>
-              <option value="USD">USD ($)</option>
-            </select>
-          </div>
-        </div>
       </div>
     `;
   }

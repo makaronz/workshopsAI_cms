@@ -14,8 +14,7 @@ interface WorkshopFormData {
     enableWaitingList?: boolean;
     templateTheme?: string;
     language?: string;
-    price?: number;
-    currency?: string;
+
     imageUrl?: string;
 }
 
@@ -396,35 +395,7 @@ export class WorkshopCreator extends LitElement {
           </div>
         </div>
 
-        <!-- Pricing -->
-        <div class="form-section">
-          <h2 class="section-title">Pricing</h2>
-          
-          <div class="row">
-            <div class="form-group">
-              <label>Price</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                .value="${this.formData.price?.toString() || ''}"
-                @input="${(e: Event) => this.updateField('price', parseFloat((e.target as HTMLInputElement).value) || undefined)}"
-              />
-            </div>
 
-            <div class="form-group">
-              <label>Currency</label>
-              <select
-                .value="${this.formData.currency}"
-                @change="${(e: Event) => this.updateField('currency', (e.target as HTMLSelectElement).value)}"
-              >
-                <option value="PLN">PLN</option>
-                <option value="EUR">EUR</option>
-                <option value="USD">USD</option>
-              </select>
-            </div>
-          </div>
-        </div>
 
         <div class="button-group">
           <button type="submit" class="btn-primary" ?disabled="${this.loading}">

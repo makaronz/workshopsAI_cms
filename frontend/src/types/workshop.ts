@@ -19,8 +19,7 @@ export interface Workshop {
   waitingListCount?: number;
   templateTheme: 'integracja' | 'konflikty' | 'well-being' | 'custom';
   language: 'pl' | 'en';
-  price?: number;
-  currency?: string;
+
   imageUrl?: string;
   gallery?: string[];
   requirementsI18n?: Record<string, string[]>;
@@ -116,8 +115,7 @@ export interface WorkshopFormData {
   enableWaitingList?: boolean;
   templateTheme: 'integracja' | 'konflikty' | 'well-being' | 'custom';
   language: 'pl' | 'en';
-  price?: number;
-  currency?: string;
+
   requirementsI18n: Record<string, string[]>;
   objectivesI18n: Record<string, string[]>;
   materials: WorkshopMaterial[];

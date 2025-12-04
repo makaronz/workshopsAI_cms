@@ -214,7 +214,7 @@ export class WorkshopCrudService {
             .leftJoin(tags, eq(workshopTags.tagId, tags.id))
             .where(
               workshopIds.length > 0
-                ? sql`${workshopTags.workshopId} IN ${sql.raw(workshopIds.map(id => `'${id}'`).join(','))}`
+                ? sql`${workshopTags.workshopId} IN (${sql.raw(workshopIds.map(id => `'${id}'`).join(','))})`
                 : undefined,
             )
           : [];

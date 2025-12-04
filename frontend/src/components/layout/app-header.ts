@@ -377,9 +377,8 @@ export class AppHeader extends LitElement {
                 Workshops
               </a>
               <a
-                href="/dashboard/questionnaires"
-                class="nav-link ${classMap({ active: this.currentPath.startsWith('/dashboard/questionnaires') })}"
-                @click=${this.handleNavigation}
+                href="/questionnaires.html"
+                class="nav-link ${classMap({ active: this.currentPath.startsWith('/questionnaires') })}"
               >
                 Questionnaires
               </a>
@@ -472,9 +471,8 @@ export class AppHeader extends LitElement {
               Workshops
             </a>
             <a
-              href="/dashboard/questionnaires"
-              class="mobile-nav-link ${classMap({ active: this.currentPath.startsWith('/dashboard/questionnaires') })}"
-              @click=${this.handleNavigation}
+              href="/questionnaires.html"
+              class="mobile-nav-link ${classMap({ active: this.currentPath.startsWith('/questionnaires') })}"
             >
               Questionnaires
             </a>

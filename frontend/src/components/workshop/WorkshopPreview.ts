@@ -705,14 +705,7 @@ export class WorkshopPreview extends LitElement {
             </div>
           ` : ''}
 
-          ${this.workshop.price && this.workshop.price > 0 ? html`
-            <div class="meta-item">
-              💰 ${new Intl.NumberFormat(this.currentLanguage, {
-                style: 'currency',
-                currency: this.workshop.currency || 'PLN'
-              }).format(this.workshop.price)}
-            </div>
-          ` : ''}
+
         </div>
 
         <div class="workshop-badges">

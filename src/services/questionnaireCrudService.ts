@@ -469,6 +469,145 @@ export class QuestionnaireCrudService {
   }
 
   /**
+   * Get all questionnaires with pagination and filtering
+   */
+  static async getQuestionnaires(
+    options: {
+      limit?: number;
+      offset?: number;
+      status?: string;
+      workshopId?: string;
+    } = {},
+    request?: Request,
+  ): Promise<{
+    questionnaires: Array<
+      Questionnaire & {
+        creator: { id: string; name: string; email: string };
+        workshop?: { id: string; slug: string; titleI18n: Record<string, string> };
+        questionGroupCount: number;
+        questionCount: number;
+        responseCount: number;
+      }
+    >;
+    total: number;
+  }> {
+    const { limit = 20, offset = 0, status, workshopId } = options;
+
+    // Build where conditions
+    const conditions = [isNull(questionnaires.deletedAt)];
+    if (status) {
+      conditions.push(eq(questionnaires.status, status as any));
+    }
+    if (workshopId) {
+      conditions.push(eq(questionnaires.workshopId, workshopId));
+    }
+
+    const questionnairesData = await db
+      .select({
+        // Questionnaire fields
+        id: questionnaires.id,
+        workshopId: questionnaires.workshopId,
+        titleI18n: questionnaires.titleI18n,
+        instructionsI18n: questionnaires.instructionsI18n,
+        status: questionnaires.status,
+        settings: questionnaires.settings,
+        publishedAt: questionnaires.publishedAt,
+        closedAt: questionnaires.closedAt,
+        createdBy: questionnaires.createdBy,
+        createdAt: questionnaires.createdAt,
+        updatedAt: questionnaires.updatedAt,
+        deletedAt: questionnaires.deletedAt,
+
+        // Creator info
+        creatorId: users.id,
+        creatorName: users.name,
+        creatorEmail: users.email,
+
+        // Workshop info
+        workshopSlug: workshops.slug,
+        workshopTitleI18n: workshops.titleI18n,
+
+        // Aggregated counts
+        questionGroupCount: sql<number>`COUNT(DISTINCT ${questionGroups.id})`.as('questionGroupCount'),
+        questionCount: count(questions.id),
+      })
+      .from(questionnaires)
+      .leftJoin(users, eq(questionnaires.createdBy, users.id))
+      .leftJoin(workshops, eq(questionnaires.workshopId, workshops.id))
+      .leftJoin(
+        questionGroups,
+        eq(questionnaires.id, questionGroups.questionnaireId),
+      )
+      .leftJoin(questions, eq(questionGroups.id, questions.groupId))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .groupBy(questionnaires.id, users.id, workshops.id)
+      .orderBy(desc(questionnaires.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    // Get total count
+    const totalResult = await db
+      .select({ count: count(questionnaires.id) })
+      .from(questionnaires)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+    const total = Number(totalResult[0]?.count || 0);
+
+    // Get response counts for each questionnaire
+    const questionnaireIds = questionnairesData.map(q => q.id);
+    const responseCounts =
+      questionnaireIds.length > 0
+        ? await db
+          .select({
+            questionnaireId: questionGroups.questionnaireId,
+            responseCount: count(
+              sql`DISTINCT ${responses.userId} || '-' || ${responses.enrollmentId}`,
+            ),
+          })
+          .from(questionGroups)
+          .leftJoin(questions, eq(questionGroups.id, questions.groupId))
+          .leftJoin(responses, eq(questions.id, responses.questionId))
+          .where(
+            questionnaireIds.length > 0
+              ? sql`${questionGroups.questionnaireId} IN (${sql.raw(questionnaireIds.map(id => `'${id}'`).join(','))})`
+              : undefined,
+          )
+          .groupBy(questionGroups.questionnaireId)
+        : [];
+
+    const responseCountsMap = responseCounts.reduce(
+      (acc, item) => {
+        acc[item.questionnaireId] = Number(item.responseCount);
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    const formattedQuestionnaires = questionnairesData.map(questionnaire => ({
+      ...questionnaire,
+      creator: {
+        id: questionnaire.creatorId,
+        name: questionnaire.creatorName,
+        email: questionnaire.creatorEmail,
+      },
+      workshop: questionnaire.workshopId
+        ? {
+            id: questionnaire.workshopId,
+            slug: questionnaire.workshopSlug,
+            titleI18n: questionnaire.workshopTitleI18n,
+          }
+        : undefined,
+      questionGroupCount: Number(questionnaire.questionGroupCount),
+      questionCount: Number(questionnaire.questionCount),
+      responseCount: responseCountsMap[questionnaire.id] || 0,
+    }));
+
+    return {
+      questionnaires: formattedQuestionnaires,
+      total,
+    };
+  }
+
+  /**
    * Get questionnaires for workshop
    */
   static async getQuestionnairesByWorkshop(
@@ -506,7 +645,7 @@ export class QuestionnaireCrudService {
         creatorEmail: users.email,
 
         // Aggregated counts
-        questionGroupCount: count(questionGroups.id),
+        questionGroupCount: sql<number>`COUNT(DISTINCT ${questionGroups.id})`.as('questionGroupCount'),
         questionCount: count(questions.id),
       })
       .from(questionnaires)
@@ -541,7 +680,7 @@ export class QuestionnaireCrudService {
           .leftJoin(responses, eq(questions.id, responses.questionId))
           .where(
             questionnaireIds.length > 0
-              ? sql`${questionGroups.questionnaireId} IN ${sql.raw(questionnaireIds.map(id => `'${id}'`).join(','))}`
+              ? sql`${questionGroups.questionnaireId} IN (${sql.raw(questionnaireIds.map(id => `'${id}'`).join(','))})`
               : undefined,
           )
           .groupBy(questionGroups.questionnaireId)
