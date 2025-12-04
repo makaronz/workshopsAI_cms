@@ -8,7 +8,7 @@ import { LitElement, html, css, PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 
-import {
+import type {
   WorkshopTemplate,
   TemplateCategory,
   Language,
@@ -699,7 +699,7 @@ export class TemplateSelector extends LitElement {
       { value: 'custom', label: { pl: 'Niestandardowe', en: 'Custom' } },
     ];
 
-  connectedCallback() {
+  override connectedCallback() {
     super.connectedCallback();
     this.loadTemplates();
   }
