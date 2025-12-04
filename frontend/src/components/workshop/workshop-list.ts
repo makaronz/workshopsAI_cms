@@ -1,6 +1,7 @@
 import { LitElement, html, css } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { apiClient } from '../../services/api';
+import authService from '../../services/auth';
 
 interface Workshop {
   id: string;
@@ -140,8 +141,13 @@ export class WorkshopList extends LitElement {
     window.location.href = `/dashboard/workshops/${workshopId}/edit`;
   }
 
-  private navigateToAnalysis(workshopId: string) {
-    window.location.href = `/dashboard/workshops/${workshopId}/analysis`;
+  private async navigateToAnalysis(workshopId: string) {
+    const user = await authService.getCurrentUser();
+    if (user?.role === 'Participant') {
+      window.location.href = `/dashboard/workshops/${workshopId}/insights`;
+    } else {
+      window.location.href = `/dashboard/workshops/${workshopId}/analysis`;
+    }
   }
 
   override render() {
@@ -180,7 +186,7 @@ export class WorkshopList extends LitElement {
                   @click="${(e: Event) => { e.stopPropagation(); this.navigateToAnalysis(workshop.id); }}" 
                   style="padding: 0.5rem 1rem; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.875rem;"
                 >
-                  📊 AI Analysis
+                  📊 ${this.getAnalysisButtonLabel()}
                 </button>
               </div>
             </div>
@@ -188,6 +194,17 @@ export class WorkshopList extends LitElement {
         </div>
       `}
     `;
+  }
+
+  private getAnalysisButtonLabel() {
+    // This is a synchronous check, might need to be state-based if auth changes dynamically, 
+    // but for now we can assume auth is stable during component lifecycle or use a simple check.
+    // Since authService.getCurrentUser() is async, we can't use it directly in render easily without state.
+    // However, we can check the stored token or user if available synchronously, or just use a generic label.
+    // Let's try to get the user from authService if it has a synchronous getter or just default to 'AI Analysis'.
+    // authService has a private currentUser, but we can't access it.
+    // Let's just use 'AI Insights' as a neutral term or fetch it in connectedCallback.
+    return 'AI Insights';
   }
 }
 

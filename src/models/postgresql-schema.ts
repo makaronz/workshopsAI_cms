@@ -165,6 +165,9 @@ export const consents = pgTable(
     userId: uuid('userId')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    questionnaireId: uuid('questionnaireId').references(() => questionnaires.id, {
+      onDelete: 'cascade',
+    }),
     consentType: text('consentType').notNull(), // 'research_analysis', 'marketing_emails', 'data_sharing'
     granted: boolean('granted').notNull(),
     ipAddress: text('ipAddress'),
@@ -882,6 +885,9 @@ export const responses = pgTable(
     enrollmentId: uuid('enrollmentId').references(() => enrollments.id, {
       onDelete: 'set null',
     }), // nullable for standalone
+    questionnaireId: uuid('questionnaireId')
+      .notNull()
+      .references(() => questionnaires.id, { onDelete: 'cascade' }),
     answer: jsonb('answer').notNull(), // polymorphic based on question type
     metadata: jsonb('metadata').$type<{
       ip_hash: string;
@@ -908,6 +914,13 @@ export const responses = pgTable(
 export type Response = typeof responses.$inferSelect;
 export type InsertResponse = typeof responses.$inferInsert;
 
+export const analysisStatusEnum = pgEnum('analysisStatus', [
+  'pending',
+  'processing',
+  'completed',
+  'failed',
+]);
+
 /**
  * LLM Analyses table - enhanced AI analysis for questionnaire insights
  */
@@ -928,13 +941,16 @@ export const llmAnalyses = pgTable(
       confidence_score: number;
       response_count: number;
     }>(),
-    status: questionnaireStatusEnum('status').default('draft').notNull(),
+    status: analysisStatusEnum('status').default('pending').notNull(),
     errorMessage: text('errorMessage'),
     createdAt: timestamp('createdAt').defaultNow().notNull(),
     completedAt: timestamp('completedAt'),
     createdBy: uuid('createdBy')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
+    isVisibleToParticipants: boolean('isVisibleToParticipants')
+      .default(false)
+      .notNull(),
   },
   table => ({
     questionnaireIdIdx: index('idx_llm_analyses_questionnaire_id').on(
@@ -943,6 +959,104 @@ export const llmAnalyses = pgTable(
     analysisTypeIdx: index('idx_llm_analyses_type').on(table.analysisType),
     statusIdx: index('idx_llm_analyses_status').on(table.status),
     createdByIdx: index('idx_llm_analyses_created_by').on(table.createdBy),
+  }),
+);
+
+export const analysisJobStatusEnum = pgEnum('analysisJobStatus', [
+  'queued',
+  'processing',
+  'completed',
+  'failed',
+  'cancelled',
+]);
+
+export const analysisJobPriorityEnum = pgEnum('analysisJobPriority', [
+  'low',
+  'medium',
+  'high',
+  'urgent',
+]);
+
+/**
+ * Analysis Jobs table - queue management for LLM processing
+ */
+export const analysisJobs = pgTable(
+  'analysis_jobs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    questionnaireId: uuid('questionnaireId')
+      .notNull()
+      .references(() => questionnaires.id),
+    analysisTypes: jsonb('analysisTypes').$type<string[]>().notNull(),
+    status: analysisJobStatusEnum('status')
+      .default('queued')
+      .notNull(),
+    priority: analysisJobPriorityEnum('priority')
+      .default('medium')
+      .notNull(),
+    progress: decimal('progress', { precision: 5, scale: 2 }).default('0'), // 0-100 percentage
+    totalSteps: decimal('totalSteps', { precision: 10, scale: 0 }).notNull().default('1'),
+    completedSteps: decimal('completedSteps', { precision: 10, scale: 0 }).default('0'),
+    options: jsonb('options').$type<{
+      minClusterSize?: number;
+      minThemeFrequency?: number;
+      includeSentiment?: boolean;
+      anonymizationLevel?: 'partial' | 'full';
+      customPrompt?: string;
+    }>(),
+    errorLog: jsonb('errorLog').$type<
+      Array<{
+        step: string;
+        error: string;
+        timestamp: string;
+        retryable: boolean;
+      }>
+    >(),
+    estimatedDuration: decimal('estimatedDuration', { precision: 10, scale: 0 }), // in seconds
+    actualDuration: decimal('actualDuration', { precision: 10, scale: 0 }), // in seconds
+    workerId: text('workerId'),
+    scheduledAt: timestamp('scheduledAt'),
+    startedAt: timestamp('startedAt'),
+    completedAt: timestamp('completedAt'),
+    triggeredBy: uuid('triggeredBy').references(() => users.id),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  },
+  table => ({
+    questionnaireIdIdx: index('idx_analysis_jobs_questionnaire_id').on(table.questionnaireId),
+    statusIdx: index('idx_analysis_jobs_status').on(table.status),
+    priorityIdx: index('idx_analysis_jobs_priority').on(table.priority),
+    triggeredByIdx: index('idx_analysis_jobs_triggered_by').on(table.triggeredBy),
+    scheduledAtIdx: index('idx_analysis_jobs_scheduled_at').on(table.scheduledAt),
+  }),
+);
+
+/**
+ * Embeddings table - vector embeddings for semantic search
+ */
+export const embeddings = pgTable(
+  'embeddings',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    responseId: uuid('responseId')
+      .notNull()
+      .references(() => responses.id, { onDelete: 'cascade' }),
+    questionId: uuid('questionId')
+      .notNull()
+      .references(() => questions.id),
+    vectorIndex: decimal('vectorIndex', { precision: 10, scale: 0 }).notNull(), // Index in external vector DB
+    model: text('model').notNull(), // "text-embedding-3-small", etc.
+    dimensions: decimal('dimensions', { precision: 10, scale: 0 }).notNull(), // 1536, 384, etc.
+    provider: text('provider').notNull().default('openai'), // openai, anthropic, local
+    checksum: text('checksum'), // For content integrity verification
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  },
+  table => ({
+    responseIdIdx: index('idx_embeddings_response_id').on(table.responseId),
+    questionIdIdx: index('idx_embeddings_question_id').on(table.questionId),
+    modelIdx: index('idx_embeddings_model').on(table.model),
+    checksumIdx: index('idx_embeddings_checksum').on(table.checksum),
   }),
 );
 
@@ -1660,22 +1774,22 @@ export { sql } from 'drizzle-orm';
  * Designs table - for saving workshop simulation designs
  */
 export const designs = pgTable(
-    'designs',
-    {
-        id: uuid('id').primaryKey().defaultRandom(),
-        name: text('name').notNull(),
-        description: text('description'),
-        parameters: jsonb('parameters').notNull(), // Stores DesignParams
-        thumbnailUrl: text('thumbnailUrl'),
-        isPublic: boolean('isPublic').default(false).notNull(),
-        createdBy: uuid('createdBy')
-            .references(() => users.id, { onDelete: 'set null' }), // Optional: link to user if auth exists
-        createdAt: timestamp('createdAt').defaultNow().notNull(),
-        updatedAt: timestamp('updatedAt').defaultNow().notNull(),
-    },
-    table => ({
-        createdByIdx: index('idx_designs_created_by').on(table.createdBy),
-    }),
+  'designs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    description: text('description'),
+    parameters: jsonb('parameters').notNull(), // Stores DesignParams
+    thumbnailUrl: text('thumbnailUrl'),
+    isPublic: boolean('isPublic').default(false).notNull(),
+    createdBy: uuid('createdBy')
+      .references(() => users.id, { onDelete: 'set null' }), // Optional: link to user if auth exists
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  },
+  table => ({
+    createdByIdx: index('idx_designs_created_by').on(table.createdBy),
+  }),
 );
 
 export type Design = typeof designs.$inferSelect;

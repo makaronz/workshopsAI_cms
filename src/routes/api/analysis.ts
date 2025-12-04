@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import rateLimit from 'express-rate-limit';
 import { db } from '../../config/database';
 import { eq, and, desc, gte, lte, inArray } from 'drizzle-orm';
 import { enhancedLLMAnalysisWorker } from '../../services/enhanced-llm-worker';
@@ -10,12 +11,11 @@ import {
   questionnaires,
   users,
   responses,
+  consents,
   analysisStatusEnum,
   analysisJobStatusEnum,
-} from '../../models/llm-schema';
-import { authenticateToken } from '../../middleware/auth';
-import { rateLimitMiddleware } from '../../middleware/responseRateLimit';
-import { exportService } from '../../services/export-service';
+} from '../../models/postgresql-schema';
+import { authenticateJWT } from '../../middleware/auth';
 import { logger } from '../../utils/logger';
 
 const router = Router();
@@ -62,20 +62,20 @@ const exportAnalysisSchema = z.object({
 /**
  * Rate limiting configuration
  */
-const analysisRateLimit = rateLimitMiddleware({
+const analysisRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // Limit each IP to 100 requests per windowMs
-  message: {
-    error: 'Too many analysis requests, please try again later.',
-  },
+  message: 'Too many analysis requests, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 /**
  * POST /api/analysis/jobs - Create new analysis job
  */
-router.post('/jobs', authenticateToken, analysisRateLimit, async (req, res) => {
+router.post('/jobs', authenticateJWT, analysisRateLimit, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = (req as any).user.id;
     const validatedData = createAnalysisJobSchema.parse(req.body);
 
     // Verify user owns the questionnaire
@@ -106,6 +106,7 @@ router.post('/jobs', authenticateToken, analysisRateLimit, async (req, res) => {
     // Create the analysis job
     const jobId = await enhancedLLMAnalysisWorker.addJob({
       ...validatedData,
+      scheduledAt: validatedData.scheduledAt ? new Date(validatedData.scheduledAt) : undefined,
       triggeredBy: userId,
     });
 
@@ -130,7 +131,7 @@ router.post('/jobs', authenticateToken, analysisRateLimit, async (req, res) => {
       });
     }
 
-    logger.error('Error creating analysis job', { error, userId: req.user.id });
+    logger.error('Error creating analysis job', { error, userId: (req as any).user?.id });
     res.status(500).json({
       error: 'Internal server error',
     });
@@ -140,10 +141,10 @@ router.post('/jobs', authenticateToken, analysisRateLimit, async (req, res) => {
 /**
  * GET /api/analysis/jobs/:jobId/status - Get job status and progress
  */
-router.get('/jobs/:jobId/status', authenticateToken, async (req, res) => {
+router.get('/jobs/:jobId/status', authenticateJWT, async (req, res) => {
   try {
     const { jobId } = req.params;
-    const userId = req.user.id;
+    const userId = (req as any).user.id;
 
     // Verify job ownership
     const job = await db.query.analysisJobs.findFirst({
@@ -202,10 +203,10 @@ router.get('/jobs/:jobId/status', authenticateToken, async (req, res) => {
 /**
  * POST /api/analysis/jobs/:jobId/cancel - Cancel a job
  */
-router.post('/jobs/:jobId/cancel', authenticateToken, async (req, res) => {
+router.post('/jobs/:jobId/cancel', authenticateJWT, async (req, res) => {
   try {
     const { jobId } = req.params;
-    const userId = req.user.id;
+    const userId = (req as any).user.id;
 
     // Verify job ownership
     const job = await db.query.analysisJobs.findFirst({
@@ -246,9 +247,9 @@ router.post('/jobs/:jobId/cancel', authenticateToken, async (req, res) => {
 /**
  * GET /api/analysis/results - Get analysis results
  */
-router.get('/results', authenticateToken, async (req, res) => {
+router.get('/results', authenticateJWT, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = (req as any).user.id;
     const validatedQuery = getAnalysesSchema.parse(req.query);
 
     // Verify questionnaire ownership
@@ -269,11 +270,11 @@ router.get('/results', authenticateToken, async (req, res) => {
     const conditions = [eq(llmAnalyses.questionnaireId, validatedQuery.questionnaireId)];
 
     if (validatedQuery.analysisTypes) {
-      conditions.push(inArray(llmAnalyses.analysisType, validatedQuery.analysisTypes));
+      conditions.push(inArray(llmAnalyses.analysisType, validatedQuery.analysisTypes as any[]));
     }
 
     if (validatedQuery.status) {
-      conditions.push(eq(llmAnalyses.status, validatedQuery.status));
+      conditions.push(eq(llmAnalyses.status, validatedQuery.status as any));
     }
 
     // Get analyses with pagination
@@ -306,7 +307,7 @@ router.get('/results', authenticateToken, async (req, res) => {
       });
     }
 
-    logger.error('Error getting analysis results', { error, userId: req.user.id });
+    logger.error('Error getting analysis results', { error, userId: (req as any).user?.id });
     res.status(500).json({
       error: 'Internal server error',
     });
@@ -316,10 +317,10 @@ router.get('/results', authenticateToken, async (req, res) => {
 /**
  * GET /api/analysis/results/:analysisId - Get specific analysis result
  */
-router.get('/results/:analysisId', authenticateToken, async (req, res) => {
+router.get('/results/:analysisId', authenticateJWT, async (req, res) => {
   try {
     const { analysisId } = req.params;
-    const userId = req.user.id;
+    const userId = (req as any).user.id;
 
     const analysis = await db.query.llmAnalyses.findFirst({
       where: eq(llmAnalyses.id, analysisId),
@@ -377,11 +378,11 @@ router.get('/results/:analysisId', authenticateToken, async (req, res) => {
 /**
  * PATCH /api/analysis/results/:analysisId/visibility - Toggle analysis visibility for participants
  */
-router.patch('/results/:analysisId/visibility', authenticateToken, async (req, res) => {
+router.patch('/results/:analysisId/visibility', authenticateJWT, async (req, res) => {
   try {
     const { analysisId } = req.params;
     const { isVisible } = z.object({ isVisible: z.boolean() }).parse(req.body);
-    const userId = req.user.id;
+    const userId = (req as any).user.id;
 
     // Verify analysis exists and user owns the questionnaire
     const analysis = await db.query.llmAnalyses.findFirst({
@@ -439,10 +440,10 @@ router.patch('/results/:analysisId/visibility', authenticateToken, async (req, r
 /**
  * POST /api/analysis/results/:analysisId/export - Export analysis results
  */
-router.post('/results/:analysisId/export', authenticateToken, async (req, res) => {
+router.post('/results/:analysisId/export', authenticateJWT, async (req, res) => {
   try {
     const { analysisId } = req.params;
-    const userId = req.user.id;
+    const userId = (req as any).user.id;
     const validatedData = exportAnalysisSchema.parse(req.body);
 
     // Get analysis with related questionnaire
@@ -497,7 +498,7 @@ router.post('/results/:analysisId/export', authenticateToken, async (req, res) =
         ...analysis,
         questionnaire: {
           id: analysis.questionnaire.id,
-          title: analysis.questionnaire.title,
+          titleI18n: analysis.questionnaire.titleI18n,
           createdAt: analysis.questionnaire.createdAt,
         },
       },
@@ -569,9 +570,9 @@ router.post('/results/:analysisId/export', authenticateToken, async (req, res) =
 /**
  * GET /api/analysis/stats - Get analysis statistics
  */
-router.get('/stats', authenticateToken, async (req, res) => {
+router.get('/stats', authenticateJWT, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = (req as any).user.id;
     const { questionnaireId } = req.query;
 
     // Verify questionnaire ownership if specified
@@ -635,7 +636,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Error getting analysis statistics', { error, userId: req.user.id });
+    logger.error('Error getting analysis statistics', { error, userId: (req as any).user?.id });
     res.status(500).json({
       error: 'Internal server error',
     });
@@ -645,9 +646,9 @@ router.get('/stats', authenticateToken, async (req, res) => {
 /**
  * GET /api/analysis/gdpr-report - Generate GDPR compliance report
  */
-router.get('/gdpr-report', authenticateToken, async (req, res) => {
+router.get('/gdpr-report', authenticateJWT, async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = (req as any).user.id;
     const { questionnaireId } = req.query;
 
     // Verify questionnaire ownership
@@ -681,7 +682,7 @@ router.get('/gdpr-report', authenticateToken, async (req, res) => {
     );
 
     // Check consent status
-    const consents = await db.query.consents.findMany({
+    const consentRecords = await db.query.consents.findMany({
       where: and(
         eq(consents.questionnaireId, questionnaireId as string),
         eq(consents.granted, true),
@@ -692,20 +693,20 @@ router.get('/gdpr-report', authenticateToken, async (req, res) => {
     const gdprReport = {
       questionnaire: {
         id: questionnaire.id,
-        title: questionnaire.title,
+        titleI18n: questionnaire.titleI18n,
         createdAt: questionnaire.createdAt,
       },
       dataProcessing: {
         totalResponses: allResponses.length,
         uniqueRespondents: new Set(allResponses.map(r => r.userId).filter(Boolean)).size,
         analysesPerformed: analyses.length,
-        consentRecords: consents.length,
-        consentRate: allResponses.length > 0 ? (consents.length / allResponses.length) * 100 : 0,
+        consentRecords: consentRecords.length,
+        consentRate: allResponses.length > 0 ? (consentRecords.length / allResponses.length) * 100 : 0,
       },
       anonymization: anonymizationReport,
       dataRetention: {
         oldestResponse: allResponses.length > 0 ?
-          new Date(Math.min(...allResponses.map(r => new Date(r.submittedAt).getTime()))) :
+          new Date(Math.min(...allResponses.map(r => new Date(r.submittedAt!).getTime()))) :
           null,
         retentionPeriod: '12 months',
         deletionSchedule: new Date(Date.now() + (365 * 24 * 60 * 60 * 1000)), // 1 year from now
@@ -722,13 +723,13 @@ router.get('/gdpr-report', authenticateToken, async (req, res) => {
         'Implement regular data retention reviews',
         'Consider data minimization principles',
       ].flat(),
-      complianceScore: calculateGDPRComplianceScore(anonymizationReport, consents.length, allResponses.length),
+      complianceScore: calculateGDPRComplianceScore(anonymizationReport, consentRecords.length, allResponses.length),
     };
 
     res.json(gdprReport);
 
   } catch (error) {
-    logger.error('Error generating GDPR report', { error, userId: req.user.id });
+    logger.error('Error generating GDPR report', { error, userId: (req as any).user?.id });
     res.status(500).json({
       error: 'Internal server error',
     });
@@ -738,10 +739,10 @@ router.get('/gdpr-report', authenticateToken, async (req, res) => {
 /**
  * GET /api/analysis/export/:questionnaireId - Export all analyses for a questionnaire
  */
-router.get('/export/:questionnaireId', authenticateToken, async (req, res) => {
+router.get('/export/:questionnaireId', authenticateJWT, async (req, res) => {
   try {
     const { questionnaireId } = req.params;
-    const userId = req.user.id;
+    const userId = (req as any).user.id;
     const { format = 'json', includeRawResponses = 'false' } = req.query;
 
     // Verify questionnaire ownership
@@ -765,18 +766,18 @@ router.get('/export/:questionnaireId', authenticateToken, async (req, res) => {
     });
 
     // Get responses if requested
-    let responses = null;
+    let responseData = null;
     if (includeRawResponses === 'true') {
-      responses = await db.query.responses.findMany({
+      responseData = await db.query.responses.findMany({
         where: eq(responses.questionnaireId, questionnaireId),
       });
 
       // Anonymize responses
-      responses = responses.map(r => ({
+      responseData = responseData.map(r => ({
         ...r,
         answer: anonymizationService.anonymizeResponse(r, 'full').answer,
         metadata: {
-          ...r.metadata,
+          ...(r.metadata as any),
           ipHash: '[HASHED]',
           userAgentHash: '[HASHED]',
         },
@@ -784,7 +785,7 @@ router.get('/export/:questionnaireId', authenticateToken, async (req, res) => {
     }
 
     // Get consent information
-    const consents = await db.query.consents.findMany({
+    const consentRecords = await db.query.consents.findMany({
       where: eq(consents.questionnaireId, questionnaireId),
     });
 
@@ -792,27 +793,26 @@ router.get('/export/:questionnaireId', authenticateToken, async (req, res) => {
     const exportPackage = {
       questionnaire: {
         id: questionnaire.id,
-        title: questionnaire.title,
-        description: questionnaire.description,
+        titleI18n: questionnaire.titleI18n,
+        instructionsI18n: questionnaire.instructionsI18n,
         status: questionnaire.status,
         createdAt: questionnaire.createdAt,
         settings: questionnaire.settings,
       },
       analyses,
-      responses,
-      consents: consents.map(c => ({
-        ...c,
-        ipAddress: '[REDACTED]',
-        userAgent: '[REDACTED]',
-      })),
+      responses: responseData,
+      consents: {
+        total: consentRecords.length,
+        granted: consentRecords.filter(c => c.granted).length,
+      },
       statistics: {
         totalAnalyses: analyses.length,
         completedAnalyses: analyses.filter(a => a.status === 'completed').length,
         failedAnalyses: analyses.filter(a => a.status === 'failed').length,
-        totalResponses: responses ? responses.length : 0,
-        totalConsents: consents.filter(c => c.granted).length,
-        consentRate: responses.length > 0 ?
-          (consents.filter(c => c.granted).length / responses.length) * 100 : 0,
+        totalResponses: responseData ? responseData.length : 0,
+        totalConsents: consentRecords.filter(c => c.granted).length,
+        consentRate: responseData && responseData.length > 0 ?
+          (consentRecords.filter(c => c.granted).length / responseData.length) * 100 : 0,
       },
       exportMetadata: {
         exportedAt: new Date().toISOString(),
@@ -901,7 +901,7 @@ function convertAnalysesToCSV(packageData: any): string {
   // Questionnaire header
   csvRows.push('# Questionnaire');
   csvRows.push(`ID,${packageData.questionnaire.id}`);
-  csvRows.push(`Title,${packageData.questionnaire.title}`);
+  csvRows.push(`Title,${JSON.stringify(packageData.questionnaire.titleI18n)}`);
   csvRows.push(`Status,${packageData.questionnaire.status}`);
   csvRows.push(`Created At,${packageData.questionnaire.createdAt}`);
   csvRows.push('');
@@ -981,202 +981,5 @@ function calculateGDPRComplianceScore(anonymizationReport: any, consentCount: nu
 
   return Math.min(100, score);
 }
-
-/**
- * Export validation schemas
- */
-const exportAnalysesSchema = z.object({
-  format: z.enum(['json', 'csv', 'ods']),
-  includeMetadata: z.boolean().optional(),
-  includeAnonymizedData: z.boolean().optional(),
-  dateRange: z.object({
-    start: z.string().datetime(),
-    end: z.string().datetime(),
-  }).optional(),
-  analysisTypes: z.array(z.string()).optional(),
-  questionnaireIds: z.array(z.string().uuid()).optional(),
-  language: z.enum(['en', 'pl']).optional(),
-});
-
-/**
- * POST /api/analysis/export
- * Export analysis results in various formats
- */
-router.post('/export', authenticateToken, async (req, res) => {
-  try {
-    const userId = (req as any).user.id;
-    const validatedData = exportAnalysesSchema.parse(req.body);
-
-    // Validate export request
-    const validation = exportService.validateExportRequest(validatedData);
-    if (!validation.valid) {
-      return res.status(400).json({
-        error: 'Invalid export request',
-        details: validation.errors,
-      });
-    }
-
-    // Check user access to questionnaires if specified
-    if (validatedData.questionnaireIds && validatedData.questionnaireIds.length > 0) {
-      const questionnaires = await db.query.questionnaires.findMany({
-        where: inArray(questionnaires.id, validatedData.questionnaireIds),
-        columns: { id: true, createdBy: true },
-      });
-
-      const hasAccess = questionnaires.every(q => q.createdBy === userId);
-      if (!hasAccess) {
-        return res.status(403).json({
-          error: 'Access denied - insufficient permissions for one or more questionnaires',
-        });
-      }
-    }
-
-    // Perform export
-    const exportResult = await exportService.exportAnalyses(validatedData);
-
-    // Set appropriate headers for file download
-    res.setHeader('Content-Type', exportResult.mimeType);
-    res.setHeader('Content-Disposition', `attachment; filename="${exportResult.filename}"`);
-    res.setHeader('Content-Length', exportResult.size);
-
-    // Log export for audit
-    logger.info('Analysis exported', {
-      userId,
-      format: validatedData.format,
-      recordCount: exportResult.recordCount,
-      size: exportResult.size,
-    });
-
-    // Send file data
-    if (Buffer.isBuffer(exportResult.data)) {
-      res.send(exportResult.data);
-    } else {
-      res.send(Buffer.from(exportResult.data));
-    }
-
-  } catch (error) {
-    logger.error('Export failed:', { error, userId: (req as any).user.id });
-
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        error: 'Invalid request data',
-        details: error.errors,
-      });
-    }
-
-    res.status(500).json({
-      error: 'Export failed',
-      message: error.message,
-    });
-  }
-});
-
-/**
- * GET /api/analysis/export/stats
- * Get export statistics
- */
-router.get('/export/stats', authenticateToken, async (req, res) => {
-  try {
-    const userId = (req as any).user.id;
-
-    // Get export statistics
-    const stats = await exportService.getExportStats();
-
-    res.json({
-      success: true,
-      data: stats,
-    });
-
-  } catch (error) {
-    logger.error('Export stats failed:', { error, userId: (req as any).user.id });
-    res.status(500).json({
-      error: 'Failed to fetch export statistics',
-    });
-  }
-});
-
-/**
- * POST /api/analysis/export/:analysisId
- * Export a specific analysis
- */
-router.post('/export/:analysisId', authenticateToken, async (req, res) => {
-  try {
-    const userId = (req as any).user.id;
-    const { analysisId } = req.params;
-    const validatedData = exportAnalysesSchema.parse(req.body);
-
-    // Get specific analysis
-    const analysis = await db.query.llmAnalyses.findFirst({
-      where: eq(llmAnalyses.id, analysisId),
-      with: {
-        questionnaire: {
-          columns: { id: true, createdBy: true },
-        },
-      },
-    });
-
-    if (!analysis) {
-      return res.status(404).json({
-        error: 'Analysis not found',
-      });
-    }
-
-    // Check user access
-    if (analysis.questionnaire.createdBy !== userId) {
-      return res.status(403).json({
-        error: 'Access denied - insufficient permissions',
-      });
-    }
-
-    // Create export options with specific analysis
-    const exportOptions = {
-      ...validatedData,
-      questionnaireIds: [analysis.questionnaireId],
-      analysisTypes: [analysis.analysisType],
-    };
-
-    // Perform export
-    const exportResult = await exportService.exportAnalyses(exportOptions);
-
-    // Set appropriate headers for file download
-    res.setHeader('Content-Type', exportResult.mimeType);
-    res.setHeader('Content-Disposition', `attachment; filename="${exportResult.filename}"`);
-    res.setHeader('Content-Length', exportResult.size);
-
-    // Log export for audit
-    logger.info('Specific analysis exported', {
-      userId,
-      analysisId,
-      format: validatedData.format,
-      size: exportResult.size,
-    });
-
-    // Send file data
-    if (Buffer.isBuffer(exportResult.data)) {
-      res.send(exportResult.data);
-    } else {
-      res.send(Buffer.from(exportResult.data));
-    }
-
-  } catch (error) {
-    logger.error('Specific export failed:', {
-      error,
-      userId: (req as any).user.id,
-      analysisId: req.params.analysisId,
-    });
-
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        error: 'Invalid request data',
-        details: error.errors,
-      });
-    }
-
-    res.status(500).json({
-      error: 'Export failed',
-      message: error.message,
-    });
-  }
-});
 
 export default router;

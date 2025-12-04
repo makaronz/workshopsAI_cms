@@ -43,15 +43,15 @@ Implementacja MVP została podzielona na cztery tygodniowe sprinty. Każdy sprin
 
 | Zadanie | Priorytet | Szacowany Czas | Opis Techniczny |
 |---|---|---|---|
-| *| **3.1: Konfiguracja Kolejki Zadań** | **Krytyczny** | 6h | Skonfigurowanie BullMQ z Redis do asynchronicznego przetwarzania zadań analizy LLM. Stworzenie workera, który będzie obsługiwał zadania z kolejki. |
-| **3.2: Serwis Anonimizacji Danych** | **Krytyczny** | 4h | Implementacja serwisu `AnonymizationService`, który będzie usuwał dane PII z odpowiedzi uczestników przed wysłaniem ich do LLM. |
-| **3.3: Serwis Analizy LLM** | **Wysoki** | 8h | Stworzenie serwisu `LLMAnalysisService`, który będzie integrował się z API OpenAI. Serwis będzie wywoływany przez workera z kolejki zadań. |i`). |
+| **3.1: Konfiguracja Kolejki Zadań** | **Krytyczny** | 6h | Skonfigurowanie BullMQ z Redis do asynchronicznego przetwarzania zadań analizy LLM. Stworzenie workera, który będzie obsługiwał zadania z kolejki. **(Zakończone)** |
+| **3.2: Serwis Anonimizacji Danych** | **Krytyczny** | 4h | Implementacja serwisu `AnonymizationService`, który będzie usuwał dane PII z odpowiedzi uczestników przed wysłaniem ich do LLM. **(Zakończone)** |
+| **3.3: Serwis Analizy LLM** | **Wysoki** | 8h | Stworzenie serwisu `LLMAnalysisService`, który będzie integrował się z API OpenAI. Serwis będzie wywoływany przez workera z kolejki zadań. **(Zakończone)** |
 | **3.4: API Uruchamiania Analizy** | **Krytyczny** | 6h | Zmodyfikowanie endpointu `POST /api/workshops/{id}/analyses`, aby:
 
 1. Zbierał dane.
 2. Dodawał zadanie do kolejki BullMQ z zebranymi danymi.
-3. Zwracał natychmiastową odpowiedź z ID zadania. |
-| **3.5: API Udostępniania Wyników** | **Średni** | 4h | Stworzenie endpointów `PUT /api/analyses/{id}/share` i `hide`, które będą zmieniać flagę `is_visible_to_participants` w tabeli `workshop_llm_analyses`. |
+3. Zwracał natychmiastową odpowiedź z ID zadania. **(Zakończone)** |
+| **3.5: API Udostępniania Wyników** | **Średni** | 4h | Stworzenie endpointów `PUT /api/analyses/{id}/share` i `hide`, które będą zmieniać flagę `is_visible_to_participants` w tabeli `workshop_llm_analyses`. **(Zakończone)** |
 
 ### Sprint 4: Prezentacja Wyników i Finalizacja
 

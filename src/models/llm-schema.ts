@@ -7,7 +7,6 @@ import {
   json,
   boolean,
   decimal,
-  datetime,
   index,
   primaryKey,
   uuid,
@@ -205,6 +204,9 @@ export const responses = pgTable(
       .references(() => questions.id, { onDelete: 'cascade' }),
     userId: uuid('userId').references(() => users.id, { onDelete: 'cascade' }),
     enrollmentId: varchar('enrollmentId', { length: 36 }),
+    questionnaireId: varchar('questionnaireId', { length: 36 })
+      .notNull()
+      .references(() => questionnaires.id, { onDelete: 'cascade' }),
     answer: json('answer').notNull(), // Format varies by question type
     metadata: json('metadata').$type<{
       ipHash: string;
