@@ -228,8 +228,8 @@ export class WorkshopCrudService {
           if (tag.tagName) {
             acc[tag.workshopId].push({
               id: tag.tagId,
-              name: tag.tagName,
-              category: tag.tagCategory,
+              name: tag.tagName ?? '',
+              category: tag.tagCategory ?? '',
               color: tag.tagColor || '#000000',
             });
           }
@@ -245,9 +245,9 @@ export class WorkshopCrudService {
       const formattedWorkshops = filteredWorkshops.map(workshop => ({
         ...workshop,
         creator: {
-          id: workshop.creatorId,
-          name: workshop.creatorName,
-          email: workshop.creatorEmail,
+          id: workshop.creatorId ?? '',
+          name: workshop.creatorName ?? '',
+          email: workshop.creatorEmail ?? '',
         },
         tags: tagsByWorkshop[workshop.id] || [],
         sessionCount: Number(workshop.sessionCount),
@@ -377,8 +377,8 @@ export class WorkshopCrudService {
     const workshopTagsFormatted = workshopTagsData
       .map(tag => ({
         id: tag.tagId,
-        name: tag.tagName,
-        category: tag.tagCategory,
+        name: tag.tagName ?? '',
+        category: tag.tagCategory ?? '',
         color: tag.tagColor || '#000000',
       }))
       .filter(tag => tag.name);
@@ -386,9 +386,9 @@ export class WorkshopCrudService {
     return {
       ...workshop,
       creator: {
-        id: workshop.creatorId,
-        name: workshop.creatorName,
-        email: workshop.creatorEmail,
+        id: workshop.creatorId ?? '',
+        name: workshop.creatorName ?? '',
+        email: workshop.creatorEmail ?? '',
       },
       sessions: workshopSessions,
       questionnaires: workshopQuestionnaires,
@@ -771,7 +771,7 @@ export class WorkshopCrudService {
       workshop.endDate &&
       new Date(workshop.startDate) < new Date(workshop.endDate);
 
-    const allRequiredFields = titleValid && descriptionValid && datesValid;
+    const allRequiredFields: boolean = !!(titleValid && descriptionValid && datesValid);
     if (!allRequiredFields) {
       if (!titleValid)
         errors.push(
@@ -786,13 +786,12 @@ export class WorkshopCrudService {
     }
 
     // WCAG compliance check (placeholder - would need actual implementation)
-    const wcagCompliant = true; // TODO: Implement actual WCAG validation
+    const wcagCompliant: boolean = true; // TODO: Implement actual WCAG validation
     if (!wcagCompliant) {
       errors.push('Workshop must meet WCAG accessibility standards');
     }
 
-    const canPublish =
-      hasSessions && hasQuestionnaire && allRequiredFields && wcagCompliant;
+    const canPublish: boolean = !!(hasSessions && hasQuestionnaire && allRequiredFields && wcagCompliant);
 
     return {
       hasSessions,
