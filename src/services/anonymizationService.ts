@@ -1,7 +1,7 @@
 /**
  * Anonymization Service
- * Removes PII (Personally Identifiable Information) from participant data
- * GDPR Compliance for Workshop Intelligence
+ * Removes Personally Identifiable Information (PII) from participant data
+ * before sending to LLM for analysis (GDPR compliance)
  */
 
 export interface AnonymizedContribution {
@@ -13,74 +13,68 @@ export interface AnonymizedContribution {
   }>;
 }
 
-export interface AnonymizationConfig {
-  removeEmails: boolean;
-  removeNames: boolean;
-  removePhoneNumbers: boolean;
-  removeURLs: boolean;
-  removeIPAddresses: boolean;
-  customPatterns?: RegExp[];
-} 
-
 export class AnonymizationService {
-  private readonly defaultConfig: AnonymizationConfig = {
-    removeEmails: true,
-    removeNames: true,
-    removePhoneNumbers: true,
-    removeURLs: false, // Keep URLs as they might be relevant
-    removeIPAddresses: true,
-    customPatterns: [],
-  };
-
-  // PII Detection Patterns
-  private readonly patterns = {
+  // Common PII patterns to detect and remove
+  private readonly piiPatterns = [
     // Email addresses
-    email: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
-
-    // Names (First Last pattern, capitalized)
-    name: /\b[A-Z][a-z]+ [A-Z][a-z]+\b/g,
-
+    { pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, replacement: '[EMAIL]' },
+    
     // Phone numbers (various formats)
-    phone: /(\+\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/g,
-
+    { pattern: /\b(\+?[0-9]{1,3}[-.\s]?)?(\()?[0-9]{3}(\))?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}\b/g, replacement: '[PHONE]' },
+    
+    // Names (capitalized words, common pattern: FirstName LastName)
+    { pattern: /\b[A-Z][a-z]+ [A-Z][a-z]+\b/g, replacement: '[NAME]' },
+    
     // URLs
-    url: /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g,
-
-    // IP Addresses
-    ipAddress: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g,
-
-    // Social Security Numbers (US format)
-    ssn: /\b\d{3}-\d{2}-\d{4}\b/g,
-
-    // Credit Card Numbers (basic pattern)
-    creditCard: /\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b/g,
-
-    // Postal Codes (various formats)
-    postalCode: /\b\d{5}(?:-\d{4})?\b|\b[A-Z]\d[A-Z] \d[A-Z]\d\b/g,
-  };
+    { pattern: /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g, replacement: '[URL]' },
+    
+    // IP addresses
+    { pattern: /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/g, replacement: '[IP]' },
+    
+    // Credit card numbers (basic pattern)
+    { pattern: /\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b/g, replacement: '[CARD]' },
+    
+    // Social security numbers (US format)
+    { pattern: /\b\d{3}-\d{2}-\d{4}\b/g, replacement: '[SSN]' },
+    
+    // Addresses (basic pattern: number + street name)
+    { pattern: /\b\d{1,5}\s+([A-Z][a-z]+\s+){1,3}(Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr)\b/gi, replacement: '[ADDRESS]' },
+  ];
 
   /**
-   * Anonymize participant contributions for LLM processing
+   * Anonymize participant contributions before sending to LLM
+   * @param contributions - Array of participant contributions with answers
+   * @param questions - Array of questions to include question text
+   * @returns Anonymized data ready for LLM processing
    */
-  anonymizeContributions(
+  anonymize(
     contributions: Array<{
       userId: string;
       answers: Array<{
         questionId: string;
-        questionText: string;
         answerData: any;
       }>;
     }>,
-    config: Partial<AnonymizationConfig> = {},
+    questions: Array<{
+      id: string;
+      questionText: string;
+    }>,
   ): AnonymizedContribution[] {
-    const finalConfig = { ...this.defaultConfig, ...config };
-
     return contributions.map((contribution, index) => {
-      const anonymizedAnswers = contribution.answers.map((answer) => ({
-        questionId: answer.questionId,
-        questionText: this.anonymizeText(answer.questionText, finalConfig),
-        answerData: this.anonymizeAnswerData(answer.answerData, finalConfig),
-      }));
+      const anonymizedAnswers = contribution.answers.map(answer => {
+        // Find the question text
+        const question = questions.find(q => q.id === answer.questionId);
+        const questionText = question?.questionText || 'Unknown Question';
+
+        // Anonymize the answer data
+        const anonymizedAnswerData = this.removePI(answer.answerData);
+
+        return {
+          questionId: answer.questionId,
+          questionText,
+          answerData: anonymizedAnswerData,
+        };
+      });
 
       return {
         participantId: `Participant_${index + 1}`,
@@ -90,177 +84,92 @@ export class AnonymizationService {
   }
 
   /**
-   * Anonymize answer data (handles various data types)
+   * Remove PII from a single data object
+   * @param data - Any data structure (string, object, array)
+   * @returns Data with PII removed
    */
-  private anonymizeAnswerData(
-    data: any,
-    config: AnonymizationConfig,
-  ): any {
+  private removePII(data: any): any {
     if (typeof data === 'string') {
-      return this.anonymizeText(data, config);
+      return this.sanitizeText(data);
     }
 
     if (Array.isArray(data)) {
-      return data.map((item) => this.anonymizeAnswerData(item, config));
+      return data.map(item => this.removePII(item));
     }
 
     if (typeof data === 'object' && data !== null) {
-      const anonymized: any = {};
-      for (const key in data) {
-        if (data.hasOwnProperty(key)) {
-          anonymized[key] = this.anonymizeAnswerData(data[key], config);
-        }
+      const sanitized: any = {};
+      for (const [key, value] of Object.entries(data)) {
+        sanitized[key] = this.removePII(value);
       }
-      return anonymized;
+      return sanitized;
     }
 
     return data;
   }
 
   /**
-   * Anonymize text by removing PII
+   * Sanitize text by replacing PII patterns
+   * @param text - Text to sanitize
+   * @returns Sanitized text
    */
-  private anonymizeText(text: string, config: AnonymizationConfig): string {
-    if (!text || typeof text !== 'string') return text;
+  private sanitizeText(text: string): string {
+    let sanitized = text;
 
-    let anonymized = text;
-
-    // Remove emails
-    if (config.removeEmails) {
-      anonymized = anonymized.replace(this.patterns.email, '[EMAIL_REDACTED]');
+    for (const { pattern, replacement } of this.piiPatterns) {
+      sanitized = sanitized.replace(pattern, replacement);
     }
 
-    // Remove names
-    if (config.removeNames) {
-      anonymized = anonymized.replace(this.patterns.name, '[NAME_REDACTED]');
-    }
-
-    // Remove phone numbers
-    if (config.removePhoneNumbers) {
-      anonymized = anonymized.replace(this.patterns.phone, '[PHONE_REDACTED]');
-    }
-
-    // Remove URLs
-    if (config.removeURLs) {
-      anonymized = anonymized.replace(this.patterns.url, '[URL_REDACTED]');
-    }
-
-    // Remove IP addresses
-    if (config.removeIPAddresses) {
-      anonymized = anonymized.replace(
-        this.patterns.ipAddress,
-        '[IP_REDACTED]',
-      );
-    }
-
-    // Remove SSNs
-    anonymized = anonymized.replace(this.patterns.ssn, '[SSN_REDACTED]');
-
-    // Remove credit card numbers
-    anonymized = anonymized.replace(
-      this.patterns.creditCard,
-      '[CC_REDACTED]',
-    );
-
-    // Remove postal codes
-    anonymized = anonymized.replace(
-      this.patterns.postalCode,
-      '[POSTAL_REDACTED]',
-    );
-
-    // Apply custom patterns
-    if (config.customPatterns && config.customPatterns.length > 0) {
-      config.customPatterns.forEach((pattern) => {
-        anonymized = anonymized.replace(pattern, '[REDACTED]');
-      });
-    }
-
-    return anonymized;
+    return sanitized;
   }
 
   /**
    * Format anonymized data for LLM prompt
+   * @param anonymizedData - Anonymized contributions
+   * @returns Formatted string ready for LLM
    */
-  formatForLLM(anonymizedContributions: AnonymizedContribution[]): string {
-    return anonymizedContributions
-      .map((contribution) => {
-        const answersText = contribution.answers
-          .map(
-            (answer) =>
-              `Q: ${answer.questionText}\nA: ${this.formatAnswerForDisplay(answer.answerData)}`,
-          )
-          .join('\n\n');
+  formatForLLM(anonymizedData: AnonymizedContribution[]): string {
+    let formatted = '';
 
-        return `${contribution.participantId}:\n${answersText}`;
-      })
-      .join('\n\n---\n\n');
+    for (const contribution of anonymizedData) {
+      formatted += `\n## ${contribution.participantId}\n\n`;
+
+      for (const answer of contribution.answers) {
+        formatted += `**Q: ${answer.questionText}**\n`;
+        
+        // Format answer based on type
+        if (typeof answer.answerData === 'object') {
+          if (answer.answerData.value !== undefined) {
+            formatted += `A: ${answer.answerData.value}\n\n`;
+          } else if (answer.answerData.selected !== undefined) {
+            formatted += `A: ${Array.isArray(answer.answerData.selected) ? answer.answerData.selected.join(', ') : answer.answerData.selected}\n\n`;
+          } else {
+            formatted += `A: ${JSON.stringify(answer.answerData)}\n\n`;
+          }
+        } else {
+          formatted += `A: ${answer.answerData}\n\n`;
+        }
+      }
+    }
+
+    return formatted;
   }
 
   /**
-   * Format answer data for display
+   * Validate that PII has been properly removed
+   * @param text - Text to validate
+   * @returns true if no obvious PII detected, false otherwise
    */
-  private formatAnswerForDisplay(data: any): string {
-    if (typeof data === 'string') return data;
-    if (typeof data === 'number') return data.toString();
-    if (typeof data === 'boolean') return data ? 'Yes' : 'No';
-    if (Array.isArray(data)) return data.join(', ');
-    if (typeof data === 'object' && data !== null) {
-      return JSON.stringify(data, null, 2);
-    }
-    return String(data);
-  }
+  validateAnonymization(text: string): boolean {
+    // Check for common PII patterns
+    const emailPattern = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
+    const phonePattern = /\b(\+?[0-9]{1,3}[-.\s]?)?(\()?[0-9]{3}(\))?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}\b/g;
 
-  /**
-   * Validate anonymization (check if PII was removed)
-   */
-  validateAnonymization(text: string): {
-    isValid: boolean;
-    detectedPII: string[];
-  } {
-    const detectedPII: string[] = [];
-
-    if (this.patterns.email.test(text)) {
-      detectedPII.push('Email addresses found');
-    }
-    if (this.patterns.phone.test(text)) {
-      detectedPII.push('Phone numbers found');
-    }
-    if (this.patterns.ssn.test(text)) {
-      detectedPII.push('SSN found');
-    }
-    if (this.patterns.creditCard.test(text)) {
-      detectedPII.push('Credit card numbers found');
+    if (emailPattern.test(text) || phonePattern.test(text)) {
+      console.warn('⚠️ Potential PII detected in anonymized text!');
+      return false;
     }
 
-    return {
-      isValid: detectedPII.length === 0,
-      detectedPII,
-    };
-  }
-
-  /**
-   * Get anonymization statistics
-   */
-  getAnonymizationStats(
-    original: string,
-    anonymized: string,
-  ): {
-    originalLength: number;
-    anonymizedLength: number;
-    redactionsCount: number;
-    reductionPercentage: number;
-  } {
-    const redactionsCount = (anonymized.match(/\[.*?_REDACTED\]/g) || [])
-      .length;
-
-    return {
-      originalLength: original.length,
-      anonymizedLength: anonymized.length,
-      redactionsCount,
-      reductionPercentage:
-        ((original.length - anonymized.length) / original.length) * 100,
-    };
+    return true;
   }
 }
-
-export const anonymizationService = new AnonymizationService();

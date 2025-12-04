@@ -15,6 +15,13 @@
       "when": 1764126518947,
       "tag": "0001_talented_khan",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1764840162659,
+      "tag": "0002_dear_hellfire_club",
+      "breakpoints": true
     }
   ]
 }
