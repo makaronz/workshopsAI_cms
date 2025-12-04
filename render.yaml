@@ -1,0 +1,46 @@
+services:
+  # Backend API
+  - type: web
+    name: workshopsai-backend
+    runtime: node
+    env: node
+    region: frankfurt  # Najbliżej Polski
+    plan: starter  # $7/mies
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: DATABASE_URL
+        fromDatabase:
+          name: workshopsai-db
+          property: connectionString
+      - key: REDIS_URL
+        fromDatabase:
+          name: workshopsai-redis
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false  # Ustaw ręcznie w Render Dashboard
+      - key: JWT_SECRET
+        generateValue: true  # Render automatycznie wygeneruje
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CORS_ORIGIN
+        value: "*"  # Zmień na swoją domenę
+
+databases:
+  # PostgreSQL Database
+  - name: workshopsai-db
+    databaseName: workshopsai_cms
+    user: workshopsai
+    plan: starter  # $7/mies, 256MB RAM
+    ipAllowList: []  # Dostęp tylko z Render services
+
+  # Redis Cache
+  - name: workshopsai-redis
+    plan: starter  # $7/mies, 256MB RAM
+    maxmemoryPolicy: allkeys-lru  # Usuń najstarsze klucze gdy brakuje pamięci
+    ipAllowList: []

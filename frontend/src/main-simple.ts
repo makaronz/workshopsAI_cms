@@ -25,6 +25,8 @@ import './components/dashboard/dashboard-overview';
 // Import workshop components  
 import './components/workshop/workshop-creator';
 import './components/workshop/workshop-list';
+import './components/workshop/control-room';
+import './components/workshop/workshop-compare';
 
 // Import auth service
 import authService from './services/auth';
@@ -94,11 +96,46 @@ export async function initializeRouting(appElement: HTMLElement, path: string) {
           \u003c/app-shell\u003e
         `;
         console.log('✅ Workshop list rendered');
+      } else if (path === '/dashboard/simulation') {
+        appElement.innerHTML = `
+          \u003capp-shell\u003e
+            <div style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+              <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 1rem; color: #1f2937;">
+                UrbanCore Workshop
+              </h1>
+              \u003cworkshop-control-room\u003e\u003c/workshop-control-room\u003e
+            </div>
+          \u003c/app-shell\u003e
+        `;
+        console.log('✅ UrbanCore Workshop rendered');
+        console.log('✅ UrbanCore Workshop rendered');
+      } else if (path === '/dashboard/compare') {
+        appElement.innerHTML = `
+          \u003capp-shell\u003e
+            <div style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+              \u003cworkshop-compare\u003e\u003c/workshop-compare\u003e
+            </div>
+          \u003c/app-shell\u003e
+        `;
+        console.log('✅ Workshop compare rendered');
       } else if (path === '/dashboard') {
         // Main dashboard - use the dashboard-overview component
         appElement.innerHTML = `
           \u003capp-shell\u003e
             \u003cdashboard-overview\u003e\u003c/dashboard-overview\u003e
+            <div style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+               <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-top: 2rem;">
+                  <h2 style="font-size: 1.25rem; font-weight: 600; margin: 0 0 1rem 0; color: #1f2937;">
+                    UrbanCore Lab
+                  </h2>
+                  <a href="/dashboard/simulation" style="display: inline-block; padding: 0.75rem 1.5rem; background: #2563eb; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">
+                    🚀 Launch Simulation
+                  </a>
+                  <a href="/dashboard/compare" style="display: inline-block; padding: 0.75rem 1.5rem; background: #4b5563; color: white; border-radius: 6px; text-decoration: none; font-weight: 500; margin-left: 1rem;">
+                    ⚖️ Compare Designs
+                  </a>
+               </div>
+            </div>
           \u003c/app-shell\u003e
         `;
         console.log('✅ Dashboard overview component rendered');
@@ -153,7 +190,7 @@ document.addEventListener('navigate-to-register', (async (e: CustomEvent) => {
   if (appElement) {
     await initializeRouting(appElement, '/register');
   }
-}) as EventListener);
+}) as unknown as EventListener);
 
 document.addEventListener('navigate-to-login', (async (e: CustomEvent) => {
   e.preventDefault();
@@ -162,7 +199,7 @@ document.addEventListener('navigate-to-login', (async (e: CustomEvent) => {
   if (appElement) {
     await initializeRouting(appElement, '/login');
   }
-}) as EventListener);
+}) as unknown as EventListener);
 
 document.addEventListener('forgot-password', ((e: CustomEvent) => {
   e.preventDefault();
@@ -170,7 +207,7 @@ document.addEventListener('forgot-password', ((e: CustomEvent) => {
   alert('Please contact the administrator to reset your password.');
   // Alternatively, you could navigate to a forgot password page:
   // window.location.href = '/forgot-password';
-}) as EventListener);
+}) as unknown as EventListener);
 
 // Handle browser back/forward buttons
 window.addEventListener('popstate', async () => {
@@ -182,14 +219,14 @@ window.addEventListener('popstate', async () => {
 });
 
 // Handle custom navigate events from components
-window.addEventListener('navigate', async (e: CustomEvent) => {
+window.addEventListener('navigate', (async (e: CustomEvent) => {
   const path = e.detail?.path || window.location.pathname;
   const appElement = document.getElementById('app');
   if (appElement) {
     window.history.pushState({}, '', path);
     await initializeRouting(appElement, path);
   }
-});
+}) as unknown as EventListener);
 
 // Handle clicks on internal links (prevent full page reload)
 document.addEventListener('click', async (e: MouseEvent) => {
@@ -318,7 +355,7 @@ document.addEventListener('login-success', (async (e: CustomEvent) => {
       console.error('❌ Error during retry:', error);
     }
   }
-}) as EventListener);
+}) as unknown as EventListener);
 
 // Global error handling
 window.addEventListener('error', (event) => {

@@ -1,6 +1,5 @@
-import { LitElement, render, html } from 'lit';
+import { render, html } from 'lit';
 import { Router } from '@vaadin/router';
-import { customElements } from 'lit/decorators.js';
 
 // Import global styles
 import './styles/global.css';
@@ -12,8 +11,8 @@ import './services/i18n';
 import './components/layout/app-shell';
 import './components/layout/app-header';
 import './components/layout/app-footer';
-
 import './components/auth/login-form';
+import './components/workshop/control-room';
 
 import './components/ui/button';
 import './components/ui/input';
@@ -26,10 +25,9 @@ import './components/ui/badge';
 import './components/questionnaire';
 
 // Import services
-import { authService } from './services/auth';
+import authService from './services/auth';
 import accessibilityService from './services/accessibility';
 
-// Define application routes (simplified - only existing components)
 const routes = [
   {
     path: '/',
@@ -39,22 +37,41 @@ const routes = [
     path: '/login',
     component: 'login-form',
     action: async () => {
-      // Redirect if already logged in
       if (await authService.isAuthenticated()) {
         return '/dashboard';
       }
+      return undefined;
+    }
+  },
+  {
+    path: '/dashboard/simulation',
+    component: 'app-shell',
+    action: async (context: any) => {
+      if (!(await authService.isAuthenticated())) {
+        return '/login';
+      }
+      const outlet = context.element.querySelector('[slot="content"]');
+      if (outlet) {
+        render(html`
+          <div style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+            <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 1rem; color: #1f2937;">
+              UrbanCore Workshop
+            </h1>
+            <workshop-control-room></workshop-control-room>
+          </div>
+        `, outlet);
+      }
+      return undefined;
     }
   },
   {
     path: '/dashboard',
     component: 'app-shell',
-    action: async (context) => {
-      // Protect route
+    action: async (context: any) => {
       if (!(await authService.isAuthenticated())) {
         return '/login';
       }
-      
-      // Simple dashboard content
+
       const outlet = context.element.querySelector('[slot="content"]');
       if (outlet) {
         render(html`
@@ -67,6 +84,7 @@ const routes = [
             </p>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+              <!-- Stats cards (omitted for brevity, keep existing) -->
               <div style="padding: 1.5rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                 <h3 style="font-size: 0.875rem; font-weight: 600; color: #6b7280; margin: 0 0 0.5rem 0;">WORKSHOPS</h3>
                 <p style="font-size: 2.5rem; font-weight: 700; color: #2563eb; margin: 0;">0</p>
@@ -97,14 +115,14 @@ const routes = [
                 Quick Actions
               </h2>
               <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                <a href="/dashboard/workshops/new" style="padding: 0.75rem 1.5rem; background: #2563eb; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">
+                <a href="/dashboard/simulation" style="padding: 0.75rem 1.5rem; background: #2563eb; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">
+                  🚀 Launch UrbanCore Lab
+                </a>
+                <a href="/dashboard/workshops/new" style="padding: 0.75rem 1.5rem; background: #4b5563; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">
                   + Create Workshop
                 </a>
                 <a href="/dashboard/questionnaires/new" style="padding: 0.75rem 1.5rem; background: #10b981; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">
                   + Create Questionnaire
-                </a>
-                <a href="/api/v1" target="_blank" style="padding: 0.75rem 1.5rem; background: #6b7280; color: white; border-radius: 6px; text-decoration: none; font-weight: 500;">
-                  API Documentation
                 </a>
               </div>
             </div>
@@ -123,13 +141,14 @@ const routes = [
           </div>
         `, outlet);
       }
+      return undefined;
     }
   }
 ];
 
 // Initialize router
-const router = new Router(document.getElementById('app') as HTMLElement);
-router.setRoutes(routes);
+const router: Router = new Router(document.getElementById('app') as HTMLElement);
+router.setRoutes(routes as any);
 
 // Initialize accessibility service
 accessibilityService.init();

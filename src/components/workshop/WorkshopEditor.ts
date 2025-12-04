@@ -10,7 +10,7 @@ import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 import { updateWhenLocaleChanges } from '@lit/localize';
 
-import {
+import type {
   WorkshopData,
   WorkshopSession,
   WorkshopTemplate,

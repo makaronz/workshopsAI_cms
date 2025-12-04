@@ -23,6 +23,7 @@ import authRoutes from './routes/auth';
 import fileRoutes from './routes/api/files';
 import { initializePreviewRoutes } from './routes/api/preview';
 import fileSignedRoutes from './routes/api/files-signed';
+import workshopV2Routes from './routes/workshop-v2';
 import dashboardRoutes from './routes/api/dashboard';
 import workshopIntelligenceRoutes from './routes/api/workshop-intelligence';
 
@@ -113,7 +114,7 @@ app.use(hpp());
 
 // XSS Protection middleware
 app.use((req, res, next) => {
-  const sanitizeObject = (obj: any) => {
+  const sanitizeObject = (obj: any): any => {
     if (typeof obj !== 'object' || obj === null) {
       return obj;
     }
@@ -196,7 +197,7 @@ async function checkLLMServicesHealth() {
       performanceSystem: performanceSystem ? { status: 'active' } : { status: 'initializing' },
       dbOptimization: dbOptimization ? { status: 'active' } : { status: 'initializing' },
     };
-  } catch (error) {
+  } catch (error: any) {
     return {
       embeddings: { status: 'error', error: error.message },
       analysisWorker: { status: 'error', error: error.message },
@@ -224,6 +225,7 @@ app.use(express.static(join(__dirname, '../public'), {
 // API routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/workshops', workshopRoutes);
+app.use('/api/v2/workshop', workshopV2Routes); // New V2 routes
 app.use('/api/v1/enrollments', enrollmentRoutes);
 app.use('/api/v1/questionnaires', questionnaireRoutes);
 app.use('/api/v1/responses', responseRoutes);
@@ -231,7 +233,7 @@ app.use('/api/v1/files', fileRoutes);
 app.use('/api/v1/files/signed', fileSignedRoutes);
 app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
-app.use('/api/v1/workshop-intelligence', workshopIntelligenceRoutes);
+app.use('/api/v1/workshop-intelligence', workshopIntelligenceRoutes); // Workshop Intelligence routes
 
 // Performance monitoring routes (will be initialized after services are set up)
 
@@ -250,8 +252,23 @@ app.all('/api', (_req, res) => {
   });
 });
 
-// API 404 handler - handle all other /api/* routes that don't match
-app.use('/api/*', (_req, res) => {
+// SPA Catch-all handler (must be before 404 handler)
+// Serve index.html for any non-API routes to support client-side routing
+app.get('*', (req, res, next) => {
+  // Skip API routes, static files, and specific extensions
+  if (
+    req.path.startsWith('/api/') ||
+    req.path.includes('.') ||
+    req.path === '/health'
+  ) {
+    return next();
+  }
+
+  res.sendFile(join(__dirname, '../public/index.html'));
+});
+
+// 404 handler
+app.use('*', (_req, res) => {
   res.status(404).json({
     error: 'Route not found',
     message: 'The requested resource does not exist',
@@ -372,7 +389,7 @@ const startServer = async () => {
       console.log('📱 Real-time preview functionality available');
       console.log('📈 Performance monitoring available at /api/v1/performance');
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to start server:', error);
     process.exit(1);
   }
@@ -382,3 +399,4 @@ startServer();
 
 export { app, server };
 // Trigger restart Fri Nov 21 06:13:35 CET 2025
+// Trigger restart Tue Nov 25 18:05:03 CET 2025

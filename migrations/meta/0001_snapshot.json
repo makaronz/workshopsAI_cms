@@ -1,5 +1,5 @@
 {
-  "id": "23fd07a4-f73d-45ae-90d6-682cdc80f9c5",
+  "id": "ddd9041f-3b91-461c-b2e0-7a3f7d9eae83",
   "prevId": "795285d7-a341-41b1-a638-805b6af7875a",
   "version": "7",
   "dialect": "postgresql",
@@ -404,6 +404,107 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.designs": {
+      "name": "designs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "parameters": {
+          "name": "parameters",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "thumbnailUrl": {
+          "name": "thumbnailUrl",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "isPublic": {
+          "name": "isPublic",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "createdBy": {
+          "name": "createdBy",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "idx_designs_created_by": {
+          "name": "idx_designs_created_by",
+          "columns": [
+            {
+              "expression": "createdBy",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "designs_createdBy_users_id_fk": {
+          "name": "designs_createdBy_users_id_fk",
+          "tableFrom": "designs",
+          "tableTo": "users",
+          "columnsFrom": [
+            "createdBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -3323,115 +3424,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.form_questions": {
-      "name": "form_questions",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "formId": {
-          "name": "formId",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "questionText": {
-          "name": "questionText",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "questionType": {
-          "name": "questionType",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "options": {
-          "name": "options",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "isRequired": {
-          "name": "isRequired",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "displayOrder": {
-          "name": "displayOrder",
-          "type": "numeric(10, 0)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "idx_form_questions_form_id": {
-          "name": "idx_form_questions_form_id",
-          "columns": [
-            {
-              "expression": "formId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_form_questions_display_order": {
-          "name": "idx_form_questions_display_order",
-          "columns": [
-            {
-              "expression": "displayOrder",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "form_questions_formId_workshop_forms_id_fk": {
-          "name": "form_questions_formId_workshop_forms_id_fk",
-          "tableFrom": "form_questions",
-          "tableTo": "workshop_forms",
-          "columnsFrom": [
-            "formId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.llm_analyses": {
       "name": "llm_analyses",
       "schema": "",
@@ -3891,413 +3883,7 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.participant_answers": {
-      "name": "participant_answers",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "contributionId": {
-          "name": "contributionId",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "questionId": {
-          "name": "questionId",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "answerData": {
-          "name": "answerData",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "idx_participant_answers_contribution_question": {
-          "name": "idx_participant_answers_contribution_question",
-          "columns": [
-            {
-              "expression": "contributionId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "questionId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_participant_answers_contribution_id": {
-          "name": "idx_participant_answers_contribution_id",
-          "columns": [
-            {
-              "expression": "contributionId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_participant_answers_question_id": {
-          "name": "idx_participant_answers_question_id",
-          "columns": [
-            {
-              "expression": "questionId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "participant_answers_contributionId_participant_contributions_id_fk": {
-          "name": "participant_answers_contributionId_participant_contributions_id_fk",
-          "tableFrom": "participant_answers",
-          "tableTo": "participant_contributions",
-          "columnsFrom": [
-            "contributionId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "participant_answers_questionId_form_questions_id_fk": {
-          "name": "participant_answers_questionId_form_questions_id_fk",
-          "tableFrom": "participant_answers",
-          "tableTo": "form_questions",
-          "columnsFrom": [
-            "questionId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.participant_contributions": {
-      "name": "participant_contributions",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "workshopId": {
-          "name": "workshopId",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "userId": {
-          "name": "userId",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'draft'"
-        },
-        "submittedAt": {
-          "name": "submittedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "idx_participant_contributions_workshop_user": {
-          "name": "idx_participant_contributions_workshop_user",
-          "columns": [
-            {
-              "expression": "workshopId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "userId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_participant_contributions_workshop_id": {
-          "name": "idx_participant_contributions_workshop_id",
-          "columns": [
-            {
-              "expression": "workshopId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_participant_contributions_user_id": {
-          "name": "idx_participant_contributions_user_id",
-          "columns": [
-            {
-              "expression": "userId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "participant_contributions_workshopId_workshops_id_fk": {
-          "name": "participant_contributions_workshopId_workshops_id_fk",
-          "tableFrom": "participant_contributions",
-          "tableTo": "workshops",
-          "columnsFrom": [
-            "workshopId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "participant_contributions_userId_users_id_fk": {
-          "name": "participant_contributions_userId_users_id_fk",
-          "tableFrom": "participant_contributions",
-          "tableTo": "users",
-          "columnsFrom": [
-            "userId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.prompt_templates": {
-      "name": "prompt_templates",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "description": {
-          "name": "description",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "templateText": {
-          "name": "templateText",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "variables": {
-          "name": "variables",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "category": {
-          "name": "category",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "isDefault": {
-          "name": "isDefault",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "createdBy": {
-          "name": "createdBy",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "idx_prompt_templates_category": {
-          "name": "idx_prompt_templates_category",
-          "columns": [
-            {
-              "expression": "category",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_prompt_templates_is_default": {
-          "name": "idx_prompt_templates_is_default",
-          "columns": [
-            {
-              "expression": "isDefault",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_prompt_templates_created_by": {
-          "name": "idx_prompt_templates_created_by",
-          "columns": [
-            {
-              "expression": "createdBy",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "prompt_templates_createdBy_users_id_fk": {
-          "name": "prompt_templates_createdBy_users_id_fk",
-          "tableFrom": "prompt_templates",
-          "tableTo": "users",
-          "columnsFrom": [
-            "createdBy"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
+"policies": {},           
       "checkConstraints": {},
       "isRLSEnabled": false
     },
@@ -4467,7 +4053,7 @@
           "primaryKey": false,
           "notNull": false
         },
-        "createdBy": {
+    "createdBy": {
           "name": "createdBy",
           "type": "uuid",
           "primaryKey": false,
@@ -4486,7 +4072,7 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
+      },
         "deletedAt": {
           "name": "deletedAt",
           "type": "timestamp",
@@ -4503,7 +4089,7 @@
               "isExpression": false,
               "asc": true,
               "nulls": "last"
-            }
+          }
           ],
           "isUnique": false,
           "concurrently": false,
@@ -5391,102 +4977,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.workshop_analysis_results": {
-      "name": "workshop_analysis_results",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "analysisId": {
-          "name": "analysisId",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "resultType": {
-          "name": "resultType",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "content": {
-          "name": "content",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "rawResponse": {
-          "name": "rawResponse",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "idx_workshop_analysis_results_analysis_id": {
-          "name": "idx_workshop_analysis_results_analysis_id",
-          "columns": [
-            {
-              "expression": "analysisId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_workshop_analysis_results_result_type": {
-          "name": "idx_workshop_analysis_results_result_type",
-          "columns": [
-            {
-              "expression": "resultType",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "workshop_analysis_results_analysisId_workshop_llm_analyses_id_fk": {
-          "name": "workshop_analysis_results_analysisId_workshop_llm_analyses_id_fk",
-          "tableFrom": "workshop_analysis_results",
-          "tableTo": "workshop_llm_analyses",
-          "columnsFrom": [
-            "analysisId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.workshop_facilitators": {
       "name": "workshop_facilitators",
       "schema": "",
@@ -5583,281 +5073,6 @@
             "id"
           ],
           "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.workshop_forms": {
-      "name": "workshop_forms",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "workshopId": {
-          "name": "workshopId",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "isEditable": {
-          "name": "isEditable",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updatedAt": {
-          "name": "updatedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "idx_workshop_forms_workshop_id": {
-          "name": "idx_workshop_forms_workshop_id",
-          "columns": [
-            {
-              "expression": "workshopId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "workshop_forms_workshopId_workshops_id_fk": {
-          "name": "workshop_forms_workshopId_workshops_id_fk",
-          "tableFrom": "workshop_forms",
-          "tableTo": "workshops",
-          "columnsFrom": [
-            "workshopId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "workshop_forms_workshopId_unique": {
-          "name": "workshop_forms_workshopId_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "workshopId"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.workshop_llm_analyses": {
-      "name": "workshop_llm_analyses",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "workshopId": {
-          "name": "workshopId",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "triggeredBy": {
-          "name": "triggeredBy",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "modelName": {
-          "name": "modelName",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "promptTemplateId": {
-          "name": "promptTemplateId",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "customInstructions": {
-          "name": "customInstructions",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'pending'"
-        },
-        "isVisibleToParticipants": {
-          "name": "isVisibleToParticipants",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "startedAt": {
-          "name": "startedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "completedAt": {
-          "name": "completedAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "errorMessage": {
-          "name": "errorMessage",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "createdAt": {
-          "name": "createdAt",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "idx_workshop_llm_analyses_workshop_id": {
-          "name": "idx_workshop_llm_analyses_workshop_id",
-          "columns": [
-            {
-              "expression": "workshopId",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_workshop_llm_analyses_triggered_by": {
-          "name": "idx_workshop_llm_analyses_triggered_by",
-          "columns": [
-            {
-              "expression": "triggeredBy",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_workshop_llm_analyses_status": {
-          "name": "idx_workshop_llm_analyses_status",
-          "columns": [
-            {
-              "expression": "status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "idx_workshop_llm_analyses_created_at": {
-          "name": "idx_workshop_llm_analyses_created_at",
-          "columns": [
-            {
-              "expression": "createdAt",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "workshop_llm_analyses_workshopId_workshops_id_fk": {
-          "name": "workshop_llm_analyses_workshopId_workshops_id_fk",
-          "tableFrom": "workshop_llm_analyses",
-          "tableTo": "workshops",
-          "columnsFrom": [
-            "workshopId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "workshop_llm_analyses_triggeredBy_users_id_fk": {
-          "name": "workshop_llm_analyses_triggeredBy_users_id_fk",
-          "tableFrom": "workshop_llm_analyses",
-          "tableTo": "users",
-          "columnsFrom": [
-            "triggeredBy"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "workshop_llm_analyses_promptTemplateId_prompt_templates_id_fk": {
-          "name": "workshop_llm_analyses_promptTemplateId_prompt_templates_id_fk",
-          "tableFrom": "workshop_llm_analyses",
-          "tableTo": "prompt_templates",
-          "columnsFrom": [
-            "promptTemplateId"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
