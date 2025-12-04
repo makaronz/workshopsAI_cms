@@ -65,6 +65,61 @@ const routes = [
     }
   },
   {
+    path: '/dashboard/workshops',
+    component: 'app-shell',
+    action: async (context: any) => {
+      if (!(await authService.isAuthenticated())) {
+        return '/login';
+      }
+      const outlet = context.element.querySelector('[slot="content"]');
+      if (outlet) {
+        import('./components/workshop/workshop-list');
+        render(html`<workshop-list></workshop-list>`, outlet);
+      }
+      return undefined;
+    }
+  },
+  {
+    path: '/dashboard/workshops/:id/analysis',
+    component: 'app-shell',
+    action: async (context: any) => {
+      if (!(await authService.isAuthenticated())) {
+        return '/login';
+      }
+      const workshopId = context.params.id;
+      const outlet = context.element.querySelector('[slot="content"]');
+      if (outlet) {
+        import('./components/workshop-intelligence/analysis-viewer');
+        render(html`
+          <div style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+            <analysis-viewer .workshopId=${workshopId}></analysis-viewer>
+          </div>
+        `, outlet);
+      }
+      return undefined;
+    }
+  },
+  {
+    path: '/dashboard/workshops/:id/insights',
+    component: 'app-shell',
+    action: async (context: any) => {
+      if (!(await authService.isAuthenticated())) {
+        return '/login';
+      }
+      const workshopId = context.params.id;
+      const outlet = context.element.querySelector('[slot="content"]');
+      if (outlet) {
+        import('./components/workshop-intelligence/participant-analysis-viewer');
+        render(html`
+          <div style="padding: 2rem; max-width: 900px; margin: 0 auto;">
+            <participant-analysis-viewer .workshopId=${workshopId}></participant-analysis-viewer>
+          </div>
+        `, outlet);
+      }
+      return undefined;
+    }
+  },
+  {
     path: '/dashboard',
     component: 'app-shell',
     action: async (context: any) => {

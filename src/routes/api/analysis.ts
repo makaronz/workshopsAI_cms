@@ -375,6 +375,68 @@ router.get('/results/:analysisId', authenticateToken, async (req, res) => {
 });
 
 /**
+ * PATCH /api/analysis/results/:analysisId/visibility - Toggle analysis visibility for participants
+ */
+router.patch('/results/:analysisId/visibility', authenticateToken, async (req, res) => {
+  try {
+    const { analysisId } = req.params;
+    const { isVisible } = z.object({ isVisible: z.boolean() }).parse(req.body);
+    const userId = req.user.id;
+
+    // Verify analysis exists and user owns the questionnaire
+    const analysis = await db.query.llmAnalyses.findFirst({
+      where: eq(llmAnalyses.id, analysisId),
+      with: {
+        questionnaire: true,
+      },
+    });
+
+    if (!analysis) {
+      return res.status(404).json({
+        error: 'Analysis not found',
+      });
+    }
+
+    if (analysis.questionnaire.createdBy !== userId) {
+      return res.status(403).json({
+        error: 'Access denied - only questionnaire creator can change visibility',
+      });
+    }
+
+    // Update visibility
+    await db
+      .update(llmAnalyses)
+      .set({ isVisibleToParticipants: isVisible })
+      .where(eq(llmAnalyses.id, analysisId));
+
+    logger.info('Analysis visibility updated', {
+      userId,
+      analysisId,
+      isVisible,
+    });
+
+    res.json({
+      success: true,
+      message: `Analysis is now ${isVisible ? 'visible' : 'hidden'} to participants`,
+      isVisible,
+    });
+
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: error.errors,
+      });
+    }
+
+    logger.error('Error updating analysis visibility', { error, analysisId: req.params.analysisId });
+    res.status(500).json({
+      error: 'Internal server error',
+    });
+  }
+});
+
+/**
  * POST /api/analysis/results/:analysisId/export - Export analysis results
  */
 router.post('/results/:analysisId/export', authenticateToken, async (req, res) => {
@@ -453,29 +515,29 @@ router.post('/results/:analysisId/export', authenticateToken, async (req, res) =
     let filename: string;
 
     switch (validatedData.format) {
-    case 'json':
-      formattedData = JSON.stringify(exportData, null, 2);
-      contentType = 'application/json';
-      filename = `analysis_${analysisId}.json`;
-      break;
+      case 'json':
+        formattedData = JSON.stringify(exportData, null, 2);
+        contentType = 'application/json';
+        filename = `analysis_${analysisId}.json`;
+        break;
 
-    case 'csv':
-      formattedData = convertToCSV(exportData);
-      contentType = 'text/csv';
-      filename = `analysis_${analysisId}.csv`;
-      break;
+      case 'csv':
+        formattedData = convertToCSV(exportData);
+        contentType = 'text/csv';
+        filename = `analysis_${analysisId}.csv`;
+        break;
 
-    case 'ods':
-      // For ODS, we'll return JSON and let the client handle conversion
-      formattedData = JSON.stringify(exportData, null, 2);
-      contentType = 'application/vnd.oasis.opendocument.spreadsheet';
-      filename = `analysis_${analysisId}.ods`;
-      break;
+      case 'ods':
+        // For ODS, we'll return JSON and let the client handle conversion
+        formattedData = JSON.stringify(exportData, null, 2);
+        contentType = 'application/vnd.oasis.opendocument.spreadsheet';
+        filename = `analysis_${analysisId}.ods`;
+        break;
 
-    default:
-      return res.status(400).json({
-        error: 'Unsupported export format',
-      });
+      default:
+        return res.status(400).json({
+          error: 'Unsupported export format',
+        });
     }
 
     // Set headers
@@ -771,25 +833,25 @@ router.get('/export/:questionnaireId', authenticateToken, async (req, res) => {
     let filename: string;
 
     switch (format) {
-    case 'csv':
-      formattedData = convertAnalysesToCSV(exportPackage);
-      contentType = 'text/csv';
-      filename = `questionnaire_${questionnaireId}_analyses.csv`;
-      break;
+      case 'csv':
+        formattedData = convertAnalysesToCSV(exportPackage);
+        contentType = 'text/csv';
+        filename = `questionnaire_${questionnaireId}_analyses.csv`;
+        break;
 
-    case 'ods':
-      // For ODS, return JSON and let client handle conversion
-      formattedData = JSON.stringify(exportPackage, null, 2);
-      contentType = 'application/vnd.oasis.opendocument.spreadsheet';
-      filename = `questionnaire_${questionnaireId}_analyses.ods`;
-      break;
+      case 'ods':
+        // For ODS, return JSON and let client handle conversion
+        formattedData = JSON.stringify(exportPackage, null, 2);
+        contentType = 'application/vnd.oasis.opendocument.spreadsheet';
+        filename = `questionnaire_${questionnaireId}_analyses.ods`;
+        break;
 
-    case 'json':
-    default:
-      formattedData = JSON.stringify(exportPackage, null, 2);
-      contentType = 'application/json';
-      filename = `questionnaire_${questionnaireId}_analyses.json`;
-      break;
+      case 'json':
+      default:
+        formattedData = JSON.stringify(exportPackage, null, 2);
+        contentType = 'application/json';
+        filename = `questionnaire_${questionnaireId}_analyses.json`;
+        break;
     }
 
     // Set headers

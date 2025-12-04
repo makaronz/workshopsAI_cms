@@ -3,24 +3,24 @@ import { customElement, state } from 'lit/decorators.js';
 import { apiClient } from '../../services/api';
 
 interface Workshop {
-    id: string;
-    slug: string;
-    titleI18n: { pl: string; en: string };
-    descriptionI18n?: { pl: string; en: string };
-    status?: string;
-    startDate?: string;
-    endDate?: string;
-    seatLimit?: number;
-    createdAt: string;
+  id: string;
+  slug: string;
+  titleI18n: { pl: string; en: string };
+  descriptionI18n?: { pl: string; en: string };
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  seatLimit?: number;
+  createdAt: string;
 }
 
 @customElement('workshop-list')
 export class WorkshopList extends LitElement {
-    @state() private workshops: Workshop[] = [];
-    @state() private loading = true;
-    @state() private error: string | null = null;
+  @state() private workshops: Workshop[] = [];
+  @state() private loading = true;
+  @state() private error: string | null = null;
 
-    static override styles = css`
+  static override styles = css`
     :host {
       display: block;
       padding: 2rem;
@@ -115,33 +115,37 @@ export class WorkshopList extends LitElement {
     }
   `;
 
-    override connectedCallback() {
-        super.connectedCallback();
-        this.loadWorkshops();
+  override connectedCallback() {
+    super.connectedCallback();
+    this.loadWorkshops();
+  }
+
+  private async loadWorkshops() {
+    try {
+      this.loading = true;
+      this.error = null;
+
+      const response = await apiClient.get('/workshops');
+
+      this.workshops = response.data.data?.workshops || response.data.workshops || [];
+      this.loading = false;
+    } catch (error: any) {
+      console.error('Error loading workshops:', error);
+      this.error = error.response?.data?.message || 'Failed to load workshops';
+      this.loading = false;
     }
+  }
 
-    private async loadWorkshops() {
-        try {
-            this.loading = true;
-            this.error = null;
+  private navigateToWorkshop(workshopId: string) {
+    window.location.href = `/dashboard/workshops/${workshopId}/edit`;
+  }
 
-            const response = await apiClient.get('/workshops');
+  private navigateToAnalysis(workshopId: string) {
+    window.location.href = `/dashboard/workshops/${workshopId}/analysis`;
+  }
 
-            this.workshops = response.data.data?.workshops || response.data.workshops || [];
-            this.loading = false;
-        } catch (error: any) {
-            console.error('Error loading workshops:', error);
-            this.error = error.response?.data?.message || 'Failed to load workshops';
-            this.loading = false;
-        }
-    }
-
-    private navigateToWorkshop(workshopId: string) {
-        window.location.href = `/dashboard/workshops/${workshopId}/edit`;
-    }
-
-    override render() {
-        return html`
+  override render() {
+    return html`
       <div class="header">
         <h1>Workshops</h1>
         <a href="/dashboard/workshops/new" class="create-btn">+ Create Workshop</a>
@@ -171,16 +175,24 @@ export class WorkshopList extends LitElement {
                 <span>📅 ${workshop.startDate ? new Date(workshop.startDate).toLocaleDateString() : 'TBD'}</span>
                 ${workshop.seatLimit ? html`<span>👥 ${workshop.seatLimit} seats</span>` : ''}
               </div>
+              <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #f3f4f6; display: flex; gap: 0.5rem;">
+                <button 
+                  @click="${(e: Event) => { e.stopPropagation(); this.navigateToAnalysis(workshop.id); }}" 
+                  style="padding: 0.5rem 1rem; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500; font-size: 0.875rem;"
+                >
+                  📊 AI Analysis
+                </button>
+              </div>
             </div>
           `)}
         </div>
       `}
     `;
-    }
+  }
 }
 
 declare global {
-    interface HTMLElementTagNameMap {
-        'workshop-list': WorkshopList;
-    }
+  interface HTMLElementTagNameMap {
+    'workshop-list': WorkshopList;
+  }
 }

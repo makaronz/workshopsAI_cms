@@ -240,6 +240,9 @@ export const llmAnalyses = pgTable(
     status: analysisStatusEnum('status')
       .default('pending')
       .notNull(),
+    isVisibleToParticipants: boolean('isVisibleToParticipants')
+      .default(false)
+      .notNull(),
     results: json('results').$type<{
       summary: string;
       themes?: Array<{
