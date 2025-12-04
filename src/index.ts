@@ -275,11 +275,6 @@ app.use('*', (_req, res) => {
   });
 });
 
-// SPA fallback - serve index.html for all other routes
-// This allows client-side routing to work properly
-app.get('*', (_req, res) => {
-  res.sendFile(join(__dirname, '../public/index.html'));
-});
 
 // Global error handler
 app.use(
