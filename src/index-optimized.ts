@@ -9,6 +9,7 @@ import mongoSanitize from 'express-mongo-sanitize';
 import xss from 'xss';
 import { createServer } from 'http';
 import { config } from 'dotenv';
+import { logger } from './utils/logger';
 
 // Import optimized services
 import {
@@ -339,7 +340,7 @@ app.get('/api/v1/system/metrics', async (_req, res) => {
 async function checkLLMServicesHealth() {
   try {
     const health = await embeddingsService.healthCheck();
-    const queueStats = await llmAnalysisWorker.getQueueStats();
+    const queueStats = await llmAnalysisWorker.instance.getQueueStats();
 
     return {
       embeddings: health,

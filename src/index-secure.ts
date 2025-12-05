@@ -8,7 +8,7 @@ import { createServer } from 'http';
 import { config } from 'dotenv';
 
 // Import enhanced security middleware
-import securityMiddleware, {
+import securityHeaders, {
   rateLimiters,
   inputSanitization,
   csrfProtection,
@@ -43,6 +43,9 @@ import securityMonitor, {
   securityMonitoringMiddleware,
   getSecurityMetrics,
   isIPBlocked,
+  blockIP,
+  SecurityEventType,
+  SecuritySeverity,
 } from './services/security-monitoring';
 
 // Import routes
@@ -92,7 +95,7 @@ const blockedIPs = process.env.BLOCKED_IPS?.split(',') || [];
 app.use(ipBlocking(blockedIPs));
 
 // 2. Enhanced security headers
-app.use(securityMiddleware.securityHeaders);
+app.use(securityHeaders);
 app.use(apiSecurityHeaders);
 
 // 3. GDPR compliance headers
@@ -233,7 +236,7 @@ app.post('/api/admin/security/block-ip', authenticateJWT, (req, res) => {
     return res.status(400).json({ error: 'IP and reason are required' });
   }
 
-  const event = securityMonitor.blockIP(ip, reason);
+  const event = blockIP(ip, reason);
   res.json({
     success: true,
     data: { eventId: event.id },
@@ -279,7 +282,7 @@ app.get('/health', async (_req, res) => {
 async function checkLLMServicesHealth() {
   try {
     const health = await embeddingsService.healthCheck();
-    const queueStats = await llmAnalysisWorker.getQueueStats();
+    const queueStats = await llmAnalysisWorker.instance.getQueueStats();
 
     return {
       embeddings: health,
@@ -288,7 +291,7 @@ async function checkLLMServicesHealth() {
         queue: queueStats,
       },
     };
-  } catch (error) {
+  } catch (error: any) {
     return {
       embeddings: { status: 'error', error: error.message },
       analysisWorker: { status: 'error', error: error.message },
@@ -348,17 +351,17 @@ app.use('*', (_req, res) => {
 // Enhanced global error handler
 app.use(
   (
-    err: Error,
+    err: any,
     req: express.Request,
     res: express.Response,
     _next: express.NextFunction,
   ) => {
     // Log security-related errors
-    if (err.name === 'UnauthorizedError' || err.message.includes('security')) {
+    if (err.name === 'UnauthorizedError' || err.message?.includes('security')) {
       securityMonitor.recordEvent({
-        type: 'SECURITY_ERROR',
-        severity: 'HIGH',
-        ip: req.ip,
+        type: SecurityEventType.UNAUTHORIZED_ACCESS,
+        severity: SecuritySeverity.HIGH,
+        ip: req.ip || 'unknown',
         userAgent: req.headers['user-agent'],
         userId: req.user?.id,
         sessionId: req.session?.id,
@@ -393,14 +396,14 @@ process.on('SIGTERM', async () => {
 
   // Log shutdown event
   securityMonitor.recordEvent({
-    type: 'SYSTEM_SHUTDOWN',
-    severity: 'MEDIUM',
+    type: SecurityEventType.ANOMALOUS_BEHAVIOR,
+    severity: SecuritySeverity.MEDIUM,
     ip: 'system',
-    details: { reason: 'SIGTERM' },
+    details: { reason: 'SIGTERM', action: 'SYSTEM_SHUTDOWN' },
   });
 
   server.close(async () => {
-    await llmAnalysisWorker.shutdown();
+    await llmAnalysisWorker.instance.shutdown();
     await redisService.disconnect();
     await closeDatabaseConnection();
     console.log('Process terminated');
@@ -413,14 +416,14 @@ process.on('SIGINT', async () => {
 
   // Log shutdown event
   securityMonitor.recordEvent({
-    type: 'SYSTEM_SHUTDOWN',
-    severity: 'MEDIUM',
+    type: SecurityEventType.ANOMALOUS_BEHAVIOR,
+    severity: SecuritySeverity.MEDIUM,
     ip: 'system',
-    details: { reason: 'SIGINT' },
+    details: { reason: 'SIGINT', action: 'SYSTEM_SHUTDOWN' },
   });
 
   server.close(async () => {
-    await llmAnalysisWorker.shutdown();
+    await llmAnalysisWorker.instance.shutdown();
     await redisService.disconnect();
     await closeDatabaseConnection();
     console.log('Process terminated');
@@ -434,10 +437,10 @@ const startServer = async () => {
   try {
     // Log startup event
     securityMonitor.recordEvent({
-      type: 'SYSTEM_STARTUP',
-      severity: 'MEDIUM',
+      type: SecurityEventType.ANOMALOUS_BEHAVIOR,
+      severity: SecuritySeverity.MEDIUM,
       ip: 'system',
-      details: { environment: NODE_ENV, port: PORT },
+      details: { environment: NODE_ENV, port: PORT, action: 'SYSTEM_STARTUP' },
     });
 
     // Initialize WebSocket service

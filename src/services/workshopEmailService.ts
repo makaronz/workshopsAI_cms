@@ -7,10 +7,8 @@ import {
   workshops,
   enrollments,
   sessions,
-  facilitators,
-  locations,
-} from '../models/postgresql-schema';
-import { eq, and, gte, lte } from 'drizzle-orm';
+} from '../config/postgresql-database';
+import { eq, and } from 'drizzle-orm';
 
 export interface WorkshopEmailContext {
   workshop: any;
@@ -89,7 +87,7 @@ class WorkshopEmailService {
           templateData: context.templateData,
           workshopId,
           language: context.language,
-          priority: options.priority || 'high',
+          priority: options.priority ?? 'high',
           scheduledAt: options.scheduledAt,
         },
         { immediate: options.immediate },
@@ -199,7 +197,7 @@ class WorkshopEmailService {
               userId: user.userId,
               enrollmentId: user.enrollmentId,
               language: context.language,
-              priority: options.priority || 'high',
+              priority: options.priority ?? 'high',
               scheduledAt: options.scheduledAt,
             },
             { immediate: options.immediate },
@@ -335,9 +333,8 @@ class WorkshopEmailService {
               templateData: context.templateData,
               workshopId,
               userId: user.userId,
-              enrollmentId: user.enrollmentId,
               language: context.language,
-              priority: options.priority || 'normal',
+              priority: options.priority ?? 'normal',
               scheduledAt: options.scheduledAt,
             },
             { immediate: options.immediate },
@@ -526,7 +523,7 @@ class WorkshopEmailService {
   }
 
   private async getQuestionnaireEmailContext(
-    questionnaireId: string,
+    _questionnaireId: string,
   ): Promise<any | null> {
     // This would need to be implemented based on your questionnaire schema
     return null; // Placeholder
@@ -537,7 +534,7 @@ class WorkshopEmailService {
     email: string,
     options: EmailNotificationOptions,
   ): WorkshopEmailContext & { templateData: any; language: 'pl' | 'en' } {
-    const language = workshopData.userLanguage || 'pl';
+    const language = workshopData.userLanguage ?? 'pl';
 
     return {
       ...workshopData,
@@ -546,7 +543,7 @@ class WorkshopEmailService {
         workshop: workshopData.workshop,
         facilitator: workshopData.facilitator,
         location: workshopData.location,
-        baseUrl: process.env.EMAIL_BASE_URL || 'https://workshopsai.com',
+        baseUrl: process.env.EMAIL_BASE_URL ?? 'https://workshopsai.com',
         unsubscribeToken: this.generateUnsubscribeToken(email),
         ...options.customTemplateData,
       },
@@ -559,7 +556,7 @@ class WorkshopEmailService {
     user: any,
     options: EmailNotificationOptions,
   ): WorkshopEmailContext & { templateData: any; language: 'pl' | 'en' } {
-    const language = workshopData.userLanguage || 'pl';
+    const language = workshopData.userLanguage ?? 'pl';
 
     return {
       ...workshopData,
@@ -567,7 +564,7 @@ class WorkshopEmailService {
       templateData: {
         workshop: workshopData.workshop,
         session: sessionData.session,
-        baseUrl: process.env.EMAIL_BASE_URL || 'https://workshopsai.com',
+        baseUrl: process.env.EMAIL_BASE_URL ?? 'https://workshopsai.com',
         unsubscribeToken: this.generateUnsubscribeToken(user.email),
         ...options.customTemplateData,
       },
@@ -580,13 +577,13 @@ class WorkshopEmailService {
     workshopId?: string,
     options: EmailNotificationOptions = {},
   ): { templateData: any; language: 'pl' | 'en' } {
-    const language = user.language || 'pl';
+    const language = user.language ?? 'pl';
 
     return {
       language,
       templateData: {
         questionnaire: questionnaireData,
-        baseUrl: process.env.EMAIL_BASE_URL || 'https://workshopsai.com',
+        baseUrl: process.env.EMAIL_BASE_URL ?? 'https://workshopsai.com',
         unsubscribeToken: this.generateUnsubscribeToken(user.email),
         ...options.customTemplateData,
       },
@@ -600,7 +597,7 @@ class WorkshopEmailService {
     user: any,
     options: EmailNotificationOptions = {},
   ): WorkshopEmailContext & { templateData: any; language: 'pl' | 'en' } {
-    const language = workshopData.userLanguage || 'pl';
+    const language = workshopData.userLanguage ?? 'pl';
 
     return {
       ...workshopData,
@@ -609,7 +606,7 @@ class WorkshopEmailService {
         workshop: workshopData.workshop,
         updateType,
         updateDetails,
-        baseUrl: process.env.EMAIL_BASE_URL || 'https://workshopsai.com',
+        baseUrl: process.env.EMAIL_BASE_URL ?? 'https://workshopsai.com',
         unsubscribeToken: this.generateUnsubscribeToken(user.email),
         ...options.customTemplateData,
       },
@@ -617,8 +614,8 @@ class WorkshopEmailService {
   }
 
   private getSubject(emailType: string, context: any): string {
-    const language = context.language || 'pl';
-    const workshopTitle = context.workshop?.title || '';
+    const language = context.language ?? 'pl';
+    const workshopTitle = context.workshop?.title ?? '';
 
     const subjects: Record<string, Record<string, string>> = {
       workshop_invitation: {
@@ -639,7 +636,7 @@ class WorkshopEmailService {
       },
     };
 
-    return subjects[emailType]?.[language] || `Notification: ${workshopTitle}`;
+    return subjects[emailType][language] ?? `Notification: ${workshopTitle}`;
   }
 
   private generateUnsubscribeToken(email: string): string {
@@ -650,15 +647,15 @@ class WorkshopEmailService {
 
   async scheduleAutomatedReminders(workshopId: string): Promise<void> {
     const workshopData = await this.getWorkshopEmailContext(workshopId);
-    if (!workshopData || !workshopData.workshop.startDate) {
+    if (!workshopData?.workshop.startDate) {
       return;
     }
 
-    const workshopStartDate = new Date(workshopData.workshop.startDate);
+
     const now = new Date();
 
     // Schedule session reminders (24 hours before each session)
-    if (workshopData.workshop.sessions) {
+    if (workshopData.workshop?.sessions) {
       for (const session of workshopData.workshop.sessions) {
         const sessionStartTime = new Date(session.startTime);
         const reminderTime = new Date(

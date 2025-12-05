@@ -264,11 +264,5 @@ export const bilingualCacheMiddleware = (ttl: number = 300) => {
 };
 
 // Export all middlewares
-export {
-  i18nMiddleware as default,
-  bilingualResponseMiddleware,
-  bilingualFormMiddleware,
-  languageValidationMiddleware,
-  contentNegotiationMiddleware,
-  bilingualCacheMiddleware,
-};
+// Default export for backward compatibility
+export default i18nMiddleware;

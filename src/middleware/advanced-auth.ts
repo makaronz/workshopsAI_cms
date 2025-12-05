@@ -599,19 +599,5 @@ declare global {
   }
 }
 
-export {
-  authenticateJWT as default,
-  refreshToken,
-  logout,
-  validatePassword,
-  checkAccountLockout,
-  recordFailedAttempt,
-  clearFailedAttempts,
-  authRateLimit,
-  createTokens,
-  getUserSessions,
-  revokeSession,
-  revokeAllUserSessions,
-  hashPassword,
-  comparePassword,
-};
+// Default export for backward compatibility if needed
+export default authenticateJWT;

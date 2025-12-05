@@ -557,22 +557,5 @@ export const purposeLimitation = (allowedPurpose: string) => {
   };
 };
 
-export {
-  gdprConsent as default,
-  anonymizeData,
-  maskPII,
-  enforceDataRetention,
-  rightToBeForgotten,
-  dataSubjectAccessRequest,
-  updateConsent,
-  getUserConsents,
-  logDataProcessing,
-  gdprHeaders,
-  cookieConsent,
-  dataBreachDetection,
-  dpiaValidation,
-  dataMinimization,
-  purposeLimitation,
-  CONSENT_TYPES,
-  PROCESSING_PURPOSES,
-};
+// Default export for backward compatibility
+export default gdprConsent;

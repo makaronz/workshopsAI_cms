@@ -62,11 +62,11 @@ export interface WebSocketMessage {
 
 export interface PreviewUpdateEvent {
   type:
-    | 'content_update'
-    | 'settings_change'
-    | 'participant_join'
-    | 'participant_leave'
-    | 'state_sync';
+  | 'content_update'
+  | 'settings_change'
+  | 'participant_join'
+  | 'participant_leave'
+  | 'state_sync';
   data: any;
   userId: string;
   timestamp: Date;
@@ -181,72 +181,106 @@ class WebSocketService {
    * Setup core event handlers
    */
   private setupEventHandlers(): void {
-    this.io.on('connection', (socket: AuthenticatedSocket) => {
+    this.io.on('connection', (socket: Socket) => {
+      const authenticatedSocket = socket as AuthenticatedSocket;
       logger.info(
-        `WebSocket connected: ${socket.userEmail} (${socket.sessionId})`,
+        `WebSocket connected: ${authenticatedSocket.userEmail} (${authenticatedSocket.sessionId})`,
       );
 
       // Track user sockets
-      if (!this.userSockets.has(socket.userId)) {
-        this.userSockets.set(socket.userId, new Set());
+      if (!this.userSockets.has(authenticatedSocket.userId)) {
+        this.userSockets.set(authenticatedSocket.userId, new Set());
       }
-      this.userSockets.get(socket.userId)!.add(socket.sessionId);
+      this.userSockets.get(authenticatedSocket.userId)!.add(authenticatedSocket.sessionId);
 
       // Reset reconnect attempts on successful connection
-      this.reconnectAttempts.set(socket.userId, 0);
+      this.reconnectAttempts.set(authenticatedSocket.userId, 0);
 
       // Handle room joining
-      socket.on('join_preview', async data => {
-        await this.handleJoinPreview(socket, data);
+      authenticatedSocket.on('join_preview', async data => {
+        await this.handleJoinPreview(authenticatedSocket, data);
       });
 
-      socket.on('join_workshop', async data => {
-        await this.handleJoinWorkshop(socket, data);
+      authenticatedSocket.on('join_workshop', async data => {
+        await this.handleJoinWorkshop(authenticatedSocket, data);
       });
 
-      socket.on('join_questionnaire', async data => {
-        await this.handleJoinQuestionnaire(socket, data);
+      authenticatedSocket.on('join_questionnaire', async data => {
+        await this.handleJoinQuestionnaire(authenticatedSocket, data);
       });
 
       // Handle preview updates
-      socket.on('preview_update', async data => {
-        await this.handlePreviewUpdate(socket, data);
+      authenticatedSocket.on('preview_update', async data => {
+        await this.handlePreviewUpdate(authenticatedSocket, data);
       });
 
-      socket.on('preview_settings_change', async data => {
-        await this.handlePreviewSettingsChange(socket, data);
+      authenticatedSocket.on('preview_settings_change', async data => {
+        await this.handlePreviewSettingsChange(authenticatedSocket, data);
       });
 
       // Handle real-time collaboration
-      socket.on('collaboration_event', async data => {
-        await this.handleCollaborationEvent(socket, data);
+      authenticatedSocket.on('collaboration_event', async data => {
+        await this.handleCollaborationEvent(authenticatedSocket, data);
       });
 
       // Handle state synchronization
-      socket.on('sync_state', async data => {
-        await this.handleStateSync(socket, data);
+      authenticatedSocket.on('sync_state', async data => {
+        await this.handleStateSync(authenticatedSocket, data);
       });
 
       // Handle mobile preview
-      socket.on('mobile_preview_toggle', async data => {
-        await this.handleMobilePreviewToggle(socket, data);
+      authenticatedSocket.on('mobile_preview_toggle', async data => {
+        await this.handleMobilePreviewToggle(authenticatedSocket, data);
       });
 
       // Handle testing interactions
-      socket.on('test_interaction', async data => {
-        await this.handleTestInteraction(socket, data);
+      authenticatedSocket.on('test_interaction', async data => {
+        await this.handleTestInteraction(authenticatedSocket, data);
       });
 
       // Handle disconnection
-      socket.on('disconnect', async reason => {
-        await this.handleDisconnection(socket, reason);
+      authenticatedSocket.on('disconnect', async reason => {
+        await this.handleDisconnection(authenticatedSocket, reason);
       });
 
       // Handle errors
-      socket.on('error', error => {
-        logger.error(`WebSocket error for ${socket.userEmail}:`, error);
+      authenticatedSocket.on('error', error => {
+        logger.error(`WebSocket error for ${authenticatedSocket.userEmail}:`, error);
       });
     });
+  }
+
+  /**
+   * Handle joining a workshop room
+   */
+  private async handleJoinWorkshop(
+    socket: AuthenticatedSocket,
+    data: { workshopId: string },
+  ): Promise<void> {
+    // Implementation placeholder
+    logger.info(`User ${socket.userEmail} joined workshop ${data.workshopId}`);
+  }
+
+  /**
+   * Handle joining a questionnaire room
+   */
+  private async handleJoinQuestionnaire(
+    socket: AuthenticatedSocket,
+    data: { questionnaireId: string },
+  ): Promise<void> {
+    // Implementation placeholder
+    logger.info(`User ${socket.userEmail} joined questionnaire ${data.questionnaireId}`);
+  }
+
+  /**
+   * Handle state synchronization
+   */
+  private async handleStateSync(
+    socket: AuthenticatedSocket,
+    data: any,
+  ): Promise<void> {
+    // Implementation placeholder
+    logger.info(`State sync requested by ${socket.userEmail}`);
   }
 
   /**
@@ -576,19 +610,19 @@ class WebSocketService {
     interactionData: any,
   ): Promise<any> {
     switch (interactionType) {
-    case 'form_submit':
-      return {
-        success: true,
-        message: 'Form submitted successfully in test mode',
-      };
-    case 'button_click':
-      return { success: true, action: 'Button click simulated' };
-    case 'navigation':
-      return { success: true, route: interactionData.route };
-    case 'accessibility_check':
-      return await this.runAccessibilityCheck(interactionData);
-    default:
-      return { success: false, message: 'Unknown interaction type' };
+      case 'form_submit':
+        return {
+          success: true,
+          message: 'Form submitted successfully in test mode',
+        };
+      case 'button_click':
+        return { success: true, action: 'Button click simulated' };
+      case 'navigation':
+        return { success: true, route: interactionData.route };
+      case 'accessibility_check':
+        return await this.runAccessibilityCheck(interactionData);
+      default:
+        return { success: false, message: 'Unknown interaction type' };
     }
   }
 

@@ -13,8 +13,14 @@ import {
   emailConsents,
   emailBlacklist,
   emailTemplates,
-} from '../models/postgresql-schema';
+} from '../config/postgresql-database';
 import { eq, and, inArray } from 'drizzle-orm';
+
+// Use require for Mailgun to avoid type issues and ensure form-data is used
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const Mailgun = require('mailgun.js');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const FormData = require('form-data');
 
 export interface EmailContent {
   to: string;
@@ -23,7 +29,7 @@ export interface EmailContent {
   textContent?: string;
   templateId?: string;
   templateData?: Record<string, any>;
-  userId?: number;
+  userId?: string;
   workshopId?: string;
   enrollmentId?: string;
   language?: 'pl' | 'en';
@@ -51,41 +57,42 @@ class EmailService {
     const provider = emailConfig.provider;
 
     switch (provider.name) {
-    case 'sendgrid':
-      if (!provider.apiKey) {
-        console.error('SendGrid API key not configured');
-        return;
-      }
-      sendGridMail.setApiKey(provider.apiKey);
-      this.providers.set('sendgrid', sendGridMail);
-      break;
+      case 'sendgrid':
+        if (!provider.apiKey) {
+          console.error('SendGrid API key not configured');
+          return;
+        }
+        sendGridMail.setApiKey(provider.apiKey);
+        this.providers.set('sendgrid', sendGridMail);
+        break;
 
-    case 'mailgun':
-      if (!provider.apiKey || !provider.domain) {
-        console.error('Mailgun API key and domain not configured');
-        return;
-      }
-      const mg = mailgun({
-        apiKey: provider.apiKey,
-        domain: provider.domain,
-      });
-      this.providers.set('mailgun', mg);
-      break;
+      case 'mailgun':
+        if (!provider.apiKey || !provider.domain) {
+          console.error('Mailgun API key and domain not configured');
+          return;
+        }
+        const mailgun = new (Mailgun as any)(FormData);
+        const mg = mailgun.client({
+          username: 'api',
+          key: process.env.MAILGUN_API_KEY || '',
+        });
+        this.providers.set('mailgun', mg);
+        break;
 
-    case 'nodemailer':
-      const transporter = nodemailer.createTransporter({
-        host: process.env.SMTP_HOST || 'localhost',
-        port: parseInt(process.env.SMTP_PORT || '587'),
-        secure: process.env.SMTP_SECURE === 'true',
-        auth: process.env.SMTP_USER
-          ? {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-          }
-          : undefined,
-      });
-      this.providers.set('nodemailer', transporter);
-      break;
+      case 'nodemailer':
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST || 'localhost',
+          port: parseInt(process.env.SMTP_PORT || '587'),
+          secure: process.env.SMTP_SECURE === 'true',
+          auth: process.env.SMTP_USER
+            ? {
+              user: process.env.SMTP_USER,
+              pass: process.env.SMTP_PASS,
+            }
+            : undefined,
+        });
+        this.providers.set('nodemailer', transporter);
+        break;
     }
   }
 
@@ -120,8 +127,7 @@ class EmailService {
       const messageId = `workshopsai-${uuidv4()}`;
 
       // Create email log entry
-      const emailLogId = uuidv4();
-      await this.createEmailLog(emailLogId, messageId, content);
+      const emailLogId = await this.createEmailLog(messageId, content);
 
       // Render templates if provided
       let htmlContent = content.htmlContent;
@@ -178,33 +184,33 @@ class EmailService {
     const { to, subject, htmlContent, textContent, messageId } = content;
 
     switch (provider.name) {
-    case 'sendgrid':
-      return await this.sendViaSendGrid({
-        to,
-        subject,
-        htmlContent,
-        textContent,
-        messageId,
-      });
+      case 'sendgrid':
+        return await this.sendViaSendGrid({
+          to,
+          subject,
+          htmlContent,
+          textContent,
+          messageId,
+        });
 
-    case 'mailgun':
-      return await this.sendViaMailgun({
-        to,
-        subject,
-        htmlContent,
-        textContent,
-        messageId,
-      });
+      case 'mailgun':
+        return await this.sendViaMailgun({
+          to,
+          subject,
+          htmlContent,
+          textContent,
+          messageId,
+        });
 
-    case 'nodemailer':
-    default:
-      return await this.sendViaNodemailer({
-        to,
-        subject,
-        htmlContent,
-        textContent,
-        messageId,
-      });
+      case 'nodemailer':
+      default:
+        return await this.sendViaNodemailer({
+          to,
+          subject,
+          htmlContent,
+          textContent,
+          messageId,
+        });
     }
   }
 
@@ -299,30 +305,30 @@ class EmailService {
   }
 
   private async createEmailLog(
-    emailLogId: string,
     messageId: string,
     content: EmailContent,
-  ): Promise<void> {
-    await db.insert(emailLogs).values({
-      id: emailLogId,
+  ): Promise<string> {
+    const [log] = await db.insert(emailLogs).values({
       messageId,
       templateId: content.templateId,
       userId: content.userId,
       workshopId: content.workshopId,
       enrollmentId: content.enrollmentId,
-      type: content.type || 'custom',
+      type: (content.type as any) || 'custom',
       toEmail: content.to,
-      fromEmail: emailConfig.provider.fromEmail,
-      fromName: emailConfig.provider.fromName,
+      fromEmail: emailConfig.provider.fromEmail || '',
+      fromName: emailConfig.provider.fromName || '',
       subject: content.subject,
       language: content.language || 'pl',
       status: 'pending',
-      provider: emailConfig.provider.name,
+      provider: (emailConfig.provider.name as any),
       priority: content.priority || 'normal',
       scheduledAt: content.scheduledAt,
       consent: await this.getEmailConsent(content.to),
       createdAt: new Date(),
-    });
+    }).returning({ id: emailLogs.id });
+
+    return log.id;
   }
 
   private async renderTemplate(
@@ -400,31 +406,31 @@ class EmailService {
         const d = new Date(date);
         // Simple formatting - in production, you'd use a proper date formatting library
         switch (format) {
-        case 'LLLL':
-          return d.toLocaleDateString(
-            d.toLocaleDateString() === 'en-US' ? 'en-US' : 'pl-PL',
-            {
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
+          case 'LLLL':
+            return d.toLocaleDateString(
+              d.toLocaleDateString() === 'en-US' ? 'en-US' : 'pl-PL',
+              {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              },
+            );
+          case 'HH:mm':
+            return d.toLocaleTimeString('en-US', {
               hour: '2-digit',
               minute: '2-digit',
-            },
-          );
-        case 'HH:mm':
-          return d.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-          });
-        default:
-          return d.toLocaleDateString();
+              hour12: false,
+            });
+          default:
+            return d.toLocaleDateString();
         }
       },
     );
 
     // Conditional language helper
-    Handlebars.registerHelper('language', function (conditional, options) {
+    Handlebars.registerHelper('language', function (this: any, conditional, options) {
       if (conditional === options.data.root.language) {
         return options.fn(this);
       }
@@ -456,21 +462,21 @@ class EmailService {
 
   private hasRequiredConsent(type: string, consent: any): boolean {
     switch (type) {
-    case 'workshop_invitation':
-    case 'questionnaire_reminder':
-      return consent.questionnaireReminders;
-    case 'workshop_update':
-    case 'session_reminder':
-    case 'enrollment_confirmation':
-    case 'waiting_list_notification':
-    case 'workshop_cancellation':
-      return consent.workshopUpdates;
-    case 'account_verification':
-    case 'password_reset':
-    case 'completion_certificate':
-      return consent.transactional;
-    default:
-      return consent.marketing;
+      case 'workshop_invitation':
+      case 'questionnaire_reminder':
+        return consent.questionnaireReminders;
+      case 'workshop_update':
+      case 'session_reminder':
+      case 'enrollment_confirmation':
+      case 'waiting_list_notification':
+      case 'workshop_cancellation':
+        return consent.workshopUpdates;
+      case 'account_verification':
+      case 'password_reset':
+      case 'completion_certificate':
+        return consent.transactional;
+      default:
+        return consent.marketing;
     }
   }
 

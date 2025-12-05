@@ -1,9 +1,10 @@
-import { Queue, Worker, Job, QueueScheduler } from 'bullmq';
+import { Queue, Worker, Job } from 'bullmq';
 import Redis from 'ioredis';
-import { redisService } from './redisService';
+import { redisService } from '../config/redis';
 import { emailConfig } from '../config/email';
 import { emailService } from './emailService';
-import { db, emailLogs, emailQueueJobs } from '../models/postgresql-schema';
+import { db } from '../config/postgresql-database';
+import { emailLogs, emailQueueJobs } from '../models/postgresql-schema';
 import { eq, sql } from 'drizzle-orm';
 
 export interface EmailJobData {
@@ -15,7 +16,7 @@ export interface EmailJobData {
   textContent?: string;
   templateId?: string;
   templateData?: Record<string, any>;
-  userId?: number;
+  userId?: string;
   workshopId?: string;
   enrollmentId?: string;
   language: 'pl' | 'en';
@@ -41,7 +42,7 @@ export interface EmailQueueConfig {
 class EmailQueueService {
   private queue: Queue;
   private worker: Worker;
-  private scheduler: QueueScheduler;
+
   private config: EmailQueueConfig;
 
   constructor() {
@@ -65,9 +66,6 @@ class EmailQueueService {
       defaultJobOptions: this.config.defaultJobOptions,
     });
 
-    this.scheduler = new QueueScheduler(this.config.queueName, {
-      connection: this.config.redis,
-    });
 
     this.worker = new Worker(
       this.config.queueName,
@@ -91,7 +89,7 @@ class EmailQueueService {
       console.error(`Email job ${job?.id} failed:`, error);
       if (job) {
         await this.updateJobStatus(
-          job.id,
+          job.id!,
           'failed',
           error.message,
           error.stack,
@@ -222,15 +220,15 @@ class EmailQueueService {
     if (job.attemptsMade < job.opts.attempts!) {
       const nextRetryAt = new Date(
         Date.now() +
-          (job.opts.backoff as any).delay *
-            Math.pow(emailConfig.queue.backoffMultiplier, job.attemptsMade),
+        (job.opts.backoff as any).delay *
+        Math.pow(emailConfig.queue.backoffMultiplier, job.attemptsMade),
       );
 
       await db
         .update(emailLogs)
         .set({
           nextRetryAt,
-          retryCount: job.attemptsMade,
+          retryCount: job.attemptsMade.toString(),
         })
         .where(eq(emailLogs.id, emailLogId));
     }
@@ -244,7 +242,7 @@ class EmailQueueService {
       jobId,
       emailLogId: jobData.emailLogId,
       queueName: this.config.queueName,
-      priority: this.getPriorityNumber(jobData.priority),
+      priority: this.getPriorityNumber(jobData.priority).toString(),
       data: jobData,
       opts: {
         attempts: emailConfig.queue.maxRetries,
@@ -316,8 +314,8 @@ class EmailQueueService {
   }
 
   async clearQueue(): Promise<void> {
-    await this.queue.clean(0, 'completed');
-    await this.queue.clean(0, 'failed');
+    await this.queue.clean(0, 0, 'completed');
+    await this.queue.clean(0, 0, 'failed');
   }
 
   private getPriorityNumber(priority: string): number {
@@ -332,7 +330,7 @@ class EmailQueueService {
 
   async close(): Promise<void> {
     await this.worker.close();
-    await this.scheduler.close();
+
     await this.queue.close();
   }
 }

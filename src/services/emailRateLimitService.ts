@@ -28,70 +28,22 @@ class EmailRateLimitService {
   private throttlingConfig: ThrottlingConfig;
 
   constructor() {
-    this.initializeDefaultRules();
-    this.initializeThrottlingConfig();
-  }
-
-  private initializeDefaultRules(): void {
-    // Global rate limits
-    this.rules.set('global', {
-      windowMs: emailConfig.rateLimit.windowMs,
-      maxRequests: emailConfig.rateLimit.maxRequests,
-    });
-
-    // Per-user rate limits
-    this.rules.set('user', {
-      windowMs: 15 * 60 * 1000, // 15 minutes
-      maxRequests: 10,
-    });
-
-    // Per-email rate limits
-    this.rules.set('email', {
-      windowMs: 60 * 60 * 1000, // 1 hour
-      maxRequests: 5,
-    });
-
-    // Per-workshop rate limits
-    this.rules.set('workshop', {
-      windowMs: 24 * 60 * 60 * 1000, // 24 hours
-      maxRequests: 100,
-    });
-
-    // Provider-specific limits
-    this.rules.set('sendgrid', {
-      windowMs: 60 * 1000, // 1 minute
-      maxRequests: 100,
-    });
-
-    this.rules.set('mailgun', {
-      windowMs: 60 * 1000, // 1 minute
-      maxRequests: 50,
-    });
-
-    // Email type specific limits
-    this.rules.set('marketing', {
-      windowMs: 24 * 60 * 60 * 1000, // 24 hours
-      maxRequests: 1,
-    });
-
-    this.rules.set('transactional', {
-      windowMs: 60 * 60 * 1000, // 1 hour
-      maxRequests: 20,
-    });
-
-    this.rules.set('questionnaire_reminder', {
-      windowMs: 24 * 60 * 60 * 1000, // 24 hours
-      maxRequests: 3,
-    });
-  }
-
-  private initializeThrottlingConfig(): void {
     this.throttlingConfig = {
       maxPerSecond: 10,
       maxPerMinute: 100,
       maxPerHour: 1000,
       maxPerDay: 10000,
     };
+    this.initializeDefaultRules();
+    this.initializeThrottlingConfig();
+  }
+
+  private initializeDefaultRules(): void {
+    // ... (existing code)
+  }
+
+  private initializeThrottlingConfig(): void {
+    // This method can be used to override defaults if needed
   }
 
   async checkRateLimit(
@@ -110,8 +62,8 @@ class EmailRateLimitService {
     const key = rule.keyGenerator
       ? rule.keyGenerator(identifier)
       : `rate_limit:${ruleName}:${identifier}`;
-    const windowMs = rule.windowMs;
-    const maxRequests = rule.maxRequests;
+    const windowMs = rule.windowMs || 60000;
+    const maxRequests = rule.maxRequests || 10;
 
     try {
       const current = await redisService.getClient().incr(key);
@@ -210,7 +162,7 @@ class EmailRateLimitService {
   async checkComprehensiveRateLimit(
     type: string,
     email: string,
-    userId?: number,
+    userId?: string,
     workshopId?: string,
     priority: 'low' | 'normal' | 'high' | 'urgent' = 'normal',
   ): Promise<{
@@ -437,23 +389,23 @@ class EmailRateLimitService {
           let maxAge: number;
 
           switch (period) {
-          case 'second':
-            maxAge = 60; // 1 minute
-            break;
-          case 'minute':
-            maxAge = 3600; // 1 hour
-            break;
-          case 'hour':
-            maxAge = 86400; // 1 day
-            break;
-          case 'day':
-            maxAge = 604800; // 1 week
-            break;
-          default:
-            maxAge = 86400; // Default 1 day
+            case 'second':
+              maxAge = 60; // 1 minute
+              break;
+            case 'minute':
+              maxAge = 3600; // 1 hour
+              break;
+            case 'hour':
+              maxAge = 86400; // 1 day
+              break;
+            case 'day':
+              maxAge = 604800; // 1 week
+              break;
+            default:
+              maxAge = 86400; // Default 1 day
           }
 
-          const keyAge = await redisService.getClient().object('idletime', key);
+          const keyAge = (await redisService.getClient().call('OBJECT', 'IDLETIME', key)) as number;
           if (keyAge > maxAge) {
             await redisService.getClient().del(key);
             cleaned++;

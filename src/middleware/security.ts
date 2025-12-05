@@ -344,18 +344,5 @@ export const apiSecurityHeaders = (req: Request, res: Response, next: NextFuncti
   next();
 };
 
-export {
-  securityHeaders as default,
-  rateLimiters,
-  inputSanitization,
-  csrfProtection,
-  generateCsrfToken,
-  validateContentType,
-  validateRequestSize,
-  ipBlocking,
-  securityLogging,
-  gdprCompliance,
-  generateCSPNonce,
-  cspNonce,
-  apiSecurityHeaders,
-};
+// Default export for backward compatibility
+export default securityHeaders;
