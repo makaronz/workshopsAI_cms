@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import { AuthService, UserRole, redisService } from '../services/authService';
+import { AuthService, UserRole } from '../services/authService';
+import { redisService } from '../config/redis';
 
 // Middleware: Authentication
 export const authenticate = async (
@@ -69,7 +70,8 @@ export const authenticate = async (
       req.user = {
         id: payload.userId,
         email: payload.email,
-        role: payload.role,
+        role: payload.role as UserRole,
+        name: user.name,
         sessionId: payload.sessionId,
       };
 
@@ -118,7 +120,7 @@ export const authorize = (permission: string) => {
       return;
     }
 
-    if (!AuthService.hasPermission(req.user.role, permission)) {
+    if (!AuthService.hasPermission(req.user.role as UserRole, permission)) {
       res.status(403).json({
         error: 'Access denied',
         message: 'Insufficient permissions',
@@ -145,7 +147,7 @@ export const requireRole = (roles: UserRole | UserRole[]) => {
       return;
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!allowedRoles.includes(req.user.role as UserRole)) {
       res.status(403).json({
         error: 'Access denied',
         message: 'Insufficient role permissions',
