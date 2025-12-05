@@ -152,7 +152,6 @@ export class EnhancedLLMAnalysisWorker {
       port: parseInt(process.env.REDIS_PORT || '6379'),
       password: process.env.REDIS_PASSWORD,
       db: parseInt(process.env.REDIS_DB || '0'),
-      retryDelayOnFailover: 100,
       maxRetriesPerRequest: null,
     });
 
@@ -161,7 +160,7 @@ export class EnhancedLLMAnalysisWorker {
       apiKey: config.openai?.apiKey || process.env.OPENAI_API_KEY,
       baseURL: config.openai?.baseURL,
       timeout: config.openai?.timeout || 60000,
-      organizationId: config.openai?.organizationId,
+      organization: config.openai?.organizationId,
     });
 
     // Initialize Anthropic client
@@ -655,8 +654,12 @@ export class EnhancedLLMAnalysisWorker {
         ],
       });
 
+      const textContent = response.content
+        .filter(block => block.type === 'text')
+        .map(block => ({ text: block.type === 'text' ? block.text : '' }));
+
       return {
-        content: response.content,
+        content: textContent,
         usage: response.usage,
       };
 
@@ -1258,7 +1261,14 @@ export class EnhancedLLMAnalysisWorker {
     paused: number;
   }> {
     const counts = await this.queue.getJobCounts();
-    return counts;
+    return {
+      waiting: counts.waiting || 0,
+      active: counts.active || 0,
+      completed: counts.completed || 0,
+      failed: counts.failed || 0,
+      delayed: counts.delayed || 0,
+      paused: counts.paused || 0,
+    };
   }
 
   /**
@@ -1316,11 +1326,11 @@ export class EnhancedLLMAnalysisWorker {
 // Create and export enhanced worker instance
 export const enhancedLLMAnalysisWorker = new EnhancedLLMAnalysisWorker({
   openai: {
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: process.env.OPENAI_API_KEY || '',
     organizationId: process.env.OPENAI_ORG_ID,
   },
   anthropic: {
-    apiKey: process.env.ANTHROPIC_API_KEY,
+    apiKey: process.env.ANTHROPIC_API_KEY || '',
   },
   rateLimits: {
     requestsPerMinute: 60,

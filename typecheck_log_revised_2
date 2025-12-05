@@ -1,0 +1,904 @@
+
+> workshopsai-cms@1.0.0 typecheck
+> tsc --noEmit
+
+src/middleware/api-optimization.ts(13,10): error TS2305: Module '"compression"' has no exported member 'compress'.
+src/middleware/api-optimization.ts(142,9): error TS2322: Type '(value: unknown) => void' is not assignable to type 'never'.
+src/middleware/api-optimization.ts(143,9): error TS2322: Type '(reason?: any) => void' is not assignable to type 'never'.
+src/middleware/api-optimization.ts(154,16): error TS7006: Parameter 'req' implicitly has an 'any' type.
+src/middleware/api-optimization.ts(154,21): error TS7006: Parameter 'res' implicitly has an 'any' type.
+src/middleware/api-optimization.ts(258,18): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+src/middleware/api-optimization.ts(261,34): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+src/middleware/authMiddleware.ts(2,33): error TS2459: Module '"../services/authService"' declares 'redisService' locally, but it is not exported.
+src/middleware/authMiddleware.ts(69,7): error TS2741: Property 'name' is missing in type '{ id: string; email: string; role: UserRole; sessionId: string; }' but required in type '{ id: string; email: string; role: string; name: string; sessionId: string; isActive?: boolean | undefined; lastLoginAt?: Date | null | undefined; }'.
+src/middleware/authMiddleware.ts(121,36): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UserRole'.
+src/middleware/authMiddleware.ts(148,32): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UserRole'.
+src/middleware/authMiddleware.ts(267,9): error TS2741: Property 'name' is missing in type '{ id: string; email: string; role: UserRole; sessionId: string; }' but required in type '{ id: string; email: string; role: string; name: string; sessionId: string; isActive?: boolean | undefined; lastLoginAt?: Date | null | undefined; }'.
+src/middleware/enhanced-performance-middleware.ts(66,75): error TS2339: Property 'generateRequestId' does not exist on type 'Response<any, Record<string, any>>'.
+src/middleware/enhanced-performance-middleware.ts(74,14): error TS2339: Property 'updateEnhancedMetrics' does not exist on type 'Response<any, Record<string, any>>'.
+src/middleware/enhanced-performance-middleware.ts(93,40): error TS2345: Argument of type 'any[]' is not assignable to parameter of type '[chunk: any, encoding: BufferEncoding, cb?: (() => void) | undefined]'.
+  Target requires 2 element(s) but source may have fewer.
+src/middleware/enhanced-performance-middleware.ts(94,14): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(this: (this: Response<any, Record<string, any>>, ...args: any[]) => Response<any, Record<string, any>>, thisArg: Response<any, Record<string, any>>): (...args: any[]) => Response<...>', gave the following error.
+    Argument of type 'this' is not assignable to parameter of type 'Response<any, Record<string, any>>'.
+      Type 'EnhancedPerformanceMiddleware' is missing the following properties from type 'Response<any, Record<string, any>>': status, sendStatus, links, send, and 90 more.
+  Overload 2 of 2, '(this: (this: Response<any, Record<string, any>>, ...args: any[]) => Response<any, Record<string, any>>, thisArg: Response<any, Record<string, any>>): (...args: any[]) => Response<...>', gave the following error.
+    Argument of type 'this' is not assignable to parameter of type 'Response<any, Record<string, any>>'.
+      Type 'EnhancedPerformanceMiddleware' is missing the following properties from type 'Response<any, Record<string, any>>': status, sendStatus, links, send, and 90 more.
+src/middleware/enhanced-performance-middleware.ts(126,12): error TS7030: Not all code paths return a value.
+src/middleware/enhanced-performance-middleware.ts(330,13): error TS7053: Element implicitly has an 'any' type because expression of type '"duration"' can't be used to index type '{ method: string; url: string; headers: { [key: string]: string | string[] | undefined; accept?: string | undefined; "accept-encoding"?: string | undefined; "accept-language"?: string | undefined; ... 64 more ...; "www-authenticate"?: string | undefined; }; body: any; startTime: number; }'.
+  Property 'duration' does not exist on type '{ method: string; url: string; headers: { [key: string]: string | string[] | undefined; accept?: string | undefined; "accept-encoding"?: string | undefined; "accept-language"?: string | undefined; ... 64 more ...; "www-authenticate"?: string | undefined; }; body: any; startTime: number; }'.
+src/middleware/enhanced-performance-middleware.ts(331,13): error TS7053: Element implicitly has an 'any' type because expression of type '"statusCode"' can't be used to index type '{ method: string; url: string; headers: { [key: string]: string | string[] | undefined; accept?: string | undefined; "accept-encoding"?: string | undefined; "accept-language"?: string | undefined; ... 64 more ...; "www-authenticate"?: string | undefined; }; body: any; startTime: number; }'.
+  Property 'statusCode' does not exist on type '{ method: string; url: string; headers: { [key: string]: string | string[] | undefined; accept?: string | undefined; "accept-encoding"?: string | undefined; "accept-language"?: string | undefined; ... 64 more ...; "www-authenticate"?: string | undefined; }; body: any; startTime: number; }'.
+src/middleware/enhanced-performance-middleware.ts(332,13): error TS7053: Element implicitly has an 'any' type because expression of type '"responseHeaders"' can't be used to index type '{ method: string; url: string; headers: { [key: string]: string | string[] | undefined; accept?: string | undefined; "accept-encoding"?: string | undefined; "accept-language"?: string | undefined; ... 64 more ...; "www-authenticate"?: string | undefined; }; body: any; startTime: number; }'.
+  Property 'responseHeaders' does not exist on type '{ method: string; url: string; headers: { [key: string]: string | string[] | undefined; accept?: string | undefined; "accept-encoding"?: string | undefined; "accept-language"?: string | undefined; ... 64 more ...; "www-authenticate"?: string | undefined; }; body: any; startTime: number; }'.
+src/middleware/enhanced-performance-middleware.ts(418,9): error TS2322: Type 'Response<any, Record<string, any>>' is not assignable to type 'void'.
+src/middleware/fileUpload.ts(79,3): error TS2353: Object literal may only specify known properties, and 'scanForVયુસes' does not exist in type 'FileUploadConfig'.
+src/middleware/fileUpload.ts(177,26): error TS2341: Property 'client' is private and only accessible within class 'RedisService'.
+src/middleware/fileUpload.ts(212,10): error TS7030: Not all code paths return a value.
+src/middleware/fileUpload.ts(237,61): error TS7030: Not all code paths return a value.
+src/middleware/fileUpload.ts(380,24): error TS18046: 'fileError' is of type 'unknown'.
+src/middleware/fileUpload.ts(400,34): error TS2341: Property 'client' is private and only accessible within class 'RedisService'.
+src/middleware/fileUpload.ts(421,22): error TS18046: 'error' is of type 'unknown'.
+src/middleware/fileUpload.ts(429,18): error TS18046: 'error' is of type 'unknown'.
+src/middleware/fileUpload.ts(504,23): error TS7030: Not all code paths return a value.
+src/middleware/fileUpload.ts(515,45): error TS2341: Property 'client' is private and only accessible within class 'RedisService'.
+src/middleware/fileUpload.ts(537,16): error TS18046: 'error' is of type 'unknown'.
+src/middleware/fileUpload.ts(545,23): error TS7030: Not all code paths return a value.
+src/middleware/fileUpload.ts(557,24): error TS2341: Property 'client' is private and only accessible within class 'RedisService'.
+src/middleware/fileUpload.ts(570,16): error TS18046: 'error' is of type 'unknown'.
+src/middleware/gdpr-middleware.ts(35,10): error TS7030: Not all code paths return a value.
+src/middleware/gdpr-middleware.ts(498,10): error TS7030: Not all code paths return a value.
+src/middleware/gdpr-middleware.ts(544,10): error TS7030: Not all code paths return a value.
+src/middleware/i18nMiddleware.ts(182,45): error TS7030: Not all code paths return a value.
+src/middleware/i18nMiddleware.ts(244,10): error TS7030: Not all code paths return a value.
+src/middleware/performanceMiddleware.ts(41,75): error TS2339: Property 'generateRequestId' does not exist on type 'Response<any, Record<string, any>>'.
+src/middleware/performanceMiddleware.ts(44,14): error TS2339: Property 'updateMetrics' does not exist on type 'Response<any, Record<string, any>>'.
+src/middleware/performanceMiddleware.ts(57,40): error TS2345: Argument of type 'any[]' is not assignable to parameter of type '[chunk: any, encoding: BufferEncoding, cb?: (() => void) | undefined]'.
+  Target requires 2 element(s) but source may have fewer.
+src/middleware/performanceMiddleware.ts(58,14): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(this: (this: Response<any, Record<string, any>>, ...args: any[]) => Response<any, Record<string, any>>, thisArg: Response<any, Record<string, any>>): (...args: any[]) => Response<...>', gave the following error.
+    Argument of type 'this' is not assignable to parameter of type 'Response<any, Record<string, any>>'.
+      Type 'PerformanceMiddleware' is missing the following properties from type 'Response<any, Record<string, any>>': status, sendStatus, links, send, and 90 more.
+  Overload 2 of 2, '(this: (this: Response<any, Record<string, any>>, ...args: any[]) => Response<any, Record<string, any>>, thisArg: Response<any, Record<string, any>>): (...args: any[]) => Response<...>', gave the following error.
+    Argument of type 'this' is not assignable to parameter of type 'Response<any, Record<string, any>>'.
+      Type 'PerformanceMiddleware' is missing the following properties from type 'Response<any, Record<string, any>>': status, sendStatus, links, send, and 90 more.
+src/middleware/performanceMiddleware.ts(80,12): error TS7030: Not all code paths return a value.
+src/middleware/responseRateLimit.ts(50,28): error TS2339: Property 'setex' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(146,41): error TS2339: Property 'get' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(166,26): error TS2339: Property 'setex' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(183,26): error TS2339: Property 'del' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(220,50): error TS2339: Property 'get' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(223,49): error TS2339: Property 'get' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(240,42): error TS2339: Property 'get' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(274,26): error TS2339: Property 'lpush' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(278,26): error TS2339: Property 'ltrim' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(279,26): error TS2339: Property 'expire' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(282,26): error TS2339: Property 'incr' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(285,26): error TS2339: Property 'expire' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(291,42): error TS2339: Property 'get' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(293,28): error TS2339: Property 'set' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(294,28): error TS2339: Property 'expire' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(304,26): error TS2339: Property 'incr' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(305,26): error TS2339: Property 'expire' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(307,26): error TS2339: Property 'lpush' does not exist on type 'RedisService'.
+src/middleware/responseRateLimit.ts(314,26): error TS2339: Property 'ltrim' does not exist on type 'RedisService'.
+src/middleware/security.ts(214,10): error TS7030: Not all code paths return a value.
+src/middleware/security.ts(230,10): error TS7030: Not all code paths return a value.
+src/middleware/security.ts(246,10): error TS7030: Not all code paths return a value.
+src/models/bilingualSchema.ts(14,21): error TS2724: '"drizzle-orm"' has no exported member named 'one'. Did you mean 'One'?
+src/models/bilingualSchema.ts(14,26): error TS2724: '"drizzle-orm"' has no exported member named 'many'. Did you mean 'Many'?
+src/models/bilingualSchema.ts(15,23): error TS2307: Cannot find module './schema' or its corresponding type declarations.
+src/models/vector-schema.ts(10,3): error TS2305: Module '"drizzle-orm/pg-core"' has no exported member 'sql'.
+src/models/vector-schema.ts(86,8): error TS2339: Property 'unique' does not exist on type 'IndexBuilder'.
+src/queues/workshopAnalysisQueue.ts(9,10): error TS2724: '"../services/anonymizationService"' has no exported member named 'anonymizationService'. Did you mean 'AnonymizationService'?
+src/queues/workshopAnalysisQueue.ts(10,10): error TS2724: '"../services/workshopIntelligenceService"' has no exported member named 'workshopIntelligenceService'. Did you mean 'WorkshopIntelligenceService'?
+src/queues/workshopAnalysisQueue.ts(13,3): error TS2724: '"../models/postgresql-schema"' has no exported member named 'workshopLlmAnalyses'. Did you mean 'workshopLLMAnalyses'?
+src/queues/workshopAnalysisQueue.ts(14,3): error TS2305: Module '"../models/postgresql-schema"' has no exported member 'analysisResults'.
+src/queues/workshopAnalysisQueue.ts(105,29): error TS7006: Parameter 'q' implicitly has an 'any' type.
+src/queues/workshopAnalysisQueue.ts(109,55): error TS7006: Parameter 'contrib' implicitly has an 'any' type.
+src/queues/workshopAnalysisQueue.ts(111,39): error TS7006: Parameter 'ans' implicitly has an 'any' type.
+src/routes/api/analysis.ts(76,58): error TS7030: Not all code paths return a value.
+src/routes/api/analysis.ts(144,52): error TS7030: Not all code paths return a value.
+src/routes/api/analysis.ts(164,57): error TS2339: Property 'getJobStatus' does not exist on type 'EnhancedLLMAnalysisWorker'.
+src/routes/api/analysis.ts(206,53): error TS7030: Not all code paths return a value.
+src/routes/api/analysis.ts(231,37): error TS2339: Property 'cancelJob' does not exist on type 'EnhancedLLMAnalysisWorker'.
+src/routes/api/analysis.ts(250,41): error TS7030: Not all code paths return a value.
+src/routes/api/analysis.ts(320,53): error TS7030: Not all code paths return a value.
+src/routes/api/analysis.ts(334,17): error TS2353: Object literal may only specify known properties, and 'firstName' does not exist in type '{ id?: boolean | undefined; openId?: boolean | undefined; name?: boolean | undefined; email?: boolean | undefined; password?: boolean | undefined; loginMethod?: boolean | undefined; ... 8 more ...; deletedAt?: boolean | undefined; }'.
+src/routes/api/analysis.ts(350,18): error TS2551: Property 'questionnaire' does not exist on type '{ id: string; metadata: { model: string; promptVersion: string; tokensUsed: number; processingTimeMs: number; confidenceScore: number; responseCount: number; anonymizationLevel: "partial" | "full"; } | null; ... 8 more ...; triggeredBy: string | null; }'. Did you mean 'questionnaireId'?
+src/routes/api/analysis.ts(381,66): error TS7030: Not all code paths return a value.
+src/routes/api/analysis.ts(443,61): error TS7030: Not all code paths return a value.
+src/routes/api/analysis.ts(491,67): error TS2339: Property 'answer' does not exist on type 'Promise<{ id: string; questionId: string; answer: any; metadata: any; anonymizationResult: AnonymizationResult; }>'.
+src/routes/api/analysis.ts(501,45): error TS2339: Property 'titleI18n' does not exist on type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; workshopId: string | null; settings: { anonymous: boolean; ... 5 more ...; questionStyle: "first_person_plural" | "third_person"; } | null; ... 5 more ...; instructions: unknown; }'.
+src/routes/api/analysis.ts(573,39): error TS7030: Not all code paths return a value.
+src/routes/api/analysis.ts(603,7): error TS2345: Argument of type '{ where: SQL<unknown>; } | {}' is not assignable to parameter of type 'KnownKeysOnly<{ where: SQL<unknown>; }, DBQueryConfig<"many", true, ExtractTablesWithRelations<{ users: PgTableWithColumns<{ name: "users"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "string"; columnType: "PgUUID"; data: string; ... 9 more ...; generated: undefined; }, {},...'.
+  Property 'where' is missing in type '{}' but required in type 'KnownKeysOnly<{ where: SQL<unknown>; }, DBQueryConfig<"many", true, ExtractTablesWithRelations<{ users: PgTableWithColumns<{ name: "users"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "string"; columnType: "PgUUID"; data: string; ... 9 more ...; generated: undefined; }, {},...'.
+src/routes/api/analysis.ts(620,44): error TS2367: This comparison appears to be unintentional because the types '"thematic" | "clusters" | "contradictions" | "insights" | "recommendations"' and '"sentiment"' have no overlap.
+src/routes/api/analysis.ts(649,45): error TS7030: Not all code paths return a value.
+src/routes/api/analysis.ts(681,96): error TS2339: Property 'answer' does not exist on type 'Promise<{ id: string; questionId: string; answer: any; metadata: any; anonymizationResult: AnonymizationResult; }>'.
+src/routes/api/analysis.ts(696,34): error TS2339: Property 'titleI18n' does not exist on type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; workshopId: string | null; settings: { anonymous: boolean; ... 5 more ...; questionStyle: "first_person_plural" | "third_person"; } | null; ... 5 more ...; instructions: unknown; }'.
+src/routes/api/analysis.ts(742,57): error TS7030: Not all code paths return a value.
+src/routes/api/analysis.ts(778,67): error TS2339: Property 'answer' does not exist on type 'Promise<{ id: string; questionId: string; answer: any; metadata: any; anonymizationResult: AnonymizationResult; }>'.
+src/routes/api/analysis.ts(796,34): error TS2339: Property 'titleI18n' does not exist on type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; workshopId: string | null; settings: { anonymous: boolean; ... 5 more ...; questionStyle: "first_person_plural" | "third_person"; } | null; ... 5 more ...; instructions: unknown; }'.
+src/routes/api/analysis.ts(797,41): error TS2551: Property 'instructionsI18n' does not exist on type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; workshopId: string | null; settings: { anonymous: boolean; ... 5 more ...; questionStyle: "first_person_plural" | "third_person"; } | null; ... 5 more ...; instructions: unknown; }'. Did you mean 'instructions'?
+src/routes/api/email-integration.ts(22,3): error TS7030: Not all code paths return a value.
+src/routes/api/email-integration.ts(92,3): error TS7030: Not all code paths return a value.
+src/routes/api/email-integration.ts(147,3): error TS7030: Not all code paths return a value.
+src/routes/api/email-integration.ts(205,3): error TS7030: Not all code paths return a value.
+src/routes/api/email-integration.ts(250,3): error TS7030: Not all code paths return a value.
+src/routes/api/email-integration.ts(285,3): error TS7030: Not all code paths return a value.
+src/routes/api/email-integration.ts(321,3): error TS7030: Not all code paths return a value.
+src/routes/api/email-integration.ts(359,3): error TS7030: Not all code paths return a value.
+src/routes/api/email-integration.ts(397,3): error TS7030: Not all code paths return a value.
+src/routes/api/email-integration.ts(451,3): error TS7030: Not all code paths return a value.
+src/routes/api/email-integration.ts(489,3): error TS7030: Not all code paths return a value.
+src/routes/api/enhanced-performance.ts(98,25): error TS2339: Property 'uptime' does not exist on type 'DetailedMetrics'.
+src/routes/api/enhanced-performance.ts(115,37): error TS2339: Property 'totalSize' does not exist on type '{ hitCount: number; missCount: number; hitRate: number; size: number; maxSize: number; evictions: number; memoryUsage: number; hotKeys: number; }'.
+src/routes/api/enhanced-performance.ts(343,32): error TS2339: Property 'uptime' does not exist on type 'DetailedMetrics'.
+src/routes/api/files-signed.ts(13,23): error TS7030: Not all code paths return a value.
+src/routes/api/files-signed.ts(25,41): error TS2341: Property 'client' is private and only accessible within class 'RedisService'.
+src/routes/api/files-signed.ts(97,16): error TS18046: 'error' is of type 'unknown'.
+src/routes/api/files.ts(75,16): error TS7030: Not all code paths return a value.
+src/routes/api/files.ts(103,7): error TS18048: 'req.user' is possibly 'undefined'.
+src/routes/api/files.ts(112,9): error TS2339: Property 'fileMetadata' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/api/files.ts(118,16): error TS18046: 'error' is of type 'unknown'.
+src/routes/api/files.ts(153,13): error TS2304: Cannot find name 'imports'.
+src/routes/api/files.ts(250,3): error TS7030: Not all code paths return a value.
+src/routes/api/files.ts(330,18): error TS18046: 'error' is of type 'unknown'.
+src/routes/api/files.ts(345,24): error TS2339: Property 'fileMetadata' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/api/files.ts(357,18): error TS18046: 'error' is of type 'unknown'.
+src/routes/api/files.ts(370,3): error TS7030: Not all code paths return a value.
+src/routes/api/files.ts(374,24): error TS2339: Property 'fileMetadata' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/api/files.ts(415,13): error TS2339: Property 'fileMetadata' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/api/files.ts(420,9): error TS18046: 'error' is of type 'unknown'.
+src/routes/api/files.ts(427,18): error TS18046: 'error' is of type 'unknown'.
+src/routes/api/files.ts(437,18): error TS7030: Not all code paths return a value.
+src/routes/api/files.ts(452,24): error TS2339: Property 'error' does not exist on type '{ id: string; originalName: string; fileName: string; fileSize: number; mimeType: string; url: string; previewUrl?: string | undefined; thumbnailUrl?: string | undefined; }'.
+src/routes/api/files.ts(504,16): error TS18046: 'error' is of type 'unknown'.
+src/routes/api/files.ts(525,3): error TS7030: Not all code paths return a value.
+src/routes/api/files.ts(535,24): error TS2339: Property 'fileMetadata' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/api/files.ts(553,14): error TS2345: Argument of type '{ updatedAt: Date; metadata?: Record<string, any> | undefined; isPublic?: boolean | undefined; accessLevel?: "workshop" | "private" | "organization" | "public" | undefined; tags?: string[] | undefined; expiresAt?: string | undefined; }' is not assignable to parameter of type '{ originalName?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | undefined; fileName?: string | SQL<...> | PgColumn<...> | undefined; ... 27 more ...; deletedBy?: string | ... 3 more ... | undefined; }'.
+  Types of property 'expiresAt' are incompatible.
+    Type 'string | undefined' is not assignable to type 'Date | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | null | undefined'.
+      Type 'string' is not assignable to type 'Date | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | null | undefined'.
+src/routes/api/files.ts(573,18): error TS18046: 'error' is of type 'unknown'.
+src/routes/api/files.ts(586,3): error TS7030: Not all code paths return a value.
+src/routes/api/files.ts(588,24): error TS2339: Property 'fileMetadata' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/api/files.ts(621,18): error TS18046: 'error' is of type 'unknown'.
+src/routes/api/files.ts(647,3): error TS7030: Not all code paths return a value.
+src/routes/api/files.ts(657,24): error TS2339: Property 'fileMetadata' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/api/files.ts(709,18): error TS18046: 'error' is of type 'unknown'.
+src/routes/api/files.ts(719,35): error TS7030: Not all code paths return a value.
+src/routes/api/files.ts(823,16): error TS18046: 'error' is of type 'unknown'.
+src/routes/api/files.ts(837,24): error TS2339: Property 'fileMetadata' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/routes/api/files.ts(879,42): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/routes/api/files.ts(908,18): error TS18046: 'error' is of type 'unknown'.
+src/routes/api/performance.ts(101,37): error TS2339: Property 'totalSize' does not exist on type '{ hitCount: number; missCount: number; hitRate: number; size: number; maxSize: number; evictions: number; }'.
+src/routes/api/performance.ts(136,35): error TS7030: Not all code paths return a value.
+src/routes/api/performance.ts(180,23): error TS7030: Not all code paths return a value.
+src/routes/api/performance.ts(333,34): error TS7030: Not all code paths return a value.
+src/routes/api/preview.ts(43,32): error TS7030: Not all code paths return a value.
+src/routes/api/preview.ts(85,3): error TS7030: Not all code paths return a value.
+src/routes/api/preview.ts(131,3): error TS7030: Not all code paths return a value.
+src/routes/api/preview.ts(440,3): error TS7030: Not all code paths return a value.
+src/routes/api/preview.ts(486,3): error TS7030: Not all code paths return a value.
+src/routes/api/preview.ts(635,3): error TS7030: Not all code paths return a value.
+src/routes/api/preview.ts(708,3): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires-new.ts(134,10): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires-new.ts(197,3): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires-new.ts(302,3): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires-new.ts(371,3): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires-new.ts(412,3): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires-new.ts(458,3): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires-new.ts(516,3): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires-new.ts(562,3): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires-new.ts(603,3): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires-new.ts(650,3): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires-new.ts(696,3): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires-new.ts(749,3): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires-new.ts(797,3): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires-new.ts(844,3): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires-new.ts(913,3): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires.ts(77,14): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(def: { icon: string | null; collapsed?: boolean | undefined; showProgress?: boolean | undefined; }): ZodDefault<ZodObject<{ collapsed: ZodDefault<ZodBoolean>; showProgress: ZodDefault<...>; icon: ZodNullable<...>; }, "strip", ZodTypeAny, { ...; }, { ...; }>>', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type '{ icon: string | null; collapsed?: boolean | undefined; showProgress?: boolean | undefined; }'.
+      Property 'icon' is missing in type '{}' but required in type '{ icon: string | null; collapsed?: boolean | undefined; showProgress?: boolean | undefined; }'.
+  Overload 2 of 2, '(def: () => { icon: string | null; collapsed?: boolean | undefined; showProgress?: boolean | undefined; }): ZodDefault<ZodObject<{ collapsed: ZodDefault<ZodBoolean>; showProgress: ZodDefault<...>; icon: ZodNullable<...>; }, "strip", ZodTypeAny, { ...; }, { ...; }>>', gave the following error.
+    Argument of type '{}' is not assignable to parameter of type '() => { icon: string | null; collapsed?: boolean | undefined; showProgress?: boolean | undefined; }'.
+      Type '{}' provides no match for the signature '(): { icon: string | null; collapsed?: boolean | undefined; showProgress?: boolean | undefined; }'.
+src/routes/api/questionnaires.ts(179,30): error TS2345: Argument of type 'string | ParsedQs | (string | ParsedQs)[]' is not assignable to parameter of type 'string'.
+  Type 'ParsedQs' is not assignable to type 'string'.
+src/routes/api/questionnaires.ts(180,31): error TS2345: Argument of type 'string | ParsedQs | (string | ParsedQs)[]' is not assignable to parameter of type 'string'.
+  Type 'ParsedQs' is not assignable to type 'string'.
+src/routes/api/questionnaires.ts(186,23): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "status"; tableName: "questionnaires"; dataType: "string"; columnType: "PgEnumColumn"; data: "draft" | "published" | "review" | "closed" | "analyzed"; driverParam: string; ... 8 more ...; generated: undefined; }, {}, {}>, right: "draft" | ... 4 more ... | "analyzed"): SQL<...>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type '"draft" | "published" | SQLWrapper | "review" | "closed" | "analyzed"'.
+  Overload 2 of 3, '(left: Aliased<string>, right: string | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "status"; tableName: "questionnaires"; dataType: "string"; columnType: "PgEnumColumn"; data: "draft" | "published" | "review" | "closed" | "analyzed"; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<string>'.
+      Type 'PgColumn<{ name: "status"; tableName: "questionnaires"; dataType: "string"; columnType: "PgEnumColumn"; data: "draft" | "published" | "review" | "closed" | "analyzed"; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<string>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "status"; tableName: "questionnaires"; dataType: "string"; columnType: "PgEnumColumn"; data: "draft" | "published" | "review" | "closed" | "analyzed"; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+src/routes/api/questionnaires.ts(207,11): error TS2353: Object literal may only specify known properties, and '_count' does not exist in type '{ workshop?: true | { columns?: { id?: boolean | undefined; slug?: boolean | undefined; titleI18n?: boolean | undefined; subtitleI18n?: boolean | undefined; descriptionI18n?: boolean | undefined; ... 21 more ...; deletedAt?: boolean | undefined; } | undefined; with?: { ...; } | undefined; extras?: Record<...> | ... ...'.
+src/routes/api/questionnaires.ts(213,20): error TS2345: Argument of type '(() => SQL<unknown>) | (() => boolean) | PgColumn<{ name: "id"; tableName: "questionnaires"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, { ...; }> | ... 15 more ... | undefined' is not assignable to parameter of type 'SQLWrapper | AnyColumn'.
+  Type 'undefined' is not assignable to type 'SQLWrapper | AnyColumn'.
+src/routes/api/questionnaires.ts(214,19): error TS2345: Argument of type '(() => SQL<unknown>) | (() => boolean) | PgColumn<{ name: "id"; tableName: "questionnaires"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, { ...; }> | ... 15 more ... | undefined' is not assignable to parameter of type 'SQLWrapper | AnyColumn'.
+  Type 'undefined' is not assignable to type 'SQLWrapper | AnyColumn'.
+src/routes/api/questionnaires.ts(218,31): error TS2339: Property 'count' does not exist on type 'RelationalQueryBuilder<ExtractTablesWithRelations<{ users: PgTableWithColumns<{ name: "users"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefine...'.
+src/routes/api/questionnaires.ts(242,20): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires.ts(260,9): error TS2353: Object literal may only specify known properties, and '_count' does not exist in type '{ workshop?: true | { columns?: { id?: boolean | undefined; slug?: boolean | undefined; titleI18n?: boolean | undefined; subtitleI18n?: boolean | undefined; descriptionI18n?: boolean | undefined; ... 21 more ...; deletedAt?: boolean | undefined; } | undefined; with?: { ...; } | undefined; extras?: Record<...> | ... ...'.
+src/routes/api/questionnaires.ts(282,18): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires.ts(304,8): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { createdBy: string | SQL<unknown> | Placeholder<string, any>; title: unknown; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; status?: "draft" | ... 6 more ... | undefined; ... 7 more ...; instructions?: unknown; }): PgInsertBase<...>', gave the following error.
+    Type '{ anonymous: boolean; requireConsent: boolean; closeAfterWorkshop: boolean; showAllQuestions: boolean; allowEdit: boolean; questionStyle: "first_person_plural" | "third_person"; maxResponses?: number | undefined; }' is not assignable to type 'SQL<unknown> | Placeholder<string, any> | { anonymous: boolean; requireConsent: boolean; maxResponses: number | null; closeAfterWorkshop: boolean; showAllQuestions: boolean; allowEdit: boolean; questionStyle: "first_person_plural" | "third_person"; } | null | undefined'.
+      Type '{ anonymous: boolean; requireConsent: boolean; closeAfterWorkshop: boolean; showAllQuestions: boolean; allowEdit: boolean; questionStyle: "first_person_plural" | "third_person"; maxResponses?: number | undefined; }' is not assignable to type '{ anonymous: boolean; requireConsent: boolean; maxResponses: number | null; closeAfterWorkshop: boolean; showAllQuestions: boolean; allowEdit: boolean; questionStyle: "first_person_plural" | "third_person"; }'.
+        Types of property 'maxResponses' are incompatible.
+          Type 'number | undefined' is not assignable to type 'number | null'.
+            Type 'undefined' is not assignable to type 'number | null'.
+  Overload 2 of 2, '(values: { createdBy: string | SQL<unknown> | Placeholder<string, any>; title: unknown; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; status?: "draft" | ... 6 more ... | undefined; ... 7 more ...; instructions?: unknown; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ createdBy: string | SQL<unknown> | Placeholder<string, any>; title: unknown; id?: string | SQL<unknown> | Placeholder<string, any> | undefined; status?: "draft" | ... 6 more ... | undefined; ... 7 more ...; instructions?: unknown; }[]'.
+src/routes/api/questionnaires.ts(337,30): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires.ts(401,43): error TS2339: Property 'addJob' does not exist on type '{ readonly instance: LLMAnalysisWorker; }'.
+src/routes/api/questionnaires.ts(434,29): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires.ts(508,27): error TS7030: Not all code paths return a value.
+src/routes/api/questionnaires.ts(563,8): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { questionnaireId: string | SQL<unknown> | Placeholder<string, any>; questionId: string | SQL<unknown> | Placeholder<string, any>; answer: unknown; id?: string | SQL<...> | Placeholder<...> | undefined; ... 4 more ...; submittedAt?: Date | ... 2 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Argument of type '{ id: string; questionId: string; userId: any; enrollmentId: string | undefined; answer: any; metadata: { ipHash: string; userAgentHash: string; timeSpentMs: any; editCount: number; }; }' is not assignable to parameter of type '{ questionnaireId: string | SQL<unknown> | Placeholder<string, any>; questionId: string | SQL<unknown> | Placeholder<string, any>; answer: unknown; id?: string | SQL<...> | Placeholder<...> | undefined; ... 4 more ...; submittedAt?: Date | ... 2 more ... | undefined; }'.
+      Property 'questionnaireId' is missing in type '{ id: string; questionId: string; userId: any; enrollmentId: string | undefined; answer: any; metadata: { ipHash: string; userAgentHash: string; timeSpentMs: any; editCount: number; }; }' but required in type '{ questionnaireId: string | SQL<unknown> | Placeholder<string, any>; questionId: string | SQL<unknown> | Placeholder<string, any>; answer: unknown; id?: string | SQL<...> | Placeholder<...> | undefined; ... 4 more ...; submittedAt?: Date | ... 2 more ... | undefined; }'.
+  Overload 2 of 2, '(values: { questionnaireId: string | SQL<unknown> | Placeholder<string, any>; questionId: string | SQL<unknown> | Placeholder<string, any>; answer: unknown; id?: string | SQL<...> | Placeholder<...> | undefined; ... 4 more ...; submittedAt?: Date | ... 2 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ questionnaireId: string | SQL<unknown> | Placeholder<string, any>; questionId: string | SQL<unknown> | Placeholder<string, any>; answer: unknown; id?: string | SQL<...> | Placeholder<...> | undefined; ... 4 more ...; submittedAt?: Date | ... 2 more ... | undefined; }[]'.
+src/routes/api/questionnaires.ts(570,26): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/routes/api/questionnaires.ts(594,35): error TS7030: Not all code paths return a value.
+src/routes/api/workshop-intelligence.ts(282,10): error TS7030: Not all code paths return a value.
+src/routes/api/workshops.ts(85,10): error TS7030: Not all code paths return a value.
+src/routes/api/workshops.ts(109,10): error TS7030: Not all code paths return a value.
+src/routes/api/workshops.ts(176,22): error TS18048: 'filters.offset' is possibly 'undefined'.
+src/routes/api/workshops.ts(176,39): error TS18048: 'filters.limit' is possibly 'undefined'.
+src/routes/api/workshops.ts(195,3): error TS7030: Not all code paths return a value.
+src/routes/api/workshops.ts(229,3): error TS7030: Not all code paths return a value.
+src/routes/api/workshops.ts(265,3): error TS7030: Not all code paths return a value.
+src/routes/api/workshops.ts(313,3): error TS7030: Not all code paths return a value.
+src/routes/api/workshops.ts(349,3): error TS7030: Not all code paths return a value.
+src/routes/auth.ts(103,15): error TS7030: Not all code paths return a value.
+src/routes/auth.ts(183,15): error TS7030: Not all code paths return a value.
+src/routes/auth.ts(272,15): error TS7030: Not all code paths return a value.
+src/routes/auth.ts(335,15): error TS7030: Not all code paths return a value.
+src/routes/auth.ts(373,15): error TS7030: Not all code paths return a value.
+src/routes/auth.ts(410,15): error TS7030: Not all code paths return a value.
+src/routes/auth.ts(507,15): error TS7030: Not all code paths return a value.
+src/routes/enrollments.ts(21,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/routes/enrollments.ts(58,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/routes/enrollments.ts(133,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/routes/enrollments.ts(214,7): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/routes/enrollments.ts(273,72): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/routes/enrollments.ts(339,9): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/routes/enrollments.ts(418,9): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/routes/public.ts(52,35): error TS7030: Not all code paths return a value.
+src/routes/public.ts(106,42): error TS7030: Not all code paths return a value.
+src/routes/public.ts(125,29): error TS2339: Property 'questionGroups' does not exist on type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; deletedAt: Date | null; workshopId: string | null; ... 5 more ...; createdBy: string; }'.
+src/routes/public.ts(125,49): error TS7006: Parameter 'group' implicitly has an 'any' type.
+src/routes/public.ts(130,41): error TS7006: Parameter 'question' implicitly has an 'any' type.
+src/routes/public.ts(166,7): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'number | undefined'.
+  Type 'string' is not assignable to type 'number'.
+src/routes/public.ts(197,9): error TS2322: Type 'string | undefined' is not assignable to type 'number | undefined'.
+  Type 'string' is not assignable to type 'number'.
+src/routes/public.ts(236,9): error TS2322: Type 'string | undefined' is not assignable to type 'number | undefined'.
+  Type 'string' is not assignable to type 'number'.
+src/routes/public.ts(262,34): error TS7030: Not all code paths return a value.
+src/routes/public.ts(282,9): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'number | undefined'.
+  Type 'string' is not assignable to type 'number'.
+src/routes/public.ts(296,7): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'number | undefined'.
+  Type 'string' is not assignable to type 'number'.
+src/routes/public.ts(324,9): error TS2322: Type 'string | undefined' is not assignable to type 'number | undefined'.
+  Type 'string' is not assignable to type 'number'.
+src/routes/public.ts(355,7): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'number | undefined'.
+  Type 'string' is not assignable to type 'number'.
+src/routes/public.ts(376,38): error TS7030: Not all code paths return a value.
+src/routes/public.ts(381,70): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'number | undefined'.
+  Type 'string' is not assignable to type 'number'.
+src/routes/public.ts(406,48): error TS7030: Not all code paths return a value.
+src/routes/public.ts(424,127): error TS2339: Property 'title' does not exist on type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; deletedAt: Date | null; workshopId: string | null; ... 5 more ...; createdBy: string; }'.
+src/routes/public.ts(425,125): error TS2339: Property 'title' does not exist on type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; deletedAt: Date | null; workshopId: string | null; ... 5 more ...; createdBy: string; }'.
+src/routes/responses.ts(16,10): error TS2724: '"../services/authService"' has no exported member named 'authService'. Did you mean 'AuthService'?
+src/routes/responses.ts(60,3): error TS7030: Not all code paths return a value.
+src/routes/responses.ts(89,13): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'number' is not assignable to parameter of type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<number>, right: number | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<number>'.
+      Type 'PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<number>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+src/routes/responses.ts(185,11): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/routes/responses.ts(207,26): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/routes/responses.ts(276,3): error TS7030: Not all code paths return a value.
+src/routes/responses.ts(330,9): error TS2367: This comparison appears to be unintentional because the types 'string | null' and 'number' have no overlap.
+src/routes/responses.ts(342,26): error TS2339: Property 'status' does not exist on type '{ id: string; metadata: { ipHash: string; userAgentHash: string; timeSpentMs: number; editCount: number; } | null; updatedAt: Date; userId: string | null; questionnaireId: string; questionId: string; enrollmentId: string | null; answer: unknown; submittedAt: Date; question: { ...; }; }'.
+src/routes/responses.ts(383,28): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/routes/responses.ts(400,36): error TS2339: Property 'status' does not exist on type '{ id: string; metadata: { ipHash: string; userAgentHash: string; timeSpentMs: number; editCount: number; } | null; updatedAt: Date; userId: string | null; questionnaireId: string; questionId: string; enrollmentId: string | null; answer: unknown; submittedAt: Date; question: { ...; }; }'.
+src/routes/responses.ts(438,3): error TS7030: Not all code paths return a value.
+src/routes/responses.ts(449,32): error TS2345: Argument of type 'string | ParsedQs | (string | ParsedQs)[]' is not assignable to parameter of type 'string'.
+  Type 'ParsedQs' is not assignable to type 'string'.
+src/routes/responses.ts(450,33): error TS2345: Argument of type 'string | ParsedQs | (string | ParsedQs)[]' is not assignable to parameter of type 'string'.
+  Type 'ParsedQs' is not assignable to type 'string'.
+src/routes/responses.ts(475,9): error TS2367: This comparison appears to be unintentional because the types 'string' and 'number' have no overlap.
+src/routes/responses.ts(490,11): error TS2322: Type '{ id: Aliased<string>; email: Aliased<string>; name: Aliased<string>; } | null' is not assignable to type 'SQL<unknown> | Aliased<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | PgTable<TableConfig> | SelectedFieldsFlat<...>'.
+  Type 'null' is not assignable to type 'SQL<unknown> | Aliased<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | PgTable<TableConfig> | SelectedFieldsFlat<...>'.
+src/routes/responses.ts(514,24): error TS2339: Property 'where' does not exist on type 'Omit<PgSelectBase<"responses", SelectedFields, "partial", Record<"responses", "not-null"> & { questions: "not-null"; } & { question_groups: "not-null"; } & { users: "nullable"; }, false, "where", { ...; }[], { ...; }>, "where">'.
+src/routes/responses.ts(547,13): error TS2698: Spread types may only be created from object types.
+src/routes/responses.ts(586,3): error TS7030: Not all code paths return a value.
+src/routes/responses.ts(608,16): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'number' is not assignable to parameter of type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<number>, right: number | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<number>'.
+      Type 'PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<number>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+src/routes/responses.ts(643,22): error TS2339: Property 'status' does not exist on type '{ id: string; metadata: { ipHash: string; userAgentHash: string; timeSpentMs: number; editCount: number; } | null; updatedAt: Date; userId: string | null; questionnaireId: string; questionId: string; enrollmentId: string | null; answer: unknown; submittedAt: Date; question: { ...; }; }'.
+src/routes/responses.ts(683,22): error TS2339: Property 'status' does not exist on type '{ id: string; metadata: { ipHash: string; userAgentHash: string; timeSpentMs: number; editCount: number; } | null; updatedAt: Date; userId: string | null; questionnaireId: string; questionId: string; enrollmentId: string | null; answer: unknown; submittedAt: Date; question: { ...; }; }'.
+src/routes/responses.ts(685,57): error TS2339: Property 'status' does not exist on type '{ id: string; metadata: { ipHash: string; userAgentHash: string; timeSpentMs: number; editCount: number; } | null; updatedAt: Date; userId: string | null; questionnaireId: string; questionId: string; enrollmentId: string | null; answer: unknown; submittedAt: Date; question: { ...; }; }'.
+src/routes/responses.ts(709,3): error TS7030: Not all code paths return a value.
+src/routes/responses.ts(815,3): error TS7030: Not all code paths return a value.
+src/routes/responses.ts(885,11): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/routes/responses.ts(949,30): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/routes/responses.ts(1029,3): error TS7030: Not all code paths return a value.
+src/routes/responses.ts(1091,28): error TS2339: Property 'givenAt' does not exist on type '{ id: string; createdAt: Date; updatedAt: Date; userId: string; questionnaireId: string | null; consentType: string; granted: boolean; ipAddress: string | null; userAgent: string | null; }'.
+src/routes/responses.ts(1113,3): error TS7030: Not all code paths return a value.
+src/routes/responses.ts(1146,9): error TS2367: This comparison appears to be unintentional because the types 'string | null' and 'number' have no overlap.
+src/routes/templates.ts(5,10): error TS2724: '"../middleware/auth"' has no exported member named 'authenticateToken'. Did you mean 'authenticateJWT'?
+src/routes/templates.ts(5,29): error TS2305: Module '"../middleware/auth"' has no exported member 'requireRole'.
+src/routes/templates.ts(49,28): error TS7030: Not all code paths return a value.
+src/routes/templates.ts(90,3): error TS7030: Not all code paths return a value.
+src/routes/templates.ts(120,11): error TS2322: Type 'string' is not assignable to type 'number'.
+src/routes/templates.ts(120,22): error TS18048: 'req.user' is possibly 'undefined'.
+src/routes/templates.ts(157,3): error TS7030: Not all code paths return a value.
+src/routes/templates.ts(170,9): error TS18048: 'req.user' is possibly 'undefined'.
+src/routes/templates.ts(170,9): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/routes/templates.ts(212,11): error TS18048: 'req.user' is possibly 'undefined'.
+src/routes/templates.ts(212,11): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/routes/templates.ts(266,3): error TS7030: Not all code paths return a value.
+src/routes/templates.ts(282,9): error TS18048: 'req.user' is possibly 'undefined'.
+src/routes/templates.ts(282,9): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/routes/templates.ts(316,9): error TS18048: 'req.user' is possibly 'undefined'.
+src/routes/templates.ts(316,9): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/routes/templates.ts(364,38): error TS7030: Not all code paths return a value.
+src/routes/templates.ts(430,3): error TS7030: Not all code paths return a value.
+src/routes/templates.ts(480,11): error TS18048: 'req.user' is possibly 'undefined'.
+src/routes/templates.ts(480,11): error TS2345: Argument of type 'string' is not assignable to parameter of type 'number'.
+src/routes/templates.ts(505,12): error TS7030: Not all code paths return a value.
+src/services/analysis-types.ts(70,59): error TS2769: No overload matches this call.
+  Overload 3 of 3, '(body: ChatCompletionCreateParamsBase, options?: RequestOptions | undefined): APIPromise<ChatCompletion | Stream<...>>', gave the following error.
+    Type '{ role: string; content: string; }' is not assignable to type 'ChatCompletionMessageParam'.
+      Types of property 'role' are incompatible.
+        Type 'string' is not assignable to type '"function" | "user" | "assistant" | "system" | "developer" | "tool"'.
+  Overload 3 of 3, '(body: ChatCompletionCreateParamsBase, options?: RequestOptions | undefined): APIPromise<ChatCompletion | Stream<...>>', gave the following error.
+    Type 'string' is not assignable to type '"function" | "user" | "assistant" | "system" | "developer" | "tool"'.
+src/services/analysis-types.ts(208,23): error TS2339: Property 'pl' does not exist on type '{}'.
+src/services/analysis-types.ts(208,45): error TS2339: Property 'en' does not exist on type '{}'.
+src/services/analysis-types.ts(679,37): error TS2339: Property 'pl' does not exist on type '{}'.
+src/services/analysis-types.ts(679,52): error TS2339: Property 'en' does not exist on type '{}'.
+src/services/analysis-types.ts(680,37): error TS2339: Property 'pl' does not exist on type '{}'.
+src/services/analysis-types.ts(680,52): error TS2339: Property 'en' does not exist on type '{}'.
+src/services/analysis-types.ts(759,28): error TS2339: Property 'pl' does not exist on type '{}'.
+src/services/analysis-types.ts(759,50): error TS2339: Property 'en' does not exist on type '{}'.
+src/services/analysis-types.ts(770,62): error TS18046: 'b' is of type 'unknown'.
+src/services/analysis-types.ts(770,66): error TS18046: 'a' is of type 'unknown'.
+src/services/analysis-types.ts(778,11): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ low: number; medium: number; high: number; }'.
+src/services/analysis-types.ts(779,9): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ low: number; medium: number; high: number; }'.
+src/services/analysis-types.ts(976,17): error TS2304: Cannot find name 'llmAnalyses'.
+src/services/analysis-types.ts(977,16): error TS2304: Cannot find name 'desc'.
+src/services/analysis-types.ts(977,21): error TS2304: Cannot find name 'llmAnalyses'.
+src/services/analysis-types.ts(1008,25): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ high: number; medium: number; low: number; }'.
+src/services/analysis-types.ts(1009,25): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ high: number; medium: number; low: number; }'.
+src/services/analysis-websocket.ts(15,46): error TS2304: Cannot find name 'Socket'.
+src/services/analysis-websocket.ts(43,17): error TS2345: Argument of type '(socket: AuthenticatedSocket, next: (err?: ExtendedError | undefined) => void) => Promise<void>' is not assignable to parameter of type '(socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>, next: (err?: ExtendedError | undefined) => void) => void'.
+  Types of parameters 'socket' and 'socket' are incompatible.
+    Type 'Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>' is missing the following properties from type 'AuthenticatedSocket': userId, userEmail
+src/services/analysis-websocket.ts(45,30): error TS2339: Property 'handshake' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(45,61): error TS2339: Property 'handshake' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(67,65): error TS18046: 'error' is of type 'unknown'.
+src/services/analysis-websocket.ts(77,30): error TS2345: Argument of type '(socket: AuthenticatedSocket) => void' is not assignable to parameter of type '(socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>) => void'.
+  Types of parameters 'socket' and 'socket' are incompatible.
+    Type 'Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap, any>' is missing the following properties from type 'AuthenticatedSocket': userId, userEmail
+src/services/analysis-websocket.ts(80,26): error TS2339: Property 'id' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(84,14): error TS2339: Property 'on' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(89,14): error TS2339: Property 'on' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(90,9): error TS1308: 'await' expressions are only allowed within async functions and at the top levels of modules.
+src/services/analysis-websocket.ts(94,14): error TS2339: Property 'on' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(99,14): error TS2339: Property 'on' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(100,9): error TS1308: 'await' expressions are only allowed within async functions and at the top levels of modules.
+src/services/analysis-websocket.ts(104,14): error TS2339: Property 'on' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(109,14): error TS2339: Property 'on' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(131,16): error TS2339: Property 'emit' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(139,52): error TS2339: Property 'id' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(142,14): error TS2339: Property 'join' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(145,54): error TS2339: Property 'getJobStatus' does not exist on type 'EnhancedLLMAnalysisWorker'.
+src/services/analysis-websocket.ts(146,14): error TS2339: Property 'emit' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(155,18): error TS2304: Cannot find name 'desc'.
+src/services/analysis-websocket.ts(158,14): error TS2339: Property 'emit' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(167,26): error TS2339: Property 'id' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(172,14): error TS2339: Property 'emit' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(185,35): error TS2339: Property 'id' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(192,12): error TS2339: Property 'leave' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(197,24): error TS2339: Property 'id' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(217,16): error TS2339: Property 'emit' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(222,14): error TS2339: Property 'join' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(227,18): error TS2304: Cannot find name 'desc'.
+src/services/analysis-websocket.ts(230,14): error TS2339: Property 'emit' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(244,18): error TS2304: Cannot find name 'desc'.
+src/services/analysis-websocket.ts(247,14): error TS2339: Property 'emit' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(256,26): error TS2339: Property 'id' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(265,14): error TS2339: Property 'emit' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(276,12): error TS2339: Property 'leave' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(281,24): error TS2339: Property 'id' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(300,58): error TS2339: Property 'getJobStatus' does not exist on type 'EnhancedLLMAnalysisWorker'.
+src/services/analysis-websocket.ts(301,18): error TS2339: Property 'emit' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(321,22): error TS2304: Cannot find name 'desc'.
+src/services/analysis-websocket.ts(331,22): error TS2304: Cannot find name 'desc'.
+src/services/analysis-websocket.ts(334,18): error TS2339: Property 'emit' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(349,14): error TS2339: Property 'emit' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(359,24): error TS2339: Property 'id' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(364,35): error TS2339: Property 'id' does not exist on type 'AuthenticatedSocket'.
+src/services/analysis-websocket.ts(401,56): error TS2339: Property 'getJobStatus' does not exist on type 'EnhancedLLMAnalysisWorker'.
+src/services/analysis-websocket.ts(416,22): error TS2304: Cannot find name 'desc'.
+src/services/anonymization.ts(267,36): error TS2339: Property 'anonymizedText' does not exist on type 'Promise<AnonymizationResult>'.
+src/services/anonymization.ts(573,28): error TS2345: Argument of type 'Promise<AnonymizationResult>' is not assignable to parameter of type 'string'.
+src/services/anonymization.ts(574,25): error TS2345: Argument of type 'Promise<AnonymizationResult>' is not assignable to parameter of type 'string'.
+src/services/anonymization.ts(576,23): error TS2345: Argument of type 'Promise<AnonymizationResult>' is not assignable to parameter of type 'string'.
+src/services/anonymization.ts(576,39): error TS2345: Argument of type 'Promise<AnonymizationResult>' is not assignable to parameter of type 'string'.
+src/services/anonymization.ts(607,7): error TS2322: Type 'string[]' is not assignable to type 'Promise<AnonymizationResult>[]'.
+  Type 'string' is not assignable to type 'Promise<AnonymizationResult>'.
+src/services/anonymization.ts(607,64): error TS2345: Argument of type 'Promise<AnonymizationResult>[]' is not assignable to parameter of type 'string[]'.
+  Type 'Promise<AnonymizationResult>' is not assignable to type 'string'.
+src/services/anonymization.ts(611,48): error TS2345: Argument of type 'Promise<AnonymizationResult>[]' is not assignable to parameter of type 'string[]'.
+  Type 'Promise<AnonymizationResult>' is not assignable to type 'string'.
+src/services/anonymization.ts(615,7): error TS2322: Type 'Promise<AnonymizationResult>[]' is not assignable to type 'string[]'.
+  Type 'Promise<AnonymizationResult>' is not assignable to type 'string'.
+src/services/anonymizationService.ts(70,43): error TS2551: Property 'removePI' does not exist on type 'AnonymizationService'. Did you mean 'removePII'?
+src/services/bilingualService.ts(8,3): error TS2724: '"../models/bilingualSchema"' has no exported member named 'BilingualContent'. Did you mean 'BilingualText'?
+src/services/bilingualService.ts(9,3): error TS2305: Module '"../models/bilingualSchema"' has no exported member 'validateBilingualText'.
+src/services/bilingualService.ts(10,3): error TS2724: '"../models/bilingualSchema"' has no exported member named 'getBilingualText'. Did you mean 'BilingualText'?
+src/services/caching-service.ts(282,41): error TS2558: Expected 0 type arguments, but got 1.
+src/services/caching-service.ts(531,19): error TS2339: Property 'totalSize' does not exist on type '{ hitCount: number; missCount: number; hitRate: number; size: number; maxSize: number; evictions: number; }'.
+src/services/caching-service.ts(752,50): error TS2339: Property 'totalSize' does not exist on type '{ hitCount: number; missCount: number; hitRate: number; size: number; maxSize: number; evictions: number; }'.
+src/services/database-migration.service.ts(4,27): error TS2307: Cannot find module './postgresql-database' or its corresponding type declarations.
+src/services/database-migration.service.ts(191,9): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+src/services/database-optimization-integration.ts(215,9): error TS2322: Type 'Awaited<T> | null' is not assignable to type 'T'.
+  'T' could be instantiated with an arbitrary type which could be unrelated to 'Awaited<T> | null'.
+src/services/database-optimization-integration.ts(260,9): error TS2454: Variable 'data' is used before being assigned.
+src/services/emailAnalyticsService.ts(1,10): error TS2305: Module '"../models/postgresql-schema"' has no exported member 'db'.
+src/services/emailAnalyticsService.ts(126,8): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+src/services/emailAnalyticsService.ts(126,13): error TS7006: Parameter 'result' implicitly has an 'any' type.
+src/services/emailAnalyticsService.ts(248,24): error TS7006: Parameter 'result' implicitly has an 'any' type.
+src/services/emailAnalyticsService.ts(343,10): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+src/services/emailAnalyticsService.ts(343,15): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/services/emailAnalyticsService.ts(350,10): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+src/services/emailAnalyticsService.ts(350,15): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/services/emailAnalyticsService.ts(356,45): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/services/emailAnalyticsService.ts(397,8): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+src/services/emailAnalyticsService.ts(397,13): error TS7006: Parameter 'result' implicitly has an 'any' type.
+src/services/emailAnalyticsService.ts(441,8): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+src/services/emailAnalyticsService.ts(441,13): error TS7006: Parameter 'result' implicitly has an 'any' type.
+src/services/emailAnalyticsService.ts(487,7): error TS2322: Type 'Record<string, { stats: EmailStats; metrics: EmailMetrics; }>' is not assignable to type 'Record<string, EmailStats & EmailMetrics>'.
+  'string' index signatures are incompatible.
+    Type '{ stats: EmailStats; metrics: EmailMetrics; }' is not assignable to type 'EmailStats & EmailMetrics'.
+      Type '{ stats: EmailStats; metrics: EmailMetrics; }' is missing the following properties from type 'EmailStats': total, sent, delivered, opened, and 6 more.
+src/services/emailValidationService.ts(1,10): error TS2305: Module '"../models/postgresql-schema"' has no exported member 'db'.
+src/services/emailValidationService.ts(21,11): error TS2564: Property 'disposableDomains' has no initializer and is not definitely assigned in the constructor.
+src/services/emailValidationService.ts(22,11): error TS2564: Property 'freeEmailProviders' has no initializer and is not definitely assigned in the constructor.
+src/services/emailValidationService.ts(23,11): error TS2564: Property 'suspiciousPatterns' has no initializer and is not definitely assigned in the constructor.
+src/services/emailValidationService.ts(457,12): error TS7006: Parameter 'acc' implicitly has an 'any' type.
+src/services/emailValidationService.ts(457,17): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/services/embeddings.ts(244,29): error TS2339: Property 'usage' does not exist on type 'Embedding'.
+src/services/embeddings.ts(246,25): error TS2339: Property 'usage' does not exist on type 'Embedding'.
+src/services/embeddings.ts(295,15): error TS2531: Object is possibly 'null'.
+src/services/embeddings.ts(307,33): error TS18046: 'response' is of type 'unknown'.
+src/services/embeddings.ts(308,33): error TS18046: 'response' is of type 'unknown'.
+src/services/embeddings.ts(376,12): error TS2304: Cannot find name 'embeddings'.
+src/services/embeddings.ts(377,12): error TS2304: Cannot find name 'embeddings'.
+src/services/embeddings.ts(386,9): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/services/embeddings.ts(397,17): error TS2304: Cannot find name 'embeddings'.
+src/services/embeddings.ts(405,19): error TS2304: Cannot find name 'embeddings'.
+src/services/embeddings.ts(421,23): error TS2304: Cannot find name 'embeddings'.
+src/services/embeddings.ts(441,13): error TS2339: Property 'model' does not exist on type 'VectorSearchOptions'.
+src/services/embeddings.ts(459,17): error TS2304: Cannot find name 'embeddings'.
+src/services/embeddings.ts(478,7): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
+src/services/embeddings.ts(491,11): error TS7022: 'embeddings' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/services/embeddings.ts(494,16): error TS2448: Block-scoped variable 'embeddings' used before its declaration.
+src/services/embeddings.ts(612,13): error TS2531: Object is possibly 'null'.
+src/services/embeddings.ts(652,10): error TS1205: Re-exporting a type when 'isolatedModules' is enabled requires using 'export type'.
+src/services/embeddings.ts(652,10): error TS2484: Export declaration conflicts with exported declaration of 'VectorDatabase'.
+src/services/enhanced-caching-service.ts(382,41): error TS2558: Expected 0 type arguments, but got 1.
+src/services/enhanced-caching-service.ts(457,23): error TS2339: Property 'tier' does not exist on type 'EnhancedCachingService'.
+src/services/enhanced-caching-service.ts(836,5): error TS2322: Type '{ type: string; description: string; impact: string; priority: string; }[]' is not assignable to type '{ type: string; description: string; impact: string; priority: "low" | "medium" | "high"; }[]'.
+  Type '{ type: string; description: string; impact: string; priority: string; }' is not assignable to type '{ type: string; description: string; impact: string; priority: "low" | "medium" | "high"; }'.
+    Types of property 'priority' are incompatible.
+      Type 'string' is not assignable to type '"low" | "medium" | "high"'.
+src/services/enhanced-performance-monitoring-service.ts(364,9): error TS2740: Type '{}' is missing the following properties from type '{ timestamp: Date; value: number; }[]': length, pop, push, concat, and 29 more.
+src/services/enhanced-performance-monitoring-service.ts(511,46): error TS2339: Property 'resolved' does not exist on type 'PerformanceBottleneck'.
+src/services/enhanced-performance-monitoring-service.ts(549,16): error TS2339: Property 'timestamp' does not exist on type 'OptimizationRecommendation'.
+src/services/enhanced-performance-monitoring-service.ts(549,32): error TS2339: Property 'timestamp' does not exist on type 'OptimizationRecommendation'.
+src/services/enhanced-performance-monitoring-service.ts(554,20): error TS2339: Property 'timestamp' does not exist on type 'OptimizationRecommendation'.
+src/services/enhanced-performance-monitoring-service.ts(556,18): error TS2339: Property 'timestamp' does not exist on type 'OptimizationRecommendation'.
+src/services/enhanced-performance-monitoring-service.ts(697,62): error TS2339: Property 'resolved' does not exist on type 'PerformanceBottleneck'.
+src/services/enrollmentService.ts(8,3): error TS2305: Module '"../types/validation"' has no exported member 'EnrollmentFilter'.
+src/services/enrollmentService.ts(31,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "participantId"; tableName: "enrollments"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'number' is not assignable to parameter of type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<number>, right: number | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "participantId"; tableName: "enrollments"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<number>'.
+      Type 'PgColumn<{ name: "participantId"; tableName: "enrollments"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<number>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "participantId"; tableName: "enrollments"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+src/services/enrollmentService.ts(60,10): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { workshopId: string | SQL<unknown> | Placeholder<string, any>; participantId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 12 more ...; formData?: SQL<...> | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Type 'number' is not assignable to type 'string | SQL<unknown> | Placeholder<string, any>'.
+  Overload 2 of 2, '(values: { workshopId: string | SQL<unknown> | Placeholder<string, any>; participantId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 12 more ...; formData?: SQL<...> | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ workshopId: string | SQL<unknown> | Placeholder<string, any>; participantId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 12 more ...; formData?: SQL<...> | ... 3 more ... | undefined; }[]'.
+src/services/enrollmentService.ts(77,8): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { workshopId: string | SQL<unknown> | Placeholder<string, any>; participantId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 12 more ...; formData?: SQL<...> | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Type 'number' is not assignable to type 'string | SQL<unknown> | Placeholder<string, any>'.
+  Overload 2 of 2, '(values: { workshopId: string | SQL<unknown> | Placeholder<string, any>; participantId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 12 more ...; formData?: SQL<...> | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ workshopId: string | SQL<unknown> | Placeholder<string, any>; participantId: string | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 12 more ...; formData?: SQL<...> | ... 3 more ... | undefined; }[]'.
+src/services/enrollmentService.ts(104,27): error TS2367: This comparison appears to be unintentional because the types 'string' and 'number' have no overlap.
+src/services/enrollmentService.ts(190,23): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "participantId"; tableName: "enrollments"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'number' is not assignable to parameter of type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<number>, right: number | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "participantId"; tableName: "enrollments"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<number>'.
+      Type 'PgColumn<{ name: "participantId"; tableName: "enrollments"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<number>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "participantId"; tableName: "enrollments"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+src/services/enrollmentService.ts(218,15): error TS7053: Element implicitly has an 'any' type because expression of type 'EnrollmentFilter' can't be used to index type 'PgTable<{ name: "enrollments"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "enrollments"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, {}>; ... 14 more ...; updatedAt: PgColumn<...>; ...'.
+src/services/enrollmentService.ts(219,16): error TS7053: Element implicitly has an 'any' type because expression of type 'EnrollmentFilter' can't be used to index type 'PgTable<{ name: "enrollments"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "enrollments"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, {}>; ... 14 more ...; updatedAt: PgColumn<...>; ...'.
+src/services/enrollmentService.ts(239,13): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type '{ id?: boolean | undefined; slug?: boolean | undefined; titleI18n?: boolean | undefined; subtitleI18n?: boolean | undefined; descriptionI18n?: boolean | undefined; shortDescriptionI18n?: boolean | undefined; ... 20 more ...; deletedAt?: boolean | undefined; }'.
+src/services/enrollmentService.ts(262,31): error TS2362: The left-hand side of an arithmetic operation must be of type 'any', 'number', 'bigint' or an enum type.
+src/services/enrollmentService.ts(310,27): error TS2367: This comparison appears to be unintentional because the types 'string' and 'number' have no overlap.
+src/services/enrollmentService.ts(430,7): error TS2322: Type 'string' is not assignable to type 'number'.
+src/services/enrollmentService.ts(431,7): error TS2322: Type 'string' is not assignable to type 'number'.
+src/services/enrollmentService.ts(439,11): error TS7022: 'enrollments' implicitly has type 'any' because it does not have a type annotation and is referenced directly or indirectly in its own initializer.
+src/services/enrollmentService.ts(440,17): error TS2448: Block-scoped variable 'enrollments' used before its declaration.
+src/services/enrollmentService.ts(441,22): error TS2448: Block-scoped variable 'enrollments' used before its declaration.
+src/services/enrollmentService.ts(447,13): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type '{ id?: boolean | undefined; slug?: boolean | undefined; titleI18n?: boolean | undefined; subtitleI18n?: boolean | undefined; descriptionI18n?: boolean | undefined; shortDescriptionI18n?: boolean | undefined; ... 20 more ...; deletedAt?: boolean | undefined; }'.
+src/services/export-service.ts(63,41): error TS18046: 'error' is of type 'unknown'.
+src/services/export-service.ts(85,28): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "analysisType"; tableName: "llmAnalyses"; dataType: "string"; columnType: "PgEnumColumn"; data: "thematic" | "clusters" | "contradictions" | "insights" | "recommendations"; ... 9 more ...; generated: undefined; }, {}, {}>, right: SQLWrapper | ... 4 more ... | "recommendations"): SQL<...>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type 'SQLWrapper | "thematic" | "clusters" | "contradictions" | "insights" | "recommendations"'.
+  Overload 2 of 3, '(left: Aliased<string>, right: string | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "analysisType"; tableName: "llmAnalyses"; dataType: "string"; columnType: "PgEnumColumn"; data: "thematic" | "clusters" | "contradictions" | "insights" | "recommendations"; ... 9 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<string>'.
+      Type 'PgColumn<{ name: "analysisType"; tableName: "llmAnalyses"; dataType: "string"; columnType: "PgEnumColumn"; data: "thematic" | "clusters" | "contradictions" | "insights" | "recommendations"; ... 9 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<string>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "analysisType"; tableName: "llmAnalyses"; dataType: "string"; columnType: "PgEnumColumn"; data: "thematic" | "clusters" | "contradictions" | "insights" | "recommendations"; ... 9 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+src/services/export-service.ts(95,43): error TS2339: Property 'language' does not exist on type 'PgTableWithColumns<{ name: "llmAnalyses"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "llmAnalyses"; dataType: "string"; columnType: "PgVarchar"; data: string; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, { ...; }>; ... 9 more ...; completedAt: PgColumn<......'.
+src/services/export-service.ts(109,9): error TS2353: Object literal may only specify known properties, and 'job' does not exist in type '{ questionnaire?: true | { columns?: { id?: boolean | undefined; workshopId?: boolean | undefined; title?: boolean | undefined; description?: boolean | undefined; instructions?: boolean | undefined; ... 6 more ...; updatedAt?: boolean | undefined; } | undefined; with?: { ...; } | undefined; extras?: Record<...> | .....'.
+src/services/llm-worker.ts(103,27): error TS2769: No overload matches this call.
+  Overload 1 of 8, '(options: RedisOptions): Redis', gave the following error.
+    Object literal may only specify known properties, and 'retryDelayOnFailover' does not exist in type 'RedisOptions'.
+  Overload 2 of 8, '(port: number): Redis', gave the following error.
+    Argument of type '{ host: string; port: number; password: string | undefined; db: number; retryDelayOnFailover: number; maxRetriesPerRequest: null; }' is not assignable to parameter of type 'number'.
+  Overload 3 of 8, '(path: string): Redis', gave the following error.
+    Argument of type '{ host: string; port: number; password: string | undefined; db: number; retryDelayOnFailover: number; maxRetriesPerRequest: null; }' is not assignable to parameter of type 'string'.
+src/services/llm-worker.ts(166,35): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { questionnaireId: string | SQL<unknown> | Placeholder<string, any>; analysisTypes: string[] | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<...> | Placeholder<...> | undefined; ... 15 more ...; triggeredBy?: string | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Type 'number' is not assignable to type 'string | SQL<unknown> | Placeholder<string, any> | null | undefined'.
+  Overload 2 of 2, '(values: { questionnaireId: string | SQL<unknown> | Placeholder<string, any>; analysisTypes: string[] | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<...> | Placeholder<...> | undefined; ... 15 more ...; triggeredBy?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ questionnaireId: string | SQL<unknown> | Placeholder<string, any>; analysisTypes: string[] | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<...> | Placeholder<...> | undefined; ... 15 more ...; triggeredBy?: string | ... 3 more ... | undefined; }[]'.
+src/services/llm-worker.ts(199,7): error TS2322: Type 'string | number | true | object' is not assignable to type 'number'.
+  Type 'string' is not assignable to type 'number'.
+src/services/llm-worker.ts(298,13): error TS2769: No overload matches this call.
+  Overload 2 of 2, '(values: { questionnaireId: string | SQL<unknown> | Placeholder<string, any>; analysisType: SQL<unknown> | "thematic" | "clusters" | "contradictions" | "insights" | "recommendations" | Placeholder<...>; ... 8 more ...; triggeredBy?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ questionnaireId: string | SQL<unknown> | Placeholder<string, any>; analysisType: SQL<unknown> | "thematic" | "clusters" | "contradictions" | "insights" | "recommendations" | Placeholder<...>; ... 8 more ...; triggeredBy?: string | ... 3 more ... | undefined; }[]'.
+src/services/llm-worker.ts(322,13): error TS2769: No overload matches this call.
+  Overload 2 of 2, '(values: { questionnaireId: string | SQL<unknown> | Placeholder<string, any>; analysisType: SQL<unknown> | "thematic" | "clusters" | "contradictions" | "insights" | "recommendations" | Placeholder<...>; ... 8 more ...; triggeredBy?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ questionnaireId: string | SQL<unknown> | Placeholder<string, any>; analysisType: SQL<unknown> | "thematic" | "clusters" | "contradictions" | "insights" | "recommendations" | Placeholder<...>; ... 8 more ...; triggeredBy?: string | ... 3 more ... | undefined; }[]'.
+src/services/llm-worker.ts(525,31): error TS2339: Property 'id' does not exist on type '{ jobId: string; }'.
+src/services/llm-worker.ts(529,30): error TS2339: Property 'id' does not exist on type '{ jobId: string; data: JobProgress; }'.
+src/services/llm-worker.ts(615,5): error TS2740: Type '{ [index: string]: number; }' is missing the following properties from type '{ waiting: number; active: number; completed: number; failed: number; delayed: number; paused: number; }': waiting, active, completed, failed, and 2 more.
+src/services/llmAnalysisService.ts(8,34): error TS2724: '"./anonymizationService"' has no exported member named 'anonymizationService'. Did you mean 'AnonymizationService'?
+src/services/offlineStorage.ts(439,9): error TS2698: Spread types may only be created from object types.
+src/services/pdfTemplateParser.ts(154,27): error TS2349: This expression is not callable.
+  Type 'typeof import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/pdf-parse/dist/pdf-parse/esm/index")' has no call signatures.
+src/services/pdfTemplateParser.ts(237,9): error TS18004: No value exists in scope for the shorthand property 'total_questions'. Either declare one or provide an initializer.
+src/services/performance-monitoring-service.ts(188,9): error TS2740: Type '{}' is missing the following properties from type '{ timestamp: Date; value: number; }[]': length, pop, push, concat, and 29 more.
+src/services/performance-monitoring-service.ts(375,5): error TS2322: Type '{ category: string; priority: string; recommendation: string; expectedImpact: string; }[]' is not assignable to type '{ category: "memory" | "performance" | "reliability" | "scalability"; priority: "low" | "medium" | "high" | "critical"; recommendation: string; expectedImpact: string; }[]'.
+  Type '{ category: string; priority: string; recommendation: string; expectedImpact: string; }' is not assignable to type '{ category: "memory" | "performance" | "reliability" | "scalability"; priority: "low" | "medium" | "high" | "critical"; recommendation: string; expectedImpact: string; }'.
+    Types of property 'category' are incompatible.
+      Type 'string' is not assignable to type '"memory" | "performance" | "reliability" | "scalability"'.
+src/services/query-caching-service.ts(185,40): error TS2345: Argument of type 'CacheEntry<any> | undefined' is not assignable to parameter of type 'Partial<CacheEntry<any>>'.
+  Type 'undefined' is not assignable to type 'Partial<CacheEntry<any>>'.
+src/services/query-caching-service.ts(186,39): error TS2345: Argument of type 'CacheEntry<any> | undefined' is not assignable to parameter of type 'CacheEntry<any>'.
+  Type 'undefined' is not assignable to type 'CacheEntry<any>'.
+src/services/questionnaireCrudService.ts(160,9): error TS1117: An object literal cannot have multiple properties with the same name.
+src/services/questionnaireCrudService.ts(250,9): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/services/questionnaireCrudService.ts(251,9): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/services/questionnaireCrudService.ts(252,9): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+src/services/questionnaireCrudService.ts(263,9): error TS2322: Type '{}' is not assignable to type 'Record<string, string>'.
+  Index signature for type 'string' is missing in type '{}'.
+src/services/questionnaireCrudService.ts(365,38): error TS2322: Type '{ anonymous?: boolean | undefined; require_consent?: boolean | undefined; max_responses?: number | null | undefined; close_after_workshop?: boolean | undefined; show_all_questions?: boolean | undefined; allow_edit?: boolean | undefined; question_style?: "first_person_plural" | ... 1 more ... | undefined; }' is not assignable to type '{ anonymous: boolean; require_consent: boolean; max_responses: number | null; close_after_workshop: boolean; show_all_questions: boolean; allow_edit: boolean; question_style: "first_person_plural" | "third_person"; }'.
+  Types of property 'anonymous' are incompatible.
+    Type 'boolean | undefined' is not assignable to type 'boolean'.
+      Type 'undefined' is not assignable to type 'boolean'.
+src/services/questionnaireCrudService.ts(605,7): error TS2322: Type '{ creator: { id: string | null; name: string | null; email: string | null; }; workshop: { id: string; slug: string | null; titleI18n: unknown; } | undefined; questionGroupCount: number; questionCount: number; ... 17 more ...; workshopTitleI18n: unknown; }[]' is not assignable to type '({ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; deletedAt: Date | null; workshopId: string | null; ... 5 more ...; createdBy: string; } & { ...; })[]'.
+  Type '{ creator: { id: string | null; name: string | null; email: string | null; }; workshop: { id: string; slug: string | null; titleI18n: unknown; } | undefined; questionGroupCount: number; questionCount: number; ... 17 more ...; workshopTitleI18n: unknown; }' is not assignable to type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; deletedAt: Date | null; workshopId: string | null; ... 5 more ...; createdBy: string; } & { ...; }'.
+    Type '{ creator: { id: string | null; name: string | null; email: string | null; }; workshop: { id: string; slug: string | null; titleI18n: unknown; } | undefined; questionGroupCount: number; questionCount: number; ... 17 more ...; workshopTitleI18n: unknown; }' is not assignable to type '{ creator: { id: string; name: string; email: string; }; workshop?: { id: string; slug: string; titleI18n: Record<string, string>; } | undefined; questionGroupCount: number; questionCount: number; responseCount: number; }'.
+      The types of 'creator.id' are incompatible between these types.
+        Type 'string | null' is not assignable to type 'string'.
+          Type 'null' is not assignable to type 'string'.
+src/services/questionnaireCrudService.ts(697,5): error TS2322: Type '{ creator: { id: string | null; name: string | null; email: string | null; }; questionGroupCount: number; questionCount: number; responseCount: number; id: string; workshopId: string | null; ... 12 more ...; creatorEmail: string | null; }[]' is not assignable to type '({ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; deletedAt: Date | null; workshopId: string | null; ... 5 more ...; createdBy: string; } & { ...; })[]'.
+  Type '{ creator: { id: string | null; name: string | null; email: string | null; }; questionGroupCount: number; questionCount: number; responseCount: number; id: string; workshopId: string | null; ... 12 more ...; creatorEmail: string | null; }' is not assignable to type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; deletedAt: Date | null; workshopId: string | null; ... 5 more ...; createdBy: string; } & { ...; }'.
+    Type '{ creator: { id: string | null; name: string | null; email: string | null; }; questionGroupCount: number; questionCount: number; responseCount: number; id: string; workshopId: string | null; ... 12 more ...; creatorEmail: string | null; }' is not assignable to type '{ creator: { id: string; name: string; email: string; }; questionGroupCount: number; questionCount: number; responseCount: number; }'.
+      The types of 'creator.id' are incompatible between these types.
+        Type 'string | null' is not assignable to type 'string'.
+          Type 'null' is not assignable to type 'string'.
+src/services/questionnaireCrudService.ts(819,38): error TS2322: Type '{ collapsed?: boolean | undefined; show_progress?: boolean | undefined; icon?: string | null | undefined; color?: string | null | undefined; }' is not assignable to type '{ collapsed: boolean; show_progress: boolean; icon: string | null; color: string | null; }'.
+  Types of property 'collapsed' are incompatible.
+    Type 'boolean | undefined' is not assignable to type 'boolean'.
+      Type 'undefined' is not assignable to type 'boolean'.
+src/services/questionnaireService.ts(345,7): error TS2322: Type 'number' is not assignable to type 'string'.
+src/services/questionnaireService.ts(363,5): error TS1016: A required parameter cannot follow an optional parameter.
+src/services/questionnaireService.ts(376,9): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type 'Omit<{ titleI18n: unknown; createdBy: string; id?: string | undefined; status?: "draft" | "published" | "review" | "closed" | "analyzed" | undefined; createdAt?: Date | undefined; updatedAt?: Date | undefined; ... 5 more ...; closedAt?: Date | ... 1 more ... | undefined; }, "id" | ... 1 more ... | "updatedAt">'.
+src/services/questionnaireService.ts(390,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/services/questionnaireService.ts(391,9): error TS2741: Property 'color' is missing in type '{ collapsed: false; show_progress: true; icon: null; }' but required in type '{ collapsed: boolean; show_progress: boolean; icon: string | null; color: string | null; }'.
+src/services/questionnaireService.ts(414,11): error TS2322: Type 'number' is not assignable to type 'string'.
+src/services/questionnaireService.ts(442,11): error TS2322: Type '{ creator: { columns: { id: true; name: true; email: true; }; }; questionGroups: { orderBy: SQL<unknown>[]; with: { questions: { orderBy: SQL<unknown>[]; }; }; }; workshop: { columns: { id: true; title: true; slug: true; }; }; } | { ...; }' is not assignable to type '{ workshop?: true | { columns?: { id?: boolean | undefined; slug?: boolean | undefined; titleI18n?: boolean | undefined; subtitleI18n?: boolean | undefined; descriptionI18n?: boolean | undefined; ... 21 more ...; deletedAt?: boolean | undefined; } | undefined; with?: { ...; } | undefined; extras?: Record<...> | ... ...'.
+  Object literal may only specify known properties, and 'questionGroups' does not exist in type '{ workshop?: true | { columns?: { id?: boolean | undefined; slug?: boolean | undefined; titleI18n?: boolean | undefined; subtitleI18n?: boolean | undefined; descriptionI18n?: boolean | undefined; ... 21 more ...; deletedAt?: boolean | undefined; } | undefined; with?: { ...; } | undefined; extras?: Record<...> | ... ...'.
+src/services/questionnaireService.ts(476,5): error TS2322: Type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; workshopId: string | null; settings: { anonymous: boolean; ... 5 more ...; questionStyle: "first_person_plural" | "third_person"; } | null; ... 5 more ...; instructions: unknown; } | null' is not assignable to type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; deletedAt: Date | null; workshopId: string | null; ... 5 more ...; createdBy: string; } | null'.
+  Type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; workshopId: string | null; settings: { anonymous: boolean; ... 5 more ...; questionStyle: "first_person_plural" | "third_person"; } | null; ... 5 more ...; instructions: unknown; }' is missing the following properties from type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; deletedAt: Date | null; workshopId: string | null; ... 5 more ...; createdBy: string; }': deletedAt, titleI18n, instructionsI18n
+src/services/questionnaireService.ts(500,13): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type '{ id?: boolean | undefined; slug?: boolean | undefined; titleI18n?: boolean | undefined; subtitleI18n?: boolean | undefined; descriptionI18n?: boolean | undefined; shortDescriptionI18n?: boolean | undefined; ... 20 more ...; deletedAt?: boolean | undefined; }'.
+src/services/questionnaireService.ts(507,5): error TS2322: Type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; workshopId: string | null; settings: { anonymous: boolean; ... 5 more ...; questionStyle: "first_person_plural" | "third_person"; } | null; ... 5 more ...; instructions: unknown; } | null' is not assignable to type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; deletedAt: Date | null; workshopId: string | null; ... 5 more ...; createdBy: string; } | null'.
+  Type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; workshopId: string | null; settings: { anonymous: boolean; ... 5 more ...; questionStyle: "first_person_plural" | "third_person"; } | null; ... 5 more ...; instructions: unknown; }' is missing the following properties from type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; deletedAt: Date | null; workshopId: string | null; ... 5 more ...; createdBy: string; }': deletedAt, titleI18n, instructionsI18n
+src/services/questionnaireService.ts(541,28): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "createdBy"; tableName: "questionnaires"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'number' is not assignable to parameter of type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<number>, right: number | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "createdBy"; tableName: "questionnaires"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<number>'.
+      Type 'PgColumn<{ name: "createdBy"; tableName: "questionnaires"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<number>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "createdBy"; tableName: "questionnaires"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+src/services/questionnaireService.ts(547,41): error TS2339: Property 'title' does not exist on type 'PgTableWithColumns<{ name: "questionnaires"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "questionnaires"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, {}>; ... 10 more ...; deletedAt: PgColumn<...>; }...'.
+src/services/questionnaireService.ts(548,41): error TS2339: Property 'title' does not exist on type 'PgTableWithColumns<{ name: "questionnaires"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "questionnaires"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, {}>; ... 10 more ...; deletedAt: PgColumn<...>; }...'.
+src/services/questionnaireService.ts(572,15): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type '{ id?: boolean | undefined; slug?: boolean | undefined; titleI18n?: boolean | undefined; subtitleI18n?: boolean | undefined; descriptionI18n?: boolean | undefined; shortDescriptionI18n?: boolean | undefined; ... 20 more ...; deletedAt?: boolean | undefined; }'.
+src/services/questionnaireService.ts(626,9): error TS2367: This comparison appears to be unintentional because the types 'string' and 'number' have no overlap.
+src/services/questionnaireService.ts(683,9): error TS2367: This comparison appears to be unintentional because the types 'string' and 'number' have no overlap.
+src/services/questionnaireService.ts(691,9): error TS2322: Type '"archived"' is not assignable to type '"draft" | "published" | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | "review" | "closed" | "analyzed" | undefined'.
+src/services/questionnaireService.ts(764,5): error TS1016: A required parameter cannot follow an optional parameter.
+src/services/questionnaireService.ts(776,9): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type 'Omit<{ titleI18n: unknown; createdBy: string; id?: string | undefined; status?: "draft" | "published" | "review" | "closed" | "analyzed" | undefined; createdAt?: Date | undefined; updatedAt?: Date | undefined; ... 5 more ...; closedAt?: Date | ... 1 more ... | undefined; }, "id" | ... 1 more ... | "updatedAt">'.
+src/services/questionnaireService.ts(777,27): error TS2339: Property 'title' does not exist on type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; deletedAt: Date | null; workshopId: string | null; ... 5 more ...; createdBy: string; }'.
+src/services/questionnaireService.ts(778,27): error TS2339: Property 'title' does not exist on type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; deletedAt: Date | null; workshopId: string | null; ... 5 more ...; createdBy: string; }'.
+src/services/questionnaireService.ts(780,32): error TS2551: Property 'instructions' does not exist on type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; deletedAt: Date | null; workshopId: string | null; ... 5 more ...; createdBy: string; }'. Did you mean 'instructionsI18n'?
+src/services/questionnaireService.ts(788,34): error TS2339: Property 'questionGroups' does not exist on type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; deletedAt: Date | null; workshopId: string | null; ... 5 more ...; createdBy: string; }'.
+src/services/questionnaireService.ts(792,9): error TS2353: Object literal may only specify known properties, and 'title' does not exist in type '{ questionnaireId: string; titleI18n: unknown; orderIndex: string; id?: string | undefined; createdAt?: Date | undefined; updatedAt?: Date | undefined; descriptionI18n?: unknown; uiConfig?: { ...; } | ... 1 more ... | undefined; }'.
+src/services/questionnaireService.ts(812,11): error TS2353: Object literal may only specify known properties, and 'text' does not exist in type '{ type: "number" | "text" | "scale" | "textarea" | "single_choice" | "multiple_choice"; orderIndex: string; groupId: string; textI18n: unknown; id?: string | undefined; createdAt?: Date | undefined; ... 4 more ...; helpTextI18n?: { ...; } | ... 1 more ... | undefined; }'.
+src/services/responseService.ts(51,13): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'number' is not assignable to parameter of type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<number>, right: number | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<number>'.
+      Type 'PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<number>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+src/services/responseService.ts(71,7): error TS2322: Type 'number | undefined' is not assignable to type 'string | null | undefined'.
+  Type 'number' is not assignable to type 'string'.
+src/services/responseService.ts(133,20): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'number' is not assignable to parameter of type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<number>, right: number | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<number>'.
+      Type 'PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<number>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+src/services/responseService.ts(143,29): error TS2339: Property 'affectedRows' does not exist on type 'never'.
+src/services/responseService.ts(169,9): error TS2353: Object literal may only specify known properties, and 'questionGroups' does not exist in type '{ workshop?: true | { columns?: { id?: boolean | undefined; slug?: boolean | undefined; titleI18n?: boolean | undefined; subtitleI18n?: boolean | undefined; descriptionI18n?: boolean | undefined; ... 21 more ...; deletedAt?: boolean | undefined; } | undefined; with?: { ...; } | undefined; extras?: Record<...> | ... ...'.
+src/services/responseService.ts(172,25): error TS7006: Parameter 'questions' implicitly has an 'any' type.
+src/services/responseService.ts(172,38): error TS7031: Binding element 'asc' implicitly has an 'any' type.
+src/services/responseService.ts(185,21): error TS2339: Property 'questionGroups' does not exist on type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; workshopId: string | null; settings: { anonymous: boolean; ... 5 more ...; questionStyle: "first_person_plural" | "third_person"; } | null; ... 5 more ...; instructions: unknown; }'.
+src/services/responseService.ts(185,45): error TS7006: Parameter 'g' implicitly has an 'any' type.
+src/services/responseService.ts(192,28): error TS7006: Parameter 'q' implicitly has an 'any' type.
+src/services/responseService.ts(194,18): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'number' is not assignable to parameter of type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<number>, right: number | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<number>'.
+      Type 'PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<number>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "userId"; tableName: "responses"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: false; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+src/services/responseService.ts(208,14): error TS2339: Property 'status' does not exist on type '{ id: string; metadata: { ipHash: string; userAgentHash: string; timeSpentMs: number; editCount: number; } | null; updatedAt: Date; userId: string | null; questionnaireId: string; questionId: string; enrollmentId: string | null; answer: unknown; submittedAt: Date; question: { ...; }; }'.
+src/services/responseService.ts(216,7): error TS2322: Type '{ id: string; metadata: { ipHash: string; userAgentHash: string; timeSpentMs: number; editCount: number; } | null; updatedAt: Date; userId: string | null; questionnaireId: string; questionId: string; enrollmentId: string | null; answer: unknown; submittedAt: Date; question: { ...; }; }[]' is not assignable to type '{ id: string; metadata: { ip_hash: string; user_agent_hash: string; time_spent_ms: number; edit_count: number; } | null; status: "draft" | "submitted"; createdAt: Date; updatedAt: Date; ... 5 more ...; submittedAt: Date | null; }[]'.
+  Type '{ id: string; metadata: { ipHash: string; userAgentHash: string; timeSpentMs: number; editCount: number; } | null; updatedAt: Date; userId: string | null; questionnaireId: string; questionId: string; enrollmentId: string | null; answer: unknown; submittedAt: Date; question: { ...; }; }' is missing the following properties from type '{ id: string; metadata: { ip_hash: string; user_agent_hash: string; time_spent_ms: number; edit_count: number; } | null; status: "draft" | "submitted"; createdAt: Date; updatedAt: Date; ... 5 more ...; submittedAt: Date | null; }': status, createdAt
+src/services/responseService.ts(217,7): error TS2739: Type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; workshopId: string | null; settings: { anonymous: boolean; ... 5 more ...; questionStyle: "first_person_plural" | "third_person"; } | null; ... 5 more ...; instructions: unknown; }' is missing the following properties from type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; deletedAt: Date | null; workshopId: string | null; ... 5 more ...; createdBy: string; }': deletedAt, titleI18n, instructionsI18n
+src/services/responseService.ts(247,7): error TS2322: Type 'number | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/responseService.ts(272,18): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "userId"; tableName: "consents"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'number' is not assignable to parameter of type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<number>, right: number | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "userId"; tableName: "consents"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<number>'.
+      Type 'PgColumn<{ name: "userId"; tableName: "consents"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<number>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "userId"; tableName: "consents"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+src/services/responseService.ts(273,25): error TS2339: Property 'withdrawnAt' does not exist on type 'PgTableWithColumns<{ name: "consents"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "consents"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, {}>; ... 7 more ...; updatedAt: PgColumn<.....'.
+src/services/responseService.ts(277,5): error TS2322: Type '{ id: string; userId: string; questionnaireId: string | null; consentType: "research_analysis" | "marketing_emails" | "data_sharing" | "anonymous_presentation"; granted: boolean; ... 5 more ...; revokedAt: Date | null; } | null' is not assignable to type '{ id: string; createdAt: Date; updatedAt: Date; userId: string; questionnaireId: string | null; consentType: string; granted: boolean; ipAddress: string | null; userAgent: string | null; } | null'.
+  Type '{ id: string; userId: string; questionnaireId: string | null; consentType: "research_analysis" | "marketing_emails" | "data_sharing" | "anonymous_presentation"; granted: boolean; ... 5 more ...; revokedAt: Date | null; }' is missing the following properties from type '{ id: string; createdAt: Date; updatedAt: Date; userId: string; questionnaireId: string | null; consentType: string; granted: boolean; ipAddress: string | null; userAgent: string | null; }': createdAt, updatedAt
+src/services/responseService.ts(287,9): error TS2353: Object literal may only specify known properties, and 'withdrawnAt' does not exist in type '{ userId?: string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | undefined; consentType?: string | SQL<...> | PgColumn<...> | undefined; ... 6 more ...; userAgent?: string | ... 3 more ... | undefined; }'.
+src/services/responseService.ts(292,20): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "userId"; tableName: "consents"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>, right: string | SQLWrapper): SQL<...>', gave the following error.
+    Argument of type 'number' is not assignable to parameter of type 'string | SQLWrapper'.
+  Overload 2 of 3, '(left: Aliased<number>, right: number | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "userId"; tableName: "consents"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'Aliased<number>'.
+      Type 'PgColumn<{ name: "userId"; tableName: "consents"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is missing the following properties from type 'Aliased<number>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "userId"; tableName: "consents"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: false; isPrimaryKey: false; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>' is not assignable to parameter of type 'never'.
+src/services/responseService.ts(296,24): error TS2339: Property 'affectedRows' does not exist on type 'never'.
+src/services/responseService.ts(348,30): error TS2339: Property 'text' does not exist on type '{ id: string; groupId: string; textI18n: unknown; type: "number" | "text" | "scale" | "textarea" | "single_choice" | "multiple_choice"; optionsI18n: { value: string; label: { pl: string; en: string; }; }[] | null; ... 5 more ...; updatedAt: Date; }'.
+src/services/responseService.ts(393,33): error TS2339: Property 'text' does not exist on type 'PgTableWithColumns<{ name: "questions"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "questions"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, {}>; ... 9 more ...; updatedAt: PgColumn<...'.
+src/services/responseService.ts(416,40): error TS2339: Property 'text' does not exist on type 'PgTableWithColumns<{ name: "questions"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "questions"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; ... 6 more ...; generated: undefined; }, {}, {}>; ... 9 more ...; updatedAt: PgColumn<...'.
+src/services/responseService.ts(417,16): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(builder: (aliases: { questionId: PgColumn<{ name: "id"; tableName: "questions"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 4 more ...; skipRate: SQL<...>; }) => ValueOrArray<...>): Omit<...>', gave the following error.
+    Argument of type '(responses: any, { asc }: { asc: any; }) => any[]' is not assignable to parameter of type '(aliases: { questionId: PgColumn<{ name: "id"; tableName: "questions"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 4 more ...; skipRate: SQL<...>; }) => ...'.
+      Target signature provides too few arguments. Expected 2 or more, but got 1.
+  Overload 2 of 2, '(...columns: (SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | Aliased<unknown>)[]): Omit<PgSelectBase<"responses", ... 6 more ..., { ...; }>, "where" | ... 1 more ... | "orderBy">', gave the following error.
+    Argument of type '(responses: any, { asc }: { asc: any; }) => any[]' is not assignable to parameter of type 'SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | Aliased<unknown>'.
+src/services/responseService.ts(417,17): error TS7006: Parameter 'responses' implicitly has an 'any' type.
+src/services/responseService.ts(417,30): error TS7031: Binding element 'asc' implicitly has an 'any' type.
+src/services/responseService.ts(460,22): error TS2551: Property 'question' does not exist on type '{ id: string; metadata: { ip_hash: string; user_agent_hash: string; time_spent_ms: number; edit_count: number; } | null; status: "draft" | "submitted"; createdAt: Date; updatedAt: Date; ... 5 more ...; submittedAt: Date | null; }'. Did you mean 'questionId'?
+src/services/responseService.ts(461,22): error TS2551: Property 'question' does not exist on type '{ id: string; metadata: { ip_hash: string; user_agent_hash: string; time_spent_ms: number; edit_count: number; } | null; status: "draft" | "submitted"; createdAt: Date; updatedAt: Date; ... 5 more ...; submittedAt: Date | null; }'. Did you mean 'questionId'?
+src/services/responseService.ts(462,18): error TS2551: Property 'question' does not exist on type '{ id: string; metadata: { ip_hash: string; user_agent_hash: string; time_spent_ms: number; edit_count: number; } | null; status: "draft" | "submitted"; createdAt: Date; updatedAt: Date; ... 5 more ...; submittedAt: Date | null; }'. Did you mean 'questionId'?
+src/services/security-monitoring.ts(185,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/security-monitoring.ts(215,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/security-monitoring.ts(245,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/security-monitoring.ts(276,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/security-monitoring.ts(307,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/security-monitoring.ts(338,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/security-monitoring.ts(370,11): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/security-monitoring.ts(417,9): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/security-monitoring.ts(435,9): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/security-monitoring.ts(668,45): error TS7030: Not all code paths return a value.
+src/services/security-monitoring.ts(713,19): error TS2341: Property 'implementBlockingResponse' is private and only accessible within class 'SecurityMonitoringService'.
+src/services/security-monitoring.ts(722,3): error TS2484: Export declaration conflicts with exported declaration of 'SecurityEventType'.
+src/services/security-monitoring.ts(723,3): error TS2484: Export declaration conflicts with exported declaration of 'SecuritySeverity'.
+src/services/storageService.ts(199,41): error TS18046: 'error' is of type 'unknown'.
+src/services/storageService.ts(214,43): error TS18046: 'error' is of type 'unknown'.
+src/services/storageService.ts(228,41): error TS18046: 'error' is of type 'unknown'.
+src/services/storageService.ts(258,57): error TS18046: 'error' is of type 'unknown'.
+src/services/storageService.ts(279,44): error TS7006: Parameter 'obj' implicitly has an 'any' type.
+src/services/storageService.ts(285,45): error TS18046: 'error' is of type 'unknown'.
+src/services/storageService.ts(307,39): error TS18046: 'error' is of type 'unknown'.
+src/services/storageService.ts(418,24): error TS2341: Property 'client' is private and only accessible within class 'RedisService'.
+src/services/storageService.ts(707,48): error TS2341: Property 'config' is private and only accessible within class 'AWSStorageProvider'.
+src/services/storageService.ts(708,48): error TS2341: Property 'config' is private and only accessible within class 'AWSStorageProvider'.
+src/services/storageService.ts(746,7): error TS2322: Type '{ fileSize: number; downloadCount: number; id: string; originalName: string; fileName: string; filePath: string; mimeType: string; extension: string; category: string | null; uploadedBy: string; ... 19 more ...; updatedAt: Date; }' is not assignable to type 'FileMetadata'.
+  Types of property 'category' are incompatible.
+    Type 'string | null' is not assignable to type 'string | undefined'.
+      Type 'null' is not assignable to type 'string | undefined'.
+src/services/storageService.ts(830,11): error TS2322: Type 'number' is not assignable to type 'string | SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | undefined'.
+src/services/storageService.ts(875,23): error TS2339: Property 'where' does not exist on type 'Omit<PgSelectBase<"files", { id: PgColumn<{ name: "id"; tableName: "files"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 28 more ...; updatedAt: PgColumn<...'.
+src/services/storageService.ts(879,23): error TS2339: Property 'where' does not exist on type 'Omit<PgSelectBase<"files", { id: PgColumn<{ name: "id"; tableName: "files"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 28 more ...; updatedAt: PgColumn<...'.
+src/services/storageService.ts(885,23): error TS2339: Property 'where' does not exist on type 'Omit<PgSelectBase<"files", { id: PgColumn<{ name: "id"; tableName: "files"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 28 more ...; updatedAt: PgColumn<...'.
+src/services/storageService.ts(891,23): error TS2339: Property 'where' does not exist on type 'Omit<PgSelectBase<"files", { id: PgColumn<{ name: "id"; tableName: "files"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 28 more ...; updatedAt: PgColumn<...'.
+src/services/storageService.ts(895,23): error TS2339: Property 'where' does not exist on type 'Omit<PgSelectBase<"files", { id: PgColumn<{ name: "id"; tableName: "files"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 28 more ...; updatedAt: PgColumn<...'.
+src/services/storageService.ts(903,9): error TS2741: Property 'orderBy' is missing in type 'Omit<import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/drizzle-orm/pg-core/query-builders/select").PgSelectBase<"files", { id: import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/drizzle-orm/pg-core/columns/common").PgColumn<{ name: "id"; tableName: "files"; dataTy...' but required in type 'Omit<import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/drizzle-orm/pg-core/query-builders/select").PgSelectBase<"files", { id: import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/drizzle-orm/pg-core/columns/common").PgColumn<{ name: "id"; tableName: "files"; dataTy...'.
+src/services/storageService.ts(903,36): error TS2345: Argument of type '(() => SQL<unknown>) | (() => boolean) | PgColumn<{ name: "id"; tableName: "files"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; ... 5 more ...; generated: undefined; }, {}, {}> | ... 33 more ... | undefined' is not assignable to parameter of type 'SQLWrapper | AnyColumn'.
+  Type 'undefined' is not assignable to type 'SQLWrapper | AnyColumn'.
+src/services/storageService.ts(905,9): error TS2741: Property 'orderBy' is missing in type 'Omit<import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/drizzle-orm/pg-core/query-builders/select").PgSelectBase<"files", { id: import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/drizzle-orm/pg-core/columns/common").PgColumn<{ name: "id"; tableName: "files"; dataTy...' but required in type 'Omit<import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/drizzle-orm/pg-core/query-builders/select").PgSelectBase<"files", { id: import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/drizzle-orm/pg-core/columns/common").PgColumn<{ name: "id"; tableName: "files"; dataTy...'.
+src/services/storageService.ts(905,31): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(builder: (aliases: { id: PgColumn<{ name: "id"; tableName: "files"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 28 more ...; updatedAt: PgColumn<...>; }) => ValueOrArray<...>): Omit<...>', gave the following error.
+    Argument of type '(() => SQL<unknown>) | (() => boolean) | PgColumn<{ name: "id"; tableName: "files"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; ... 5 more ...; generated: undefined; }, {}, {}> | ... 33 more ... | undefined' is not assignable to parameter of type '(aliases: { id: PgColumn<{ name: "id"; tableName: "files"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 28 more ...; updatedAt: PgColumn<...>; }) => Value...'.
+      Type 'undefined' is not assignable to type '(aliases: { id: PgColumn<{ name: "id"; tableName: "files"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; isAutoincrement: false; ... 4 more ...; generated: undefined; }, {}, {}>; ... 28 more ...; updatedAt: PgColumn<...>; }) => Value...'.
+  Overload 2 of 2, '(...columns: (SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | Aliased<unknown>)[]): Omit<PgSelectBase<"files", { ...; }, ... 5 more ..., { ...; }>, "where" | "orderBy">', gave the following error.
+    Argument of type '(() => SQL<unknown>) | (() => boolean) | PgColumn<{ name: "id"; tableName: "files"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; hasDefault: true; isPrimaryKey: true; ... 5 more ...; generated: undefined; }, {}, {}> | ... 33 more ... | undefined' is not assignable to parameter of type 'SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | Aliased<unknown>'.
+      Type 'undefined' is not assignable to type 'SQL<unknown> | PgColumn<ColumnBaseConfig<ColumnDataType, string>, {}, {}> | Aliased<unknown>'.
+src/services/storageService.ts(910,9): error TS2741: Property 'limit' is missing in type 'Omit<import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/drizzle-orm/pg-core/query-builders/select").PgSelectBase<"files", { id: import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/drizzle-orm/pg-core/columns/common").PgColumn<{ name: "id"; tableName: "files"; dataTy...' but required in type 'Omit<import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/drizzle-orm/pg-core/query-builders/select").PgSelectBase<"files", { id: import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/drizzle-orm/pg-core/columns/common").PgColumn<{ name: "id"; tableName: "files"; dataTy...'.
+src/services/storageService.ts(914,9): error TS2741: Property 'offset' is missing in type 'Omit<import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/drizzle-orm/pg-core/query-builders/select").PgSelectBase<"files", { id: import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/drizzle-orm/pg-core/columns/common").PgColumn<{ name: "id"; tableName: "files"; dataTy...' but required in type 'Omit<import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/drizzle-orm/pg-core/query-builders/select").PgSelectBase<"files", { id: import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/node_modules/drizzle-orm/pg-core/columns/common").PgColumn<{ name: "id"; tableName: "files"; dataTy...'.
+src/services/storageService.ts(920,9): error TS2322: Type '{ id: string; originalName: string; fileName: string; filePath: string; fileSize: string; mimeType: string; extension: string; category: string | null; uploadedBy: string; associatedEntityType: "workshop" | ... 6 more ... | null; ... 19 more ...; updatedAt: Date; }[]' is not assignable to type 'FileMetadata[]'.
+  Type '{ id: string; originalName: string; fileName: string; filePath: string; fileSize: string; mimeType: string; extension: string; category: string | null; uploadedBy: string; associatedEntityType: "workshop" | ... 6 more ... | null; ... 19 more ...; updatedAt: Date; }' is not assignable to type 'FileMetadata'.
+    Types of property 'fileSize' are incompatible.
+      Type 'string' is not assignable to type 'number'.
+src/services/storageService.ts(1155,28): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { originalName: string | SQL<unknown> | Placeholder<string, any>; fileName: string | SQL<unknown> | Placeholder<string, any>; filePath: string | SQL<...> | Placeholder<...>; ... 26 more ...; deletedBy?: string | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Type 'string' is not assignable to type '"local" | "aws-s3" | "google-cloud" | "azure-blob" | SQL<unknown> | Placeholder<string, any>'.
+  Overload 2 of 2, '(values: { originalName: string | SQL<unknown> | Placeholder<string, any>; fileName: string | SQL<unknown> | Placeholder<string, any>; filePath: string | SQL<...> | Placeholder<...>; ... 26 more ...; deletedBy?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ originalName: string | SQL<unknown> | Placeholder<string, any>; fileName: string | SQL<unknown> | Placeholder<string, any>; filePath: string | SQL<unknown> | Placeholder<...>; ... 26 more ...; deletedBy?: string | ... 3 more ... | undefined; }[]'.
+src/services/streaming-llm-worker.ts(71,11): error TS2564: Property 'queue' has no initializer and is not definitely assigned in the constructor.
+src/services/streaming-llm-worker.ts(72,11): error TS2564: Property 'queueEvents' has no initializer and is not definitely assigned in the constructor.
+src/services/streaming-llm-worker.ts(73,11): error TS2564: Property 'worker' has no initializer and is not definitely assigned in the constructor.
+src/services/streaming-llm-worker.ts(85,27): error TS2769: No overload matches this call.
+  Overload 1 of 8, '(options: RedisOptions): Redis', gave the following error.
+    Object literal may only specify known properties, and 'maxMemoryPolicy' does not exist in type 'RedisOptions'.
+  Overload 2 of 8, '(port: number): Redis', gave the following error.
+    Argument of type '{ host: string; port: number; password: string | undefined; db: number; maxRetriesPerRequest: null; lazyConnect: boolean; enableOfflineQueue: boolean; maxMemoryPolicy: string; }' is not assignable to parameter of type 'number'.
+  Overload 3 of 8, '(path: string): Redis', gave the following error.
+    Argument of type '{ host: string; port: number; password: string | undefined; db: number; maxRetriesPerRequest: null; lazyConnect: boolean; enableOfflineQueue: boolean; maxMemoryPolicy: string; }' is not assignable to parameter of type 'string'.
+src/services/streaming-llm-worker.ts(103,11): error TS2561: Object literal may only specify known properties, but 'organizationId' does not exist in type 'ClientOptions'. Did you mean to write 'organization'?
+src/services/streaming-llm-worker.ts(378,15): error TS2367: This comparison appears to be unintentional because the types '"message_start" | "message_delta" | "message_stop" | "content_block_start" | "content_block_delta" | "content_block_stop"' and '"content_block"' have no overlap.
+src/services/streaming-llm-worker.ts(379,35): error TS2339: Property 'content' does not exist on type 'never'.
+src/services/streaming-llm-worker.ts(417,36): error TS2304: Cannot find name 'questionnaireId'.
+src/services/streaming-llm-worker.ts(481,14): error TS2532: Object is possibly 'undefined'.
+src/services/streaming-llm-worker.ts(487,9): error TS2353: Object literal may only specify known properties, and 'questions' does not exist in type '{ workshop?: true | { columns?: { id?: boolean | undefined; slug?: boolean | undefined; titleI18n?: boolean | undefined; subtitleI18n?: boolean | undefined; descriptionI18n?: boolean | undefined; ... 21 more ...; deletedAt?: boolean | undefined; } | undefined; with?: { ...; } | undefined; extras?: Record<...> | ... ...'.
+src/services/streaming-llm-worker.ts(501,32): error TS2339: Property 'questions' does not exist on type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; workshopId: string | null; settings: { anonymous: boolean; ... 5 more ...; questionStyle: "first_person_plural" | "third_person"; } | null; ... 5 more ...; instructions: unknown; }'.
+src/services/streaming-llm-worker.ts(501,50): error TS7006: Parameter 'q' implicitly has an 'any' type.
+src/services/streaming-llm-worker.ts(640,38): error TS2339: Property 'text' does not exist on type 'ContentBlock'.
+  Property 'text' does not exist on type 'ThinkingBlock'.
+src/services/streaming-llm-worker.ts(722,34): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { questionnaireId: string | SQL<unknown> | Placeholder<string, any>; analysisType: SQL<unknown> | "thematic" | "clusters" | "contradictions" | "insights" | "recommendations" | Placeholder<...>; ... 8 more ...; triggeredBy?: string | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Type 'string' is not assignable to type 'SQL<unknown> | "thematic" | "clusters" | "contradictions" | "insights" | "recommendations" | Placeholder<string, any>'.
+  Overload 2 of 2, '(values: { questionnaireId: string | SQL<unknown> | Placeholder<string, any>; analysisType: SQL<unknown> | "thematic" | "clusters" | "contradictions" | "insights" | "recommendations" | Placeholder<...>; ... 8 more ...; triggeredBy?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ questionnaireId: string | SQL<unknown> | Placeholder<string, any>; analysisType: SQL<unknown> | "thematic" | "clusters" | "contradictions" | "insights" | "recommendations" | Placeholder<...>; ... 8 more ...; triggeredBy?: string | ... 3 more ... | undefined; }[]'.
+src/services/streaming-llm-worker.ts(804,26): error TS7053: Element implicitly has an 'any' type because expression of type '"gpt-4o-mini" | "gpt-4-turbo-preview"' can't be used to index type '{ 'gpt-4o-mini': { input: number; output: number; }; 'gpt-4-turbo-preview': { input: number; output: number; }; } | { 'claude-3-5-sonnet-20241022': { input: number; output: number; }; 'claude-3-5-haiku-20241022': { ...; }; }'.
+  Property 'gpt-4o-mini' does not exist on type '{ 'gpt-4o-mini': { input: number; output: number; }; 'gpt-4-turbo-preview': { input: number; output: number; }; } | { 'claude-3-5-sonnet-20241022': { input: number; output: number; }; 'claude-3-5-haiku-20241022': { ...; }; }'.
+src/services/streaming-llm-worker.ts(805,26): error TS7053: Element implicitly has an 'any' type because expression of type '"gpt-4o-mini"' can't be used to index type '{ 'gpt-4o-mini': { input: number; output: number; }; 'gpt-4-turbo-preview': { input: number; output: number; }; } | { 'claude-3-5-sonnet-20241022': { input: number; output: number; }; 'claude-3-5-haiku-20241022': { ...; }; }'.
+  Property 'gpt-4o-mini' does not exist on type '{ 'gpt-4o-mini': { input: number; output: number; }; 'gpt-4-turbo-preview': { input: number; output: number; }; } | { 'claude-3-5-sonnet-20241022': { input: number; output: number; }; 'claude-3-5-haiku-20241022': { ...; }; }'.
+src/services/streaming-llm-worker.ts(894,41): error TS2339: Property 'id' does not exist on type '{ jobId: string; }'.
+src/services/streaming-llm-worker.ts(941,5): error TS2740: Type '{ [index: string]: number; }' is missing the following properties from type '{ waiting: number; active: number; completed: number; failed: number; delayed: number; paused: number; }': waiting, active, completed, failed, and 2 more.
+src/services/templateManager.ts(98,5): error TS1016: A required parameter cannot follow an optional parameter.
+src/services/templateManager.ts(114,7): error TS2322: Type 'number' is not assignable to type 'string'.
+src/services/templateManager.ts(129,9): error TS2322: Type 'number' is not assignable to type 'string'.
+src/services/templateManager.ts(130,9): error TS2741: Property 'color' is missing in type '{ collapsed: false; show_progress: boolean; icon: string | null; }' but required in type '{ collapsed: boolean; show_progress: boolean; icon: string | null; color: string | null; }'.
+src/services/templateManager.ts(154,42): error TS2339: Property 'conditionalLogic' does not exist on type 'ParsedQuestion'.
+src/services/templateManager.ts(155,11): error TS2322: Type 'number' is not assignable to type 'string'.
+src/services/templateManager.ts(226,9): error TS2345: Argument of type '{ pl: string; en?: string | undefined; }' is not assignable to parameter of type '{ pl: string; en: string; }'.
+  Types of property 'en' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/services/templateManager.ts(396,34): error TS2339: Property 'templateId' does not exist on type 'PgTableWithColumns<{ name: "questionnaires"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "questionnaires"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, {}>; ... 10 more ...; deletedAt: PgColumn<...>; }...'.
+src/services/templateManager.ts(404,34): error TS2339: Property 'templateId' does not exist on type 'PgTableWithColumns<{ name: "questionnaires"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "questionnaires"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, {}>; ... 10 more ...; deletedAt: PgColumn<...>; }...'.
+src/services/templateManager.ts(409,15): error TS2353: Object literal may only specify known properties, and 'status' does not exist in type '{ id?: boolean | undefined; questionId?: boolean | undefined; userId?: boolean | undefined; enrollmentId?: boolean | undefined; questionnaireId?: boolean | undefined; answer?: boolean | undefined; metadata?: boolean | undefined; submittedAt?: boolean | undefined; updatedAt?: boolean | undefined; }'.
+src/services/templateManager.ts(422,25): error TS2339: Property 'responses' does not exist on type '{ id: string; status: "draft" | "published" | "review" | "closed" | "analyzed"; createdAt: Date; updatedAt: Date; workshopId: string | null; settings: { anonymous: boolean; ... 5 more ...; questionStyle: "first_person_plural" | "third_person"; } | null; ... 5 more ...; instructions: unknown; }'.
+src/services/templateManager.ts(422,43): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/services/templateManager.ts(427,18): error TS7006: Parameter 'r' implicitly has an 'any' type.
+src/services/templateManager.ts(479,40): error TS2339: Property 'templateId' does not exist on type 'PgTableWithColumns<{ name: "questionnaires"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "questionnaires"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {}, {}>; ... 10 more ...; deletedAt: PgColumn<...>; }...'.
+src/services/templateManager.ts(489,39): error TS18048: 'b.usage_count' is possibly 'undefined'.
+src/services/templateManager.ts(489,55): error TS18048: 'a.usage_count' is possibly 'undefined'.
+src/services/vector/embeddingService.ts(247,35): error TS2339: Property 'usage' does not exist on type 'Embedding'.
+src/services/vector/embeddingService.ts(615,12): error TS18046: 'response' is of type 'unknown'.
+src/services/vector/embeddingService.ts(615,31): error TS7006: Parameter 'embedding' implicitly has an 'any' type.
+src/services/vector/embeddingService.ts(615,42): error TS7006: Parameter 'index' implicitly has an 'any' type.
+src/services/vector/index.ts(32,3): error TS2459: Module '"./vectorIndexManager"' declares 'VectorIndexConfig' locally, but it is not exported.
+src/services/vector/index.ts(73,11): error TS2304: Cannot find name 'vectorDatabaseManager'.
+src/services/vector/index.ts(76,11): error TS2304: Cannot find name 'vectorIndexManager'.
+src/services/vector/index.ts(80,7): error TS2304: Cannot find name 'vectorDatabaseManager'.
+src/services/vector/index.ts(81,7): error TS2304: Cannot find name 'embeddingService'.
+src/services/vector/index.ts(106,11): error TS2304: Cannot find name 'vectorIndexManager'.
+src/services/vector/index.ts(107,11): error TS2304: Cannot find name 'vectorDatabaseManager'.
+src/services/vector/performanceMonitor.ts(585,21): error TS2339: Property 'resultsFound' does not exist on type '{ query: string; timestamp: Date; duration: any; results: any; }'.
+src/services/vector/ragQueryEngine.ts(325,40): error TS2339: Property 'document_embeddings' does not exist on type '{ users: RelationalQueryBuilder<ExtractTablesWithRelations<{ users: PgTableWithColumns<{ name: "users"; schema: undefined; columns: { id: PgColumn<{ name: "id"; tableName: "users"; dataType: "string"; columnType: "PgUUID"; data: string; driverParam: string; notNull: true; ... 7 more ...; generated: undefined; }, {},...'.
+src/services/vector/ragQueryEngine.ts(328,9): error TS2769: No overload matches this call.
+  Overload 1 of 3, '(left: PgColumn<{ name: "documentType"; tableName: "document_embeddings"; dataType: "string"; columnType: "PgEnumColumn"; data: "module" | "template" | "feedback" | "question" | "questionnaire_response" | "workshop_content" | "analysis_result" | "user_profile" | "announcement"; ... 9 more ...; generated: undefined; }, {}, {}>, right: "module" | ... 8 more ... | "announcement"): SQL<...>', gave the following error.
+    Argument of type 'string' is not assignable to parameter of type '"module" | "template" | SQLWrapper | "feedback" | "question" | "questionnaire_response" | "workshop_content" | "analysis_result" | "user_profile" | "announcement"'.
+  Overload 2 of 3, '(left: Aliased<string>, right: string | SQLWrapper): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "documentType"; tableName: "document_embeddings"; dataType: "string"; columnType: "PgEnumColumn"; data: "module" | "template" | "feedback" | "question" | "questionnaire_response" | "workshop_content" | "analysis_result" | "user_profile" | "announcement"; ... 9 more ...; generated: undefined; }, {}, ...' is not assignable to parameter of type 'Aliased<string>'.
+      Type 'PgColumn<{ name: "documentType"; tableName: "document_embeddings"; dataType: "string"; columnType: "PgEnumColumn"; data: "module" | "template" | "feedback" | "question" | "questionnaire_response" | "workshop_content" | "analysis_result" | "user_profile" | "announcement"; ... 9 more ...; generated: undefined; }, {}, ...' is missing the following properties from type 'Aliased<string>': sql, fieldAlias
+  Overload 3 of 3, '(left: never, right: unknown): SQL<unknown>', gave the following error.
+    Argument of type 'PgColumn<{ name: "documentType"; tableName: "document_embeddings"; dataType: "string"; columnType: "PgEnumColumn"; data: "module" | "template" | "feedback" | "question" | "questionnaire_response" | "workshop_content" | "analysis_result" | "user_profile" | "announcement"; ... 9 more ...; generated: undefined; }, {}, ...' is not assignable to parameter of type 'never'.
+src/services/vector/ragQueryEngine.ts(657,46): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(value: { queryText: string | SQL<unknown> | Placeholder<string, any>; queryEmbedding: number[] | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 10 more ...; metricUsed?: string | ... 3 more ... | undefined; }): PgInsertBase<...>', gave the following error.
+    Type 'string' is not assignable to type 'number[] | SQL<unknown> | Placeholder<string, any>'.
+  Overload 2 of 2, '(values: { queryText: string | SQL<unknown> | Placeholder<string, any>; queryEmbedding: number[] | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 10 more ...; metricUsed?: string | ... 3 more ... | undefined; }[]): PgInsertBase<...>', gave the following error.
+    Object literal may only specify known properties, and 'id' does not exist in type '{ queryText: string | SQL<unknown> | Placeholder<string, any>; queryEmbedding: number[] | SQL<unknown> | Placeholder<string, any>; id?: string | SQL<unknown> | Placeholder<...> | undefined; ... 10 more ...; metricUsed?: string | ... 3 more ... | undefined; }[]'.
+src/services/vector/semanticSearchService.ts(483,36): error TS2339: Property 'vector_search_queries' does not exist on type '{ readonly users: RelationalQueryBuilder<ExtractTablesWithRelations<typeof import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/src/models/postgresql-schema")>, { tsName: "users"; dbName: "users"; columns: { ...; }; relations: { ...; }; primaryKey: AnyColumn[]; }>; ... 37 more ...; readonly workshopAnalys...'.
+src/services/vector/semanticSearchService.ts(490,24): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/services/vector/semanticSearchService.ts(500,58): error TS2304: Cannot find name 'RAGQueryType'.
+src/services/vector/semanticSearchService.ts(712,36): error TS2339: Property 'vector_search_queries' does not exist on type '{ readonly users: RelationalQueryBuilder<ExtractTablesWithRelations<typeof import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/src/models/postgresql-schema")>, { tsName: "users"; dbName: "users"; columns: { ...; }; relations: { ...; }; primaryKey: AnyColumn[]; }>; ... 37 more ...; readonly workshopAnalys...'.
+src/services/vector/semanticSearchService.ts(721,24): error TS7006: Parameter 'item' implicitly has an 'any' type.
+src/services/vector/vectorDatabaseManager.ts(259,24): error TS2349: This expression is not callable.
+  Type 'PendingQuery<Row[]>' has no call signatures.
+src/services/vector/vectorIndexManager.ts(369,9): error TS2322: Type '"auto"' is not assignable to type '"exact" | "ivfflat" | "hnsw" | undefined'.
+src/services/vector/vectorIndexManager.ts(481,38): error TS2339: Property 'vector_index_configs' does not exist on type '{ readonly users: RelationalQueryBuilder<ExtractTablesWithRelations<typeof import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/src/models/postgresql-schema")>, { tsName: "users"; dbName: "users"; columns: { ...; }; relations: { ...; }; primaryKey: AnyColumn[]; }>; ... 37 more ...; readonly workshopAnalys...'.
+src/services/vector/vectorIndexManager.ts(567,36): error TS2339: Property 'vector_index_configs' does not exist on type '{ readonly users: RelationalQueryBuilder<ExtractTablesWithRelations<typeof import("/Users/arkadiuszfudali/Git/manus_wrkshp/workshopsAI_cms/src/models/postgresql-schema")>, { tsName: "users"; dbName: "users"; columns: { ...; }; relations: { ...; }; primaryKey: AnyColumn[]; }>; ... 37 more ...; readonly workshopAnalys...'.
