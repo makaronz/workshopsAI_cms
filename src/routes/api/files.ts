@@ -79,14 +79,13 @@ async function checkFilePermission(
 ) {
   try {
     const { fileId } = req.params;
-    const userId = req.user?.id;
-
-    if (!userId) {
+    if (!req.user) {
       return res.status(401).json({
         error: 'Authentication required',
         message: 'Please log in to access this resource',
       });
     }
+    const userId = req.user.id;
 
     const metadata = await storageService.getFileMetadata(fileId);
     if (!metadata) {
@@ -100,7 +99,7 @@ async function checkFilePermission(
     const hasPermission = await hasFileAccessPermission(
       metadata,
       userId,
-      req.user.role,
+      req.user.role as any,
     );
     if (!hasPermission) {
       return res.status(403).json({
@@ -111,12 +110,14 @@ async function checkFilePermission(
 
     req.fileMetadata = metadata;
     next();
+    return;
   } catch (error) {
     console.error('Permission check error:', error);
     res.status(500).json({
       error: 'Permission check failed',
-      message: error.message,
+      message: (error as any).message,
     });
+    return;
   }
 }
 
@@ -150,7 +151,7 @@ async function hasFileAccessPermission(
   ) {
     const enrollment = await db
       .select()
-      .from(imports)
+      .from(enrollments)
       .where(
         and(
           eq(enrollments.workshopId, fileMetadata.associatedEntityId),
@@ -251,10 +252,11 @@ router.get(
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation failed',
           details: errors.array(),
         });
+        return;
       }
 
       const {
@@ -327,7 +329,7 @@ router.get(
       console.error('Failed to list files:', error);
       res.status(500).json({
         error: 'Failed to list files',
-        message: error.message,
+        message: (error as any).message,
       });
     }
   },
@@ -354,7 +356,7 @@ router.get(
       console.error('Failed to get file metadata:', error);
       res.status(500).json({
         error: 'Failed to get file metadata',
-        message: error.message,
+        message: (error as any).message,
       });
     }
   },
@@ -380,10 +382,11 @@ router.get(
       );
 
       if (!downloadResult) {
-        return res.status(500).json({
+        res.status(500).json({
           error: 'Failed to generate download URL',
           message: 'Unable to create secure download link',
         });
+        return;
       }
 
       // Log successful download access
@@ -417,14 +420,14 @@ router.get(
         'DOWNLOAD' as any,
         req,
         false,
-        error.message,
+        (error as any).message,
         undefined,
         duration,
       );
 
       res.status(500).json({
         error: 'Failed to get download URL',
-        message: error.message,
+        message: (error as any).message,
       });
     }
   },
@@ -437,10 +440,11 @@ router.get(
 router.post('/', async (req: Request, res: Response) => {
   try {
     if (!req.uploadedFiles || req.uploadedFiles.length === 0) {
-      return res.status(400).json({
+      res.status(400).json({
         error: 'No files uploaded',
         message: 'Please upload at least one file',
       });
+      return;
     }
 
     // Process upload options from request body
@@ -449,7 +453,7 @@ router.post('/', async (req: Request, res: Response) => {
     // Apply upload options to uploaded files
     const processedFiles = [];
     for (const uploadedFile of req.uploadedFiles) {
-      if (uploadedFile.error) {
+      if ((uploadedFile as any).error) {
         processedFiles.push({
           ...uploadedFile,
           success: false,
@@ -501,7 +505,7 @@ router.post('/', async (req: Request, res: Response) => {
     console.error('File upload processing error:', error);
     res.status(500).json({
       error: 'Failed to process uploaded files',
-      message: error.message,
+      message: (error as any).message,
     });
   }
 });
@@ -526,10 +530,11 @@ router.put(
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation failed',
           details: errors.array(),
         });
+        return;
       }
 
       const file = req.fileMetadata;
@@ -540,18 +545,23 @@ router.put(
         file.uploadedBy !== userId &&
         !AuthService.hasPermission(req.user!.role as any, '*')
       ) {
-        return res.status(403).json({
+        res.status(403).json({
           error: 'Access denied',
           message: 'Only file owner or admin can update file metadata',
         });
+        return;
       }
 
       const updateData = updateFileSchema.parse(req.body);
+      const dataToUpdate: any = { ...updateData };
+      if (updateData.expiresAt) {
+        dataToUpdate.expiresAt = new Date(updateData.expiresAt);
+      }
 
       await db
         .update(files)
         .set({
-          ...updateData,
+          ...dataToUpdate,
           updatedAt: new Date(),
         })
         .where(eq(files.id, file.id));
@@ -570,7 +580,7 @@ router.put(
       console.error('Failed to update file metadata:', error);
       res.status(500).json({
         error: 'Failed to update file metadata',
-        message: error.message,
+        message: (error as any).message,
       });
     }
   },
@@ -593,19 +603,21 @@ router.delete(
         file.uploadedBy !== userId &&
         !AuthService.hasPermission(req.user!.role as any, '*')
       ) {
-        return res.status(403).json({
+        res.status(403).json({
           error: 'Access denied',
           message: 'Only file owner or admin can delete files',
         });
+        return;
       }
 
       const success = await storageService.deleteFile(file.id, userId);
 
       if (!success) {
-        return res.status(500).json({
+        res.status(500).json({
           error: 'Failed to delete file',
           message: 'The file could not be deleted',
         });
+        return;
       }
 
       // Log deletion
@@ -614,11 +626,12 @@ router.delete(
       res.json({
         message: 'File deleted successfully',
       });
+      return;
     } catch (error) {
       console.error('Failed to delete file:', error);
       res.status(500).json({
         error: 'Failed to delete file',
-        message: error.message,
+        message: (error as any).message,
       });
     }
   },
@@ -648,10 +661,11 @@ router.post(
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
-        return res.status(400).json({
+        res.status(400).json({
           error: 'Validation failed',
           details: errors.array(),
         });
+        return;
       }
 
       const file = req.fileMetadata;
@@ -662,10 +676,11 @@ router.post(
         file.uploadedBy !== userId &&
         !AuthService.hasPermission(req.user!.role as any, '*')
       ) {
-        return res.status(403).json({
+        res.status(403).json({
           error: 'Access denied',
           message: 'Only file owner or admin can share files',
         });
+        return;
       }
 
       const shareData = shareFileSchema.parse(req.body);
@@ -706,7 +721,7 @@ router.post(
       console.error('Failed to share file:', error);
       res.status(500).json({
         error: 'Failed to share file',
-        message: error.message,
+        message: (error as any).message,
       });
     }
   },
@@ -732,20 +747,22 @@ router.get('/shared/:shareToken', async (req: Request, res: Response) => {
       .limit(1);
 
     if (!share[0]) {
-      return res.status(404).json({
+      res.status(404).json({
         error: 'Share not found',
         message: 'This share link is invalid or has been disabled',
       });
+      return;
     }
 
     const shareRecord = share[0];
 
     // Check if share has expired
     if (shareRecord.expiresAt && new Date() > shareRecord.expiresAt) {
-      return res.status(410).json({
+      res.status(410).json({
         error: 'Share expired',
         message: 'This share link has expired',
       });
+      return;
     }
 
     // Check download limit
@@ -753,30 +770,33 @@ router.get('/shared/:shareToken', async (req: Request, res: Response) => {
       shareRecord.maxDownloads &&
       parseInt(shareRecord.downloadCount) >= parseInt(shareRecord.maxDownloads)
     ) {
-      return res.status(410).json({
+      res.status(410).json({
         error: 'Download limit exceeded',
         message: 'This file has reached its download limit',
       });
+      return;
     }
 
     // Get file metadata
     const file = await storageService.getFileMetadata(shareRecord.fileId);
     if (!file) {
-      return res.status(404).json({
+      res.status(404).json({
         error: 'File not found',
         message: 'The shared file does not exist',
       });
+      return;
     }
 
     // Check password protection
     if (shareRecord.password) {
       const providedPassword = req.query.password as string;
       if (!providedPassword || providedPassword !== shareRecord.password) {
-        return res.status(401).json({
+        res.status(401).json({
           error: 'Password required',
           message: 'This file is password protected',
           requiresPassword: true,
         });
+        return;
       }
     }
 
@@ -792,36 +812,40 @@ router.get('/shared/:shareToken', async (req: Request, res: Response) => {
     // Generate download URL
     const downloadResult = await storageService.getDownloadUrl(
       file.id,
-      req.user?.id || 'anonymous',
+      req.user?.id || null,
     );
+
+    if (!downloadResult) {
+      res.status(500).json({
+        error: 'Failed to generate download URL',
+        message: 'Unable to create secure download link',
+      });
+      return;
+    }
 
     res.json({
       file: {
         id: file.id,
         originalName: file.originalName,
+        fileName: file.fileName,
         fileSize: file.fileSize,
         mimeType: file.mimeType,
         uploadedAt: file.uploadedAt,
       },
-      downloadUrl: downloadResult?.url,
-      permissions: shareRecord.permissions,
-      shareInfo: {
-        sharedBy: shareRecord.sharedBy,
-        createdAt: shareRecord.createdAt,
-        expiresAt: shareRecord.expiresAt,
-        remainingDownloads: shareRecord.maxDownloads
-          ? parseInt(shareRecord.maxDownloads) -
-            parseInt(shareRecord.downloadCount) -
-            1
-          : null,
+      downloadUrl: downloadResult.url,
+      expiresIn: downloadResult.expiresIn,
+      share: {
+        permissions: shareRecord.permissions,
+        accessLevel: shareRecord.accessLevel,
       },
     });
   } catch (error) {
     console.error('Failed to access shared file:', error);
     res.status(500).json({
       error: 'Failed to access shared file',
-      message: error.message,
+      message: (error as any).message,
     });
+    return;
   }
 });
 
@@ -876,14 +900,14 @@ router.get(
       if (downloadLogs.length > 0) {
         stats.averageDownloadSize =
           downloadLogs.reduce(
-            (sum, log) => sum + parseInt(log.bytesTransferred),
+            (sum, log) => sum + parseInt(log.bytesTransferred || '0'),
             0,
           ) / downloadLogs.length;
       }
 
       // Group by date
       accessLogs.forEach(log => {
-        const date = log.timestamp.toISOString().split('T')[0];
+        const date = log.timestamp ? log.timestamp.toISOString().split('T')[0] : 'unknown';
         stats.accessByDate[date] = (stats.accessByDate[date] || 0) + 1;
       });
 
@@ -905,7 +929,7 @@ router.get(
       console.error('Failed to get file stats:', error);
       res.status(500).json({
         error: 'Failed to get file statistics',
-        message: error.message,
+        message: (error as any).message,
       });
     }
   },

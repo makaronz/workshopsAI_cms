@@ -19,6 +19,16 @@ declare global {
                 userAgent: string;
                 csrfToken?: string;
             };
+            fileMetadata?: any;
+            uploadedFiles?: Array<{
+                id: string;
+                originalName: string;
+                fileName: string;
+                fileSize: number;
+                mimeType: string;
+                url: string;
+                error?: string;
+            }>;
         }
     }
 }

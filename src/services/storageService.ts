@@ -28,12 +28,12 @@ export interface FileMetadata {
   category?: string;
   uploadedBy: string;
   associatedEntityType?:
-    | 'workshop'
-    | 'session'
-    | 'module'
-    | 'user'
-    | 'questionnaire'
-    | 'template';
+  | 'workshop'
+  | 'session'
+  | 'module'
+  | 'user'
+  | 'questionnaire'
+  | 'template';
   associatedEntityId?: string;
   isPublic: boolean;
   accessLevel: 'private' | 'workshop' | 'organization' | 'public';
@@ -66,12 +66,12 @@ export interface UploadOptions {
   generateThumbnail?: boolean;
   compress?: boolean;
   associatedEntityType?:
-    | 'workshop'
-    | 'session'
-    | 'module'
-    | 'user'
-    | 'questionnaire'
-    | 'template';
+  | 'workshop'
+  | 'session'
+  | 'module'
+  | 'user'
+  | 'questionnaire'
+  | 'template';
   associatedEntityId?: string;
   expiresAt?: Date;
 }
@@ -122,7 +122,7 @@ class AWSStorageProvider implements IStorageProvider {
   name = 'aws-s3';
   private s3: any = null;
 
-  constructor(private config: StorageProviderConfig) {
+  constructor(public config: StorageProviderConfig) {
     this.initializeClient();
   }
 
@@ -196,7 +196,7 @@ class AWSStorageProvider implements IStorageProvider {
       };
     } catch (error) {
       console.error('AWS S3 upload failed:', error);
-      throw new Error(`Upload failed: ${error.message}`);
+      throw new Error(`Upload failed: ${(error as any).message}`);
     }
   }
 
@@ -211,7 +211,7 @@ class AWSStorageProvider implements IStorageProvider {
       const response = await this.s3.send(command);
       return response.Body as Readable;
     } catch (error) {
-      throw new Error(`Download failed: ${error.message}`);
+      throw new Error(`Download failed: ${(error as any).message}`);
     }
   }
 
@@ -225,7 +225,7 @@ class AWSStorageProvider implements IStorageProvider {
     try {
       await this.s3.send(command);
     } catch (error) {
-      throw new Error(`Delete failed: ${error.message}`);
+      throw new Error(`Delete failed: ${(error as any).message}`);
     }
   }
 
@@ -255,7 +255,7 @@ class AWSStorageProvider implements IStorageProvider {
     try {
       return await getSignedUrl(this.s3, command, { expiresIn });
     } catch (error) {
-      throw new Error(`Failed to generate signed URL: ${error.message}`);
+      throw new Error(`Failed to generate signed URL: ${(error as any).message}`);
     }
   }
 
@@ -276,13 +276,13 @@ class AWSStorageProvider implements IStorageProvider {
 
     try {
       const response = await this.s3.send(command);
-      return (response.Contents || []).map(obj => ({
+      return (response.Contents || []).map((obj: any) => ({
         key: obj.Key!,
         size: obj.Size || 0,
         lastModified: obj.LastModified || new Date(),
       }));
     } catch (error) {
-      throw new Error(`List files failed: ${error.message}`);
+      throw new Error(`List files failed: ${(error as any).message}`);
     }
   }
 
@@ -304,7 +304,7 @@ class AWSStorageProvider implements IStorageProvider {
         key: destinationKey,
       };
     } catch (error) {
-      throw new Error(`Copy failed: ${error.message}`);
+      throw new Error(`Copy failed: ${(error as any).message}`);
     }
   }
 
@@ -329,7 +329,7 @@ class LocalStorageProvider implements IStorageProvider {
   private fs: any = null;
   private path: any = null;
 
-  constructor(private config: StorageProviderConfig) {
+  constructor(public config: StorageProviderConfig) {
     this.initializeDependencies();
   }
 
@@ -415,7 +415,7 @@ class LocalStorageProvider implements IStorageProvider {
   async getSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
     // For local storage, we'll create a temporary signed URL using Redis
     const token = randomUUID();
-    await redisService.client.setex(`file:${token}`, expiresIn, key);
+    await redisService.getClient().setex(`file:${token}`, expiresIn, key);
     return `${this.config.publicUrl}/signed/${token}`;
   }
 
@@ -511,23 +511,23 @@ export class StorageService {
         let provider: IStorageProvider;
 
         switch (providerConfig.name) {
-        case 'aws-s3':
-          provider = new AWSStorageProvider(providerConfig.config);
-          break;
-        case 'local':
-          provider = new LocalStorageProvider(providerConfig.config);
-          break;
-        case 'google-cloud':
-          // TODO: Implement Google Cloud Storage provider
-          console.warn('Google Cloud Storage provider not yet implemented');
-          continue;
-        case 'azure-blob':
-          // TODO: Implement Azure Blob Storage provider
-          console.warn('Azure Blob Storage provider not yet implemented');
-          continue;
-        default:
-          console.warn(`Unknown storage provider: ${providerConfig.name}`);
-          continue;
+          case 'aws-s3':
+            provider = new AWSStorageProvider(providerConfig.config);
+            break;
+          case 'local':
+            provider = new LocalStorageProvider(providerConfig.config);
+            break;
+          case 'google-cloud':
+            // TODO: Implement Google Cloud Storage provider
+            console.warn('Google Cloud Storage provider not yet implemented');
+            continue;
+          case 'azure-blob':
+            // TODO: Implement Azure Blob Storage provider
+            console.warn('Azure Blob Storage provider not yet implemented');
+            continue;
+          default:
+            console.warn(`Unknown storage provider: ${providerConfig.name}`);
+            continue;
         }
 
         this.providers.set(providerConfig.name, provider);
@@ -747,6 +747,21 @@ export class StorageService {
         ...file,
         fileSize: parseInt(file.fileSize) || 0,
         downloadCount: parseInt(file.downloadCount) || 0,
+        category: file.category || undefined,
+        associatedEntityType: (file.associatedEntityType as any) || undefined,
+        associatedEntityId: file.associatedEntityId || undefined,
+        accessLevel: file.accessLevel as any,
+        provider: file.provider as any,
+        tags: file.tags || undefined,
+        metadata: (file.metadata as Record<string, any>) || undefined,
+        bucket: file.bucket || undefined,
+        region: file.region || undefined,
+        cdnUrl: file.cdnUrl || undefined,
+        previewUrl: file.previewUrl || undefined,
+        thumbnailUrl: file.thumbnailUrl || undefined,
+        checksum: file.checksum || undefined,
+        lastAccessedAt: file.lastAccessedAt || undefined,
+        expiresAt: file.expiresAt || undefined,
       };
     } catch (error) {
       console.error('Failed to get file metadata:', error);
@@ -772,12 +787,12 @@ export class StorageService {
       // Delete preview and thumbnail if they exist
       if (metadata.previewUrl) {
         const previewPath = this.generatePreviewPath(metadata.filePath);
-        await provider.delete(previewPath).catch(() => {}); // Ignore errors
+        await provider.delete(previewPath).catch(() => { }); // Ignore errors
       }
 
       if (metadata.thumbnailUrl) {
         const thumbnailPath = this.generateThumbnailPath(metadata.filePath);
-        await provider.delete(thumbnailPath).catch(() => {}); // Ignore errors
+        await provider.delete(thumbnailPath).catch(() => { }); // Ignore errors
       }
 
       // Mark as deleted in database (soft delete)
@@ -807,7 +822,7 @@ export class StorageService {
    */
   async getDownloadUrl(
     fileId: string,
-    userId: string,
+    userId: string | null,
   ): Promise<{ url: string; expiresIn: number } | null> {
     try {
       const metadata = await this.getFileMetadata(fileId);
@@ -827,7 +842,7 @@ export class StorageService {
       await db
         .update(files)
         .set({
-          downloadCount: metadata.downloadCount + 1,
+          downloadCount: (metadata.downloadCount + 1).toString(),
           lastAccessedAt: new Date(),
           updatedAt: new Date(),
         })
@@ -865,44 +880,60 @@ export class StorageService {
     } = {},
   ): Promise<{ files: FileMetadata[]; total: number }> {
     try {
-      let query = db
-        .select()
-        .from(files)
-        .where(eq(files.deletedAt, null as any));
+      const conditions = [eq(files.deletedAt, null as any)];
 
       // Apply filters
       if (options.userId) {
-        query = query.where(eq(files.uploadedBy, options.userId));
+        conditions.push(eq(files.uploadedBy, options.userId));
       }
 
       if (options.associatedEntityType) {
-        query = query.where(
+        conditions.push(
           eq(files.associatedEntityType, options.associatedEntityType as any),
         );
       }
 
       if (options.associatedEntityId) {
-        query = query.where(
+        conditions.push(
           eq(files.associatedEntityId, options.associatedEntityId),
         );
       }
 
       if (options.mimeType) {
-        query = query.where(eq(files.mimeType, options.mimeType));
+        conditions.push(eq(files.mimeType, options.mimeType));
       }
 
       if (options.tags && options.tags.length > 0) {
-        query = query.where(sql`${files.tags} && ${options.tags}`);
+        conditions.push(sql`${files.tags} && ${options.tags}`);
       }
+
+      // Build query
+      let query: any = db
+        .select()
+        .from(files)
+        .where(and(...conditions));
 
       // Apply sorting
       const sortBy = options.sortBy || 'uploadedAt';
       const sortOrder = options.sortOrder || 'desc';
 
+      let sortColumn;
+      switch (sortBy) {
+        case 'fileSize':
+          sortColumn = files.fileSize;
+          break;
+        case 'downloadCount':
+          sortColumn = files.downloadCount;
+          break;
+        default:
+          sortColumn = files.uploadedAt;
+          break;
+      }
+
       if (sortOrder === 'desc') {
-        query = query.orderBy(desc(files[sortBy as keyof typeof files]));
+        query = query.orderBy(desc(sortColumn));
       } else {
-        query = query.orderBy(files[sortBy as keyof typeof files]);
+        query = query.orderBy(sortColumn);
       }
 
       // Apply pagination
@@ -916,9 +947,46 @@ export class StorageService {
 
       const filesList = await query;
 
+      // Map results to FileMetadata
+      const mappedFiles: FileMetadata[] = filesList.map((file: any) => ({
+        ...file,
+        fileSize: parseInt(file.fileSize),
+        downloadCount: parseInt(file.downloadCount),
+        category: file.category || undefined,
+        associatedEntityId: file.associatedEntityId || undefined,
+        associatedEntityType: file.associatedEntityType || undefined,
+        accessLevel: file.accessLevel,
+        provider: file.provider,
+        tags: file.tags || undefined,
+        metadata: (file.metadata as Record<string, any>) || undefined,
+        bucket: file.bucket || undefined,
+        region: file.region || undefined,
+        cdnUrl: file.cdnUrl || undefined,
+        previewUrl: file.previewUrl || undefined,
+        thumbnailUrl: file.thumbnailUrl || undefined,
+        checksum: file.checksum || undefined,
+        lastAccessedAt: file.lastAccessedAt || undefined,
+        expiresAt: file.expiresAt || undefined,
+      }));
+
+      // Get total count
+      // This is a simplified way, ideally we'd run a separate count query
+      // For now we just return the length of the current page + offset if exists
+      // Use efficient count query if possible, but Drizzle count() is tricky with conditions
+      // Let's stick effectively to what we had but fix types
+
+      // Actually we need total for pagination.
+      // Let's run a separate count query with same conditions
+      const countResult = await db
+        .select({ count: sql<number>`count(*)` })
+        .from(files)
+        .where(and(...conditions));
+
+      const total = Number(countResult[0]?.count || 0);
+
       return {
-        files: filesList,
-        total: filesList.length,
+        files: mappedFiles,
+        total,
       };
     } catch (error) {
       console.error('Failed to list files:', error);
@@ -1164,11 +1232,9 @@ export class StorageService {
       uploadedBy: metadata.uploadedBy,
       associatedEntityType: metadata.associatedEntityType || 'none',
       associatedEntityId: metadata.associatedEntityId,
-      isPublic: metadata.isPublic,
-      accessLevel: metadata.accessLevel,
       tags: metadata.tags,
       metadata: metadata.metadata,
-      provider: metadata.provider,
+      provider: metadata.provider as any,
       bucket: metadata.bucket,
       region: metadata.region,
       cdnUrl: metadata.cdnUrl,
@@ -1186,7 +1252,7 @@ export class StorageService {
 
   private async hasDownloadPermission(
     metadata: FileMetadata,
-    userId: string,
+    userId: string | null,
   ): Promise<boolean> {
     // Owner can always download
     if (metadata.uploadedBy === userId) {
@@ -1204,7 +1270,7 @@ export class StorageService {
   }
 
   private async createAuditLog(
-    userId: string,
+    userId: string | null,
     operation: string,
     tableName: string,
     recordId: string,

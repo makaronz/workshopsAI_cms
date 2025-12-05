@@ -170,33 +170,42 @@ export const requireOwnerOrAdmin = (
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
-    if (!req.user) {
-      res.status(401).json({
-        error: 'Authentication required',
-        message: 'User not authenticated',
+    try {
+      if (!req.user) {
+        res.status(401).json({
+          error: 'Authentication required',
+          message: 'User not authenticated',
+        });
+        return;
+      }
+
+      // Admins can access everything
+      if (req.user.role === 'admin') {
+        next();
+        return;
+      }
+
+      // Check if user owns the resource
+      const resourceOwnerId = await getResourceOwnerId(req);
+
+      if (resourceOwnerId === req.user.id) {
+        next();
+        return;
+      }
+
+      res.status(403).json({
+        error: 'Access denied',
+        message: 'You can only access your own resources',
+      });
+      return;
+    } catch (error) {
+      console.error('Owner check error:', error);
+      res.status(500).json({
+        error: 'Authorization failed',
+        message: 'Internal server error',
       });
       return;
     }
-
-    // Admins can access everything
-    if (req.user.role === 'admin') {
-      next();
-      return;
-    }
-
-    // Check if user owns the resource
-    const resourceOwnerId = await getResourceOwnerId(req);
-
-    if (resourceOwnerId === req.user.id) {
-      next();
-      return;
-    }
-
-    res.status(403).json({
-      error: 'Access denied',
-      message: 'You can only access your own resources',
-    });
-    return;
   };
 };
 
@@ -207,29 +216,38 @@ export const requireConsent = (consentType: string) => {
     res: Response,
     next: NextFunction,
   ): Promise<void> => {
-    if (!req.user) {
-      res.status(401).json({
-        error: 'Authentication required',
-        message: 'User not authenticated',
-      });
-      return;
-    }
+    try {
+      if (!req.user) {
+        res.status(401).json({
+          error: 'Authentication required',
+          message: 'User not authenticated',
+        });
+        return;
+      }
 
-    const hasConsent = await AuthService.hasUserConsent(
-      req.user.id,
-      consentType,
-    );
-
-    if (!hasConsent) {
-      res.status(403).json({
-        error: 'Consent required',
-        message: `User consent is required for: ${consentType}`,
+      const hasConsent = await AuthService.hasUserConsent(
+        req.user.id,
         consentType,
+      );
+
+      if (!hasConsent) {
+        res.status(403).json({
+          error: 'Consent required',
+          message: `User consent is required for: ${consentType}`,
+          consentType,
+        });
+        return;
+      }
+
+      next();
+    } catch (error) {
+      console.error('Consent check error:', error);
+      res.status(500).json({
+        error: 'Authorization failed',
+        message: 'Internal server error',
       });
       return;
     }
-
-    next();
   };
 };
 
@@ -269,7 +287,8 @@ export const optionalAuthenticate = async (
         req.user = {
           id: payload.userId,
           email: payload.email,
-          role: payload.role,
+          role: payload.role as UserRole,
+          name: user.name,
           sessionId: payload.sessionId,
         };
       }
