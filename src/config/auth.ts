@@ -81,7 +81,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction): v
 
   try {
     const decoded = jwt.verify(token, authConfig.jwtSecret) as any;
-    req.user = decoded;
+    req.user = decoded as any;
     next();
   } catch (error) {
     res.status(401).json({ error: 'Invalid or expired token' });
@@ -108,17 +108,4 @@ export const requireRole = (roles: string | string[]) => {
   };
 };
 
-// Extend Express Request type to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        email: string;
-        role: string;
-        name: string;
-        [key: string]: any;
-      };
-    }
-  }
-}
+

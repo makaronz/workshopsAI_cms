@@ -65,6 +65,7 @@ import {
   notExists,
   desc,
   asc,
+  not,
 } from 'drizzle-orm';
 
 // Export Drizzle ORM operators
@@ -87,4 +88,5 @@ export {
   notExists,
   desc,
   asc,
+  not,
 };

@@ -1037,7 +1037,7 @@ export class WorkshopEditor extends LitElement {
       const data = await response.json();
       this.publishingChecklist = data.data;
 
-      const isValid = this.publishingChecklist.canPublish;
+      const isValid = this.publishingChecklist?.canPublish ?? false;
       this.uiState = { ...this.uiState, isValid };
 
       return isValid;
@@ -1166,8 +1166,8 @@ export class WorkshopEditor extends LitElement {
               <li class="nav-item">
                 <button
                   class="nav-link ${classMap({
-    active: activeTab === 'basic',
-  })}"
+      active: activeTab === 'basic',
+    })}"
                   @click=${() => this.switchTab('basic')}
                 >
                   <span class="nav-icon">📝</span>
@@ -1177,8 +1177,8 @@ export class WorkshopEditor extends LitElement {
               <li class="nav-item">
                 <button
                   class="nav-link ${classMap({
-    active: activeTab === 'sessions',
-  })}"
+      active: activeTab === 'sessions',
+    })}"
                   @click=${() => this.switchTab('sessions')}
                 >
                   <span class="nav-icon">📅</span>
@@ -1188,8 +1188,8 @@ export class WorkshopEditor extends LitElement {
               <li class="nav-item">
                 <button
                   class="nav-link ${classMap({
-    active: activeTab === 'materials',
-  })}"
+      active: activeTab === 'materials',
+    })}"
                   @click=${() => this.switchTab('materials')}
                 >
                   <span class="nav-icon">📁</span>
@@ -1199,8 +1199,8 @@ export class WorkshopEditor extends LitElement {
               <li class="nav-item">
                 <button
                   class="nav-link ${classMap({
-    active: activeTab === 'questionnaires',
-  })}"
+      active: activeTab === 'questionnaires',
+    })}"
                   @click=${() => this.switchTab('questionnaires')}
                 >
                   <span class="nav-icon">📋</span>
@@ -1210,8 +1210,8 @@ export class WorkshopEditor extends LitElement {
               <li class="nav-item">
                 <button
                   class="nav-link ${classMap({
-    active: activeTab === 'preview',
-  })}"
+      active: activeTab === 'preview',
+    })}"
                   @click=${() => this.switchTab('preview')}
                 >
                   <span class="nav-icon">👁️</span>
@@ -1221,8 +1221,8 @@ export class WorkshopEditor extends LitElement {
               <li class="nav-item">
                 <button
                   class="nav-link ${classMap({
-    active: activeTab === 'settings',
-  })}"
+      active: activeTab === 'settings',
+    })}"
                   @click=${() => this.switchTab('settings')}
                 >
                   <span class="nav-icon">⚙️</span>
@@ -1251,12 +1251,12 @@ export class WorkshopEditor extends LitElement {
                 placeholder="Workshop Title"
                 value=${this.workshopData.titleI18n[this.currentLanguage] || ''}
                 @input=${(e: Event) => {
-    const target = e.target as HTMLInputElement;
-    this.updateWorkshopData('titleI18n', {
-      ...this.workshopData.titleI18n,
-      [this.currentLanguage]: target.value,
-    });
-  }}
+        const target = e.target as HTMLInputElement;
+        this.updateWorkshopData('titleI18n', {
+          ...this.workshopData.titleI18n,
+          [this.currentLanguage]: target.value,
+        });
+      }}
               />
             </div>
 
@@ -1265,16 +1265,16 @@ export class WorkshopEditor extends LitElement {
               <div class="language-switcher">
                 <button
                   class="lang-button ${classMap({
-    active: this.currentLanguage === 'pl',
-  })}"
+        active: this.currentLanguage === 'pl',
+      })}"
                   @click=${() => this.switchLanguage('pl')}
                 >
                   PL
                 </button>
                 <button
                   class="lang-button ${classMap({
-    active: this.currentLanguage === 'en',
-  })}"
+        active: this.currentLanguage === 'en',
+      })}"
                   @click=${() => this.switchLanguage('en')}
                 >
                   EN
@@ -1284,20 +1284,20 @@ export class WorkshopEditor extends LitElement {
               <!-- Save Status -->
               <div
                 class="save-status ${classMap({
-    saving: autoSaveStatus.isSaving,
-    saved: autoSaveStatus.lastSaved && !autoSaveStatus.error,
-    error: autoSaveStatus.error,
-  })}"
+        saving: autoSaveStatus.isSaving,
+        saved: !!(autoSaveStatus.lastSaved && !autoSaveStatus.error),
+        error: !!autoSaveStatus.error,
+      })}"
               >
                 <div class="save-indicator"></div>
                 <span>
                   ${autoSaveStatus.isSaving
-    ? 'Saving...'
-    : autoSaveStatus.lastSaved
-      ? 'Saved'
-      : autoSaveStatus.error
-        ? 'Error'
-        : 'Ready'}
+        ? 'Saving...'
+        : autoSaveStatus.lastSaved
+          ? 'Saved'
+          : autoSaveStatus.error
+            ? 'Error'
+            : 'Ready'}
                 </span>
               </div>
 
@@ -1343,9 +1343,9 @@ export class WorkshopEditor extends LitElement {
                         placeholder="workshop-url-slug"
                         value=${this.workshopData.slug || ''}
                         @input=${(e: Event) => {
-    const target = e.target as HTMLInputElement;
-    this.updateWorkshopData('slug', target.value);
-  }}
+        const target = e.target as HTMLInputElement;
+        this.updateWorkshopData('slug', target.value);
+      }}
                       />
                       <div class="form-help">
                         URL-friendly identifier for the workshop
@@ -1358,12 +1358,12 @@ export class WorkshopEditor extends LitElement {
                         class="form-select"
                         .value=${this.workshopData.status}
                         @change=${(e: Event) => {
-    const target = e.target as HTMLSelectElement;
-    this.updateWorkshopData(
-      'status',
-                            target.value as WorkshopData['status'],
-    );
-  }}
+        const target = e.target as HTMLSelectElement;
+        this.updateWorkshopData(
+          'status',
+          target.value as WorkshopData['status'],
+        );
+      }}
                       >
                         <option value="draft">Draft</option>
                         <option value="published">Published</option>
@@ -1381,15 +1381,15 @@ export class WorkshopEditor extends LitElement {
                         class="form-input"
                         placeholder="Workshop subtitle"
                         value=${this.workshopData.subtitleI18n?.[
-    this.currentLanguage
-  ] || ''}
+      this.currentLanguage
+      ] || ''}
                         @input=${(e: Event) => {
-    const target = e.target as HTMLInputElement;
-    this.updateWorkshopData('subtitleI18n', {
-      ...this.workshopData.subtitleI18n,
-      [this.currentLanguage]: target.value,
-    });
-  }}
+        const target = e.target as HTMLInputElement;
+        this.updateWorkshopData('subtitleI18n', {
+          ...this.workshopData.subtitleI18n,
+          [this.currentLanguage]: target.value,
+        });
+      }}
                       />
                     </div>
 
@@ -1399,12 +1399,12 @@ export class WorkshopEditor extends LitElement {
                         class="form-select"
                         .value=${this.workshopData.language}
                         @change=${(e: Event) => {
-    const target = e.target as HTMLSelectElement;
-    this.updateWorkshopData(
-      'language',
-                            target.value as Language,
-    );
-  }}
+        const target = e.target as HTMLSelectElement;
+        this.updateWorkshopData(
+          'language',
+          target.value as Language,
+        );
+      }}
                       >
                         <option value="pl">Polish</option>
                         <option value="en">English</option>
@@ -1422,15 +1422,15 @@ export class WorkshopEditor extends LitElement {
                       placeholder="Describe your workshop..."
                       rows="4"
                       value=${this.workshopData.descriptionI18n[
-    this.currentLanguage
-  ] || ''}
+      this.currentLanguage
+      ] || ''}
                       @input=${(e: Event) => {
-    const target = e.target as HTMLTextAreaElement;
-    this.updateWorkshopData('descriptionI18n', {
-      ...this.workshopData.descriptionI18n,
-      [this.currentLanguage]: target.value,
-    });
-  }}
+        const target = e.target as HTMLTextAreaElement;
+        this.updateWorkshopData('descriptionI18n', {
+          ...this.workshopData.descriptionI18n,
+          [this.currentLanguage]: target.value,
+        });
+      }}
                     ></textarea>
                   </div>
 
@@ -1441,17 +1441,17 @@ export class WorkshopEditor extends LitElement {
                         type="datetime-local"
                         class="form-input"
                         value=${this.workshopData.startDate
-    ? new Date(this.workshopData.startDate)
-      .toISOString()
-      .slice(0, 16)
-    : ''}
+        ? new Date(this.workshopData.startDate)
+          .toISOString()
+          .slice(0, 16)
+        : ''}
                         @change=${(e: Event) => {
-    const target = e.target as HTMLInputElement;
-    this.updateWorkshopData(
-      'startDate',
-      target.value ? new Date(target.value) : undefined,
-    );
-  }}
+        const target = e.target as HTMLInputElement;
+        this.updateWorkshopData(
+          'startDate',
+          target.value ? new Date(target.value) : undefined,
+        );
+      }}
                       />
                     </div>
 
@@ -1461,17 +1461,17 @@ export class WorkshopEditor extends LitElement {
                         type="datetime-local"
                         class="form-input"
                         value=${this.workshopData.endDate
-    ? new Date(this.workshopData.endDate)
-      .toISOString()
-      .slice(0, 16)
-    : ''}
+        ? new Date(this.workshopData.endDate)
+          .toISOString()
+          .slice(0, 16)
+        : ''}
                         @change=${(e: Event) => {
-    const target = e.target as HTMLInputElement;
-    this.updateWorkshopData(
-      'endDate',
-      target.value ? new Date(target.value) : undefined,
-    );
-  }}
+        const target = e.target as HTMLInputElement;
+        this.updateWorkshopData(
+          'endDate',
+          target.value ? new Date(target.value) : undefined,
+        );
+      }}
                       />
                     </div>
 
@@ -1484,12 +1484,12 @@ export class WorkshopEditor extends LitElement {
                         min="1"
                         value=${this.workshopData.seatLimit || ''}
                         @input=${(e: Event) => {
-    const target = e.target as HTMLInputElement;
-    this.updateWorkshopData(
-      'seatLimit',
-      target.value ? parseInt(target.value) : undefined,
-    );
-  }}
+        const target = e.target as HTMLInputElement;
+        this.updateWorkshopData(
+          'seatLimit',
+          target.value ? parseInt(target.value) : undefined,
+        );
+      }}
                       />
                     </div>
 
@@ -1499,12 +1499,12 @@ export class WorkshopEditor extends LitElement {
                         class="form-select"
                         .value=${this.workshopData.templateTheme || 'custom'}
                         @change=${(e: Event) => {
-    const target = e.target as HTMLSelectElement;
-    this.updateWorkshopData(
-      'templateTheme',
-                            target.value as WorkshopData['templateTheme'],
-    );
-  }}
+        const target = e.target as HTMLSelectElement;
+        this.updateWorkshopData(
+          'templateTheme',
+          target.value as WorkshopData['templateTheme'],
+        );
+      }}
                       >
                         <option value="custom">Custom</option>
                         <option value="integracja">Integration</option>
@@ -1520,42 +1520,42 @@ export class WorkshopEditor extends LitElement {
             <!-- Sessions Tab -->
             <div
               class="tab-content ${classMap({
-    active: activeTab === 'sessions',
-  })}"
+        active: activeTab === 'sessions',
+      })}"
             >
               <session-manager
                 .workshopId=${this.workshopId}
                 .sessions=${this.sessions}
                 .language=${this.currentLanguage}
                 @sessions-change=${(e: CustomEvent) => {
-    this.sessions = e.detail.sessions;
-    this.uiState = { ...this.uiState, isDirty: true };
-    this.autoSaveManager?.triggerSave();
-  }}
+        this.sessions = e.detail.sessions;
+        this.uiState = { ...this.uiState, isDirty: true };
+        this.autoSaveManager?.triggerSave();
+      }}
               ></session-manager>
             </div>
 
             <!-- Materials Tab -->
             <div
               class="tab-content ${classMap({
-    active: activeTab === 'materials',
-  })}"
+        active: activeTab === 'materials',
+      })}"
             >
               <resource-upload
                 .workshopId=${this.workshopId}
                 .materials=${this.workshopData.materials || []}
                 .sessions=${this.sessions}
                 @materials-change=${(e: CustomEvent) => {
-    this.updateWorkshopData('materials', e.detail.materials);
-  }}
+        this.updateWorkshopData('materials', e.detail.materials);
+      }}
               ></resource-upload>
             </div>
 
             <!-- Questionnaires Tab -->
             <div
               class="tab-content ${classMap({
-    active: activeTab === 'questionnaires',
-  })}"
+        active: activeTab === 'questionnaires',
+      })}"
             >
               <div class="form-section">
                 <div class="section-header">
@@ -1573,27 +1573,27 @@ export class WorkshopEditor extends LitElement {
             <!-- Preview Tab -->
             <div
               class="tab-content ${classMap({
-    active: activeTab === 'preview',
-  })}"
+        active: activeTab === 'preview',
+      })}"
             >
               <workshop-preview
                 .workshopData=${this.workshopData}
                 .sessions=${this.sessions}
                 .options=${this.uiState.previewMode}
                 @options-change=${(e: CustomEvent) => {
-    this.uiState = {
-      ...this.uiState,
-      previewMode: e.detail.options,
-    };
-  }}
+        this.uiState = {
+          ...this.uiState,
+          previewMode: e.detail.options,
+        };
+      }}
               ></workshop-preview>
             </div>
 
             <!-- Settings Tab -->
             <div
               class="tab-content ${classMap({
-    active: activeTab === 'settings',
-  })}"
+        active: activeTab === 'settings',
+      })}"
             >
               <div class="form-section">
                 <div class="section-header">
@@ -1614,34 +1614,34 @@ export class WorkshopEditor extends LitElement {
         <aside class="right-sidebar">
           <!-- Publishing Checklist -->
           ${this.publishingChecklist
-    ? html`
+        ? html`
                 <div class="sidebar-section">
                   <h3 class="sidebar-title">Publishing Checklist</h3>
                   <div class="checklist">
                     ${this.publishingChecklist.sections.map(
-    section => html`
+          section => html`
                         <div class="checklist-item">
                           <div
                             class="checklist-checkbox ${classMap({
-    checked: section.isComplete,
-  })}"
+            checked: section.isComplete,
+          })}"
                           >
                             ${section.isComplete ? '✓' : ''}
                           </div>
                           <div
                             class="checklist-text ${classMap({
-    optional: !section.required,
-  })}"
+            optional: !section.required,
+          })}"
                           >
                             ${section.title[this.currentLanguage]}
                           </div>
                         </div>
                       `,
-  )}
+        )}
                   </div>
                 </div>
               `
-    : ''}
+        : ''}
 
           <!-- Progress Indicator -->
           <div class="sidebar-section">
