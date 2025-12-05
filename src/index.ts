@@ -113,7 +113,7 @@ app.use(hpp());
 
 // XSS Protection middleware
 app.use((req, res, next) => {
-  const sanitizeObject = (obj: any) => {
+  const sanitizeObject = (obj: any): any => {
     if (typeof obj !== 'object' || obj === null) {
       return obj;
     }
@@ -198,11 +198,11 @@ async function checkLLMServicesHealth() {
     };
   } catch (error) {
     return {
-      embeddings: { status: 'error', error: error.message },
-      analysisWorker: { status: 'error', error: error.message },
-      streamingWorker: { status: 'error', error: error.message },
-      performanceSystem: { status: 'error', error: error.message },
-      dbOptimization: { status: 'error', error: error.message },
+      embeddings: { status: 'error', error: (error as any).message },
+      analysisWorker: { status: 'error', error: (error as any).message },
+      streamingWorker: { status: 'error', error: (error as any).message },
+      performanceSystem: { status: 'error', error: (error as any).message },
+      dbOptimization: { status: 'error', error: (error as any).message },
     };
   }
 }

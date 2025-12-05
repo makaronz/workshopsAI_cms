@@ -253,7 +253,7 @@ app.get('/health', async (_req, res) => {
     res.status(500).json({
       status: 'error',
       message: 'Health check failed',
-      error: NODE_ENV === 'development' ? error.message : 'Internal server error',
+      error: NODE_ENV === 'development' ? (error as any).message : 'Internal server error',
     });
   }
 });
@@ -295,7 +295,7 @@ app.get('/metrics', async (_req, res) => {
   } catch (error) {
     res.status(500).json({
       error: 'Failed to get metrics',
-      message: error.message,
+      message: (error as any).message,
     });
   }
 });
@@ -308,7 +308,7 @@ app.get('/api/v1/system/status', async (_req, res) => {
   } catch (error) {
     res.status(500).json({
       error: 'Failed to get system status',
-      message: error.message,
+      message: (error as any).message,
     });
   }
 });
@@ -331,7 +331,7 @@ app.get('/api/v1/system/metrics', async (_req, res) => {
   } catch (error) {
     res.status(500).json({
       error: 'Failed to get metrics',
-      message: error.message,
+      message: (error as any).message,
     });
   }
 });
@@ -351,8 +351,8 @@ async function checkLLMServicesHealth() {
     };
   } catch (error) {
     return {
-      embeddings: { status: 'error', error: error.message },
-      analysisWorker: { status: 'error', error: error.message },
+      embeddings: { status: 'error', error: (error as any).message },
+      analysisWorker: { status: 'error', error: (error as any).message },
     };
   }
 }
@@ -452,7 +452,7 @@ const gracefulShutdown = async (signal: string) => {
 
       // Shutdown services in order
       await Promise.all([
-        llmAnalysisWorker.shutdown(),
+        llmAnalysisWorker.instance.shutdown(),
         optimizedRedisService.disconnect(),
         closeDatabaseConnection(),
         monitoringService.stopMonitoring(),

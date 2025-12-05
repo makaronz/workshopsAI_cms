@@ -9,7 +9,7 @@ import { customElement, property, state, query } from 'lit/decorators.js';
 import { classMap } from 'lit/directives/class-map.js';
 import { styleMap } from 'lit/directives/style-map.js';
 
-import {
+import type {
   WorkshopData,
   WorkshopSession,
   PreviewOptions,
@@ -650,7 +650,7 @@ export class WorkshopPreview extends LitElement {
   @state() private isLoading = false;
   @state() private workshopPreview?: WorkshopPreviewData;
 
-  connectedCallback() {
+  override connectedCallback() {
     super.connectedCallback();
     this.generatePreview();
   }
@@ -757,33 +757,33 @@ export class WorkshopPreview extends LitElement {
     const activities = [];
 
     switch (session.type) {
-    case 'introduction':
-      activities.push({
-        id: 'welcome',
-        type: 'instruction',
-        title: { pl: 'Przywitanie', en: 'Welcome' },
-        description: {
-          pl: 'Przedstawienie prowadzącego i celów warsztatu',
-          en: 'Introduce facilitator and workshop goals',
-        },
-        duration: 10,
-        order: 1,
-        materials: [],
-        instructions: [],
-      });
-      break;
-    case 'activity':
-      activities.push({
-        id: 'main-activity',
-        type: 'exercise',
-        title: { pl: 'Główna aktywność', en: 'Main Activity' },
-        description: { pl: 'Praktyczne ćwiczenie', en: 'Practical exercise' },
-        duration: session.duration - 10,
-        order: 1,
-        materials: [],
-        instructions: [],
-      });
-      break;
+      case 'introduction':
+        activities.push({
+          id: 'welcome',
+          type: 'instruction',
+          title: { pl: 'Przywitanie', en: 'Welcome' },
+          description: {
+            pl: 'Przedstawienie prowadzącego i celów warsztatu',
+            en: 'Introduce facilitator and workshop goals',
+          },
+          duration: 10,
+          order: 1,
+          materials: [],
+          instructions: [],
+        });
+        break;
+      case 'activity':
+        activities.push({
+          id: 'main-activity',
+          type: 'exercise',
+          title: { pl: 'Główna aktywność', en: 'Main Activity' },
+          description: { pl: 'Praktyczne ćwiczenie', en: 'Practical exercise' },
+          duration: session.duration - 10,
+          order: 1,
+          materials: [],
+          instructions: [],
+        });
+        break;
     }
 
     return activities;
@@ -888,21 +888,21 @@ export class WorkshopPreview extends LitElement {
               <button
                 class="view-btn ${classMap({ active: mode === 'participant' })}"
                 @click=${() =>
-    (this.options = { ...this.options, mode: 'participant' })}
+        (this.options = { ...this.options, mode: 'participant' })}
               >
                 👤 Participant
               </button>
               <button
                 class="view-btn ${classMap({ active: mode === 'facilitator' })}"
                 @click=${() =>
-    (this.options = { ...this.options, mode: 'facilitator' })}
+        (this.options = { ...this.options, mode: 'facilitator' })}
               >
                 🎯 Facilitator
               </button>
               <button
                 class="view-btn ${classMap({ active: mode === 'print' })}"
                 @click=${() =>
-    (this.options = { ...this.options, mode: 'print' })}
+        (this.options = { ...this.options, mode: 'print' })}
               >
                 🖨️ Print
               </button>
@@ -910,42 +910,42 @@ export class WorkshopPreview extends LitElement {
 
             <!-- Device Selector (hidden in print mode) -->
             ${mode !== 'print'
-    ? html`
+        ? html`
                   <div class="device-selector">
                     <button
                       class="device-btn ${classMap({
-    active: this.deviceMode === 'desktop',
-  })}"
+          active: this.deviceMode === 'desktop',
+        })}"
                       @click=${() => (this.deviceMode = 'desktop')}
                     >
                       💻 Desktop
                     </button>
                     <button
                       class="device-btn ${classMap({
-    active: this.deviceMode === 'tablet',
-  })}"
+          active: this.deviceMode === 'tablet',
+        })}"
                       @click=${() => (this.deviceMode = 'tablet')}
                     >
                       📱 Tablet
                     </button>
                     <button
                       class="device-btn ${classMap({
-    active: this.deviceMode === 'mobile',
-  })}"
+          active: this.deviceMode === 'mobile',
+        })}"
                       @click=${() => (this.deviceMode = 'mobile')}
                     >
                       📱 Mobile
                     </button>
                   </div>
                 `
-    : ''}
+        : ''}
 
             <!-- Action Buttons -->
             <button class="action-btn secondary" @click=${this.exportPreview}>
               📥 Export
             </button>
             ${mode === 'print'
-    ? html`
+        ? html`
                   <button
                     class="action-btn primary"
                     @click=${this.printPreview}
@@ -953,25 +953,25 @@ export class WorkshopPreview extends LitElement {
                     🖨️ Print
                   </button>
                 `
-    : ''}
+        : ''}
           </div>
         </div>
 
         <!-- Preview Content -->
         <div class="preview-content">
           ${this.isLoading
-    ? html`
+        ? html`
                 <div class="loading-overlay">
                   <div class="loading-spinner"></div>
                 </div>
               `
-    : ''}
+        : ''}
 
           <!-- Device Frame -->
           <div class="device-frame ${mode} ${this.deviceMode}">
             ${previewData
-    ? this.renderPreviewContent(previewData)
-    : html`
+        ? this.renderPreviewContent(previewData)
+        : html`
                   <div class="empty-state">
                     <div class="empty-icon">🔍</div>
                     <div class="empty-title">Preview not available</div>
@@ -990,14 +990,14 @@ export class WorkshopPreview extends LitElement {
     const { mode, language } = this.options;
 
     switch (mode) {
-    case 'participant':
-      return this.renderParticipantView(previewData);
-    case 'facilitator':
-      return this.renderFacilitatorView(previewData);
-    case 'print':
-      return this.renderPrintView(previewData);
-    default:
-      return this.renderParticipantView(previewData);
+      case 'participant':
+        return this.renderParticipantView(previewData);
+      case 'facilitator':
+        return this.renderFacilitatorView(previewData);
+      case 'print':
+        return this.renderPrintView(previewData);
+      default:
+        return this.renderParticipantView(previewData);
     }
   }
 
@@ -1015,7 +1015,7 @@ export class WorkshopPreview extends LitElement {
             </h1>
             <p class="welcome-subtitle">
               ${workshopData.descriptionI18n[language] ||
-              'Workshop description'}
+      'Workshop description'}
             </p>
 
             <div class="welcome-info">
@@ -1034,7 +1034,7 @@ export class WorkshopPreview extends LitElement {
                 <div class="info-value">${language.toUpperCase()}</div>
               </div>
               ${workshopData.startDate
-    ? html`
+        ? html`
                     <div class="info-card">
                       <div class="info-label">Start Date</div>
                       <div class="info-value">
@@ -1042,7 +1042,7 @@ export class WorkshopPreview extends LitElement {
                       </div>
                     </div>
                   `
-    : ''}
+        : ''}
             </div>
           </div>
 
@@ -1051,10 +1051,10 @@ export class WorkshopPreview extends LitElement {
             <h2 class="section-title">📅 Workshop Schedule</h2>
 
             ${this.options.showSessionDetails
-    ? html`
+        ? html`
                   <div class="timeline-preview">
                     ${participantView.sessionFlow.map(
-    (sessionPreview, index) => html`
+          (sessionPreview, index) => html`
                         <div class="session-preview">
                           <div class="session-header">
                             <div style="display: flex; align-items: center;">
@@ -1069,16 +1069,16 @@ export class WorkshopPreview extends LitElement {
                           </div>
 
                           ${sessionPreview.session.descriptionI18n?.[language]
-    ? html`
+              ? html`
                                 <div class="session-description">
                                   ${sessionPreview.session.descriptionI18n[
-    language
-  ]}
+                language
+                ]}
                                 </div>
                               `
-    : ''}
+              : ''}
                           ${this.options.showTimings && sessionPreview.startTime
-    ? html`
+              ? html`
                                 <div
                                   style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1rem;"
                                 >
@@ -1087,39 +1087,39 @@ export class WorkshopPreview extends LitElement {
                                   ${this.formatTime(sessionPreview.endTime!)}
                                 </div>
                               `
-    : ''}
+              : ''}
                           ${this.options.showMaterials &&
-                          sessionPreview.materials.length > 0
-    ? html`
+              sessionPreview.materials.length > 0
+              ? html`
                                 <div class="session-materials">
                                   ${sessionPreview.materials.map(
-    material => html`
+                material => html`
                                       <div class="material-tag">
                                         📎 ${material.name}
                                       </div>
                                     `,
-  )}
+              )}
                                 </div>
                               `
-    : ''}
+              : ''}
                         </div>
                       `,
-  )}
+        )}
                   </div>
                 `
-    : ''}
+        : ''}
 
             <!-- Materials Section -->
             ${this.options.showMaterials &&
-            workshopData.materials &&
-            workshopData.materials.length > 0
-    ? html`
+        workshopData.materials &&
+        workshopData.materials.length > 0
+        ? html`
                   <h2 class="section-title" style="margin-top: 2rem;">
                     📁 Workshop Materials
                   </h2>
                   <div style="display: grid; gap: 1rem;">
                     ${workshopData.materials.map(
-    material => html`
+          material => html`
                         <div
                           style="padding: 1rem; background: white; border: 1px solid #e5e7eb; border-radius: 8px; display: flex; align-items: center; gap: 0.75rem;"
                         >
@@ -1134,10 +1134,10 @@ export class WorkshopPreview extends LitElement {
                           </div>
                         </div>
                       `,
-  )}
+        )}
                   </div>
                 `
-    : ''}
+        : ''}
           </div>
         </div>
       </div>
@@ -1181,8 +1181,8 @@ export class WorkshopPreview extends LitElement {
             <h2 class="section-title">📅 Session Timeline</h2>
 
             ${facilitatorView.sessionPlan.map((sessionPreview, index) => {
-    const startTime = this.formatTime(sessionPreview.startTime!);
-    return html`
+      const startTime = this.formatTime(sessionPreview.startTime!);
+      return html`
                 <div class="session-card" data-time="${startTime}">
                   <div class="session-header">
                     <h3 class="session-title">
@@ -1195,12 +1195,12 @@ export class WorkshopPreview extends LitElement {
                   </div>
 
                   ${sessionPreview.session.descriptionI18n?.[language]
-    ? html`
+          ? html`
                         <div class="session-description">
                           ${sessionPreview.session.descriptionI18n[language]}
                         </div>
                       `
-    : ''}
+          : ''}
 
                   <div
                     style="font-size: 0.875rem; color: #6b7280; margin: 0.5rem 0;"
@@ -1210,27 +1210,27 @@ export class WorkshopPreview extends LitElement {
                   </div>
 
                   ${sessionPreview.materials.length > 0
-    ? html`
+          ? html`
                         <div style="margin-top: 1rem;">
                           <strong>Materials:</strong>
                           <div
                             style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;"
                           >
                             ${sessionPreview.materials.map(
-    material => html`
+            material => html`
                                 <span
                                   style="padding: 0.25rem 0.5rem; background: #f0f9ff; color: #0369a1; border-radius: 4px; font-size: 0.75rem;"
                                 >
                                   📎 ${material.name}
                                 </span>
                               `,
-  )}
+          )}
                           </div>
                         </div>
                       `
-    : ''}
+          : ''}
                   ${index === 0
-    ? html`
+          ? html`
                         <div class="session-notes">
                           <strong>Opening Notes:</strong>
                           <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
@@ -1240,9 +1240,9 @@ export class WorkshopPreview extends LitElement {
                           </ul>
                         </div>
                       `
-    : ''}
+          : ''}
                   ${index === facilitatorView.sessionPlan.length - 1
-    ? html`
+          ? html`
                         <div class="session-notes">
                           <strong>Closing Notes:</strong>
                           <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
@@ -1252,36 +1252,36 @@ export class WorkshopPreview extends LitElement {
                           </ul>
                         </div>
                       `
-    : ''}
+          : ''}
                 </div>
               `;
-  })}
+    })}
 
             <!-- Preparation Checklist -->
             <div class="checklist-section">
               <h3 class="checklist-title">✅ Pre-Workshop Checklist</h3>
               ${facilitatorView.checklist.map(
-    item => html`
+      item => html`
                   <div class="checklist-item">
                     <div class="checklist-checkbox"></div>
                     <div>${item}</div>
                   </div>
                 `,
-  )}
+    )}
             </div>
 
             <!-- Facilitator Notes -->
             <div class="checklist-section">
               <h3 class="checklist-title">📝 Important Notes</h3>
               ${facilitatorView.notes.map(
-    note => html`
+      note => html`
                   <div
                     style="margin-bottom: 0.5rem; padding: 0.75rem; background: #fef3c7; border-radius: 6px; color: #92400e;"
                   >
                     ${note}
                   </div>
                 `,
-  )}
+    )}
             </div>
           </div>
         </div>
@@ -1311,34 +1311,34 @@ export class WorkshopPreview extends LitElement {
           <div class="print-section-title">Workshop Overview</div>
           <p>
             <strong>Description:</strong> ${workshopData.descriptionI18n[
-    language
-  ] || 'No description'}
+      language
+      ] || 'No description'}
           </p>
           <p><strong>Language:</strong> ${language.toUpperCase()}</p>
           <p>
             <strong>Duration:</strong> ${Math.ceil(
-    previewData.totalDuration / 60,
-  )}
+        previewData.totalDuration / 60,
+      )}
             hours
           </p>
           <p><strong>Sessions:</strong> ${sessions.length}</p>
           ${workshopData.startDate
-    ? html`
+        ? html`
                 <p>
                   <strong>Start Date:</strong> ${this.formatDate(
-    new Date(workshopData.startDate),
-  )}
+          new Date(workshopData.startDate),
+        )}
                 </p>
               `
-    : ''}
+        : ''}
         </div>
 
         <!-- Session Schedule -->
         <div class="print-section">
           <div class="print-section-title">Session Schedule</div>
           ${sessions.map((session, index) => {
-    const startTime = this.calculateSessionStartTime(session);
-    return html`
+          const startTime = this.calculateSessionStartTime(session);
+          return html`
               <div
                 style="margin-bottom: 1rem; padding: 0.75rem; border-left: 3px solid #3b82f6; background: #f8fafc;"
               >
@@ -1350,37 +1350,37 @@ export class WorkshopPreview extends LitElement {
                 >
                   ${this.formatTime(startTime)} -
                   ${this.formatTime(
-    new Date(startTime.getTime() + session.duration * 60000),
-  )}
+            new Date(startTime.getTime() + session.duration * 60000),
+          )}
                   • ${session.duration} minutes
                 </div>
                 ${session.descriptionI18n?.[language]
-    ? html`
+              ? html`
                       <div style="font-size: 0.875rem; margin-top: 0.5rem;">
                         ${session.descriptionI18n[language]}
                       </div>
                     `
-    : ''}
+              : ''}
               </div>
             `;
-  })}
+        })}
         </div>
 
         <!-- Materials -->
         ${workshopData.materials && workshopData.materials.length > 0
-    ? html`
+        ? html`
               <div class="print-section">
                 <div class="print-section-title">Workshop Materials</div>
                 ${workshopData.materials.map(
-    material => html`
+          material => html`
                     <div style="margin-bottom: 0.5rem;">
                       • ${material.name} (${material.type})
                     </div>
                   `,
-  )}
+        )}
               </div>
             `
-    : ''}
+        : ''}
 
         <!-- Notes -->
         <div class="print-section">

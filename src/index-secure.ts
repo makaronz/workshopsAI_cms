@@ -204,7 +204,7 @@ app.get('/api/admin/security/metrics', authenticateJWT, (req, res) => {
   }
 
   const metrics = getSecurityMetrics();
-  res.json({
+  return res.json({
     success: true,
     data: metrics,
     timestamp: new Date().toISOString(),
@@ -218,7 +218,7 @@ app.get('/api/admin/security/events', authenticateJWT, (req, res) => {
   }
 
   const events = securityMonitor.getEvents(req.query);
-  res.json({
+  return res.json({
     success: true,
     data: events,
     timestamp: new Date().toISOString(),
@@ -237,7 +237,7 @@ app.post('/api/admin/security/block-ip', authenticateJWT, (req, res) => {
   }
 
   const event = blockIP(ip, reason);
-  res.json({
+  return res.json({
     success: true,
     data: { eventId: event.id },
     message: `IP ${ip} has been blocked`,

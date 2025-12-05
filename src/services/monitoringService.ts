@@ -162,7 +162,7 @@ class MonitoringService {
         status: 'unhealthy',
         responseTime,
         lastCheck: new Date(),
-        error: error.message,
+        error: (error as any).message,
       };
 
       this.healthChecks.set('database', healthCheck);
@@ -170,8 +170,8 @@ class MonitoringService {
       this.createAlert({
         severity: 'critical',
         type: 'database',
-        message: 'Database health check failed: ' + error.message,
-        metadata: { responseTime, error: error.message },
+        message: 'Database health check failed: ' + (error as any).message,
+        metadata: { responseTime, error: (error as any).message },
       });
     }
   }
@@ -208,7 +208,7 @@ class MonitoringService {
         status: 'unhealthy',
         responseTime,
         lastCheck: new Date(),
-        error: error.message,
+        error: (error as any).message,
       };
 
       this.healthChecks.set('redis', healthCheck);
@@ -216,8 +216,8 @@ class MonitoringService {
       this.createAlert({
         severity: 'high',
         type: 'redis',
-        message: 'Redis health check failed: ' + error.message,
-        metadata: { responseTime, error: error.message },
+        message: 'Redis health check failed: ' + (error as any).message,
+        metadata: { responseTime, error: (error as any).message },
       });
     }
   }
@@ -388,7 +388,7 @@ class MonitoringService {
   }
 
   // Create alert
-  private createAlert(alertData: Omit<Alert, 'id' | 'timestamp' | 'resolved'>): void {
+  public createAlert(alertData: Omit<Alert, 'id' | 'timestamp' | 'resolved'>): void {
     const alert: Alert = {
       id: this.generateAlertId(),
       timestamp: new Date(),
@@ -482,7 +482,7 @@ class MonitoringService {
     alerts: Alert[];
     metrics: SystemMetrics;
     performance: any;
-    } {
+  } {
     const healthChecks = this.getHealthChecks();
     const criticalAlerts = this.getAlerts({ severity: 'critical', resolved: false });
     const highAlerts = this.getAlerts({ severity: 'high', resolved: false });

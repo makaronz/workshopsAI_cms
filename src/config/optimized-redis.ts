@@ -77,7 +77,7 @@ export class OptimizedRedisService {
       family: this.config.family,
       // Enable clustering for better performance if multiple Redis instances
       enableReadyCheck: true,
-      maxLoadingTimeout: 5000,
+      // maxLoadingTimeout removed as it is not in RedisOptions
       // Connection pool optimization
       connectionName: 'workshopsai-cms',
       keyPrefix: 'workshopsai:',
@@ -107,7 +107,7 @@ export class OptimizedRedisService {
       logger.warn('Redis connection closed');
     });
 
-    this.client.on('reconnecting', (ms) => {
+    this.client.on('reconnecting', (ms: number) => {
       logger.info(`Redis reconnecting in ${ms}ms`);
     });
   }
@@ -304,7 +304,7 @@ export class OptimizedRedisService {
       logger.error('Redis health check failed:', error);
       return {
         healthy: false,
-        details: { error: error.message },
+        details: { error: (error as any).message },
       };
     }
   }

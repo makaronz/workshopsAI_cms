@@ -141,6 +141,13 @@ class I18nManager {
   }
 
   /**
+   * Alias for translate
+   */
+  t(key: TranslationKey, params?: Record<string, string | number>): string {
+    return this.translate(key, params);
+  }
+
+  /**
    * Get bilingual text for current language
    */
   getBilingualText(bilingual: BilingualText): string {
