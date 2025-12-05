@@ -481,6 +481,7 @@ export const translations = {
     'validation.pattern': 'Invalid format',
     'validation.file_size': 'Maximum file size: {{size}}',
     'validation.file_type': 'Invalid file type',
+    'validation.required_fields': 'Please complete all required fields',
 
     // Messages and notifications
     'message.success': 'Operation completed successfully',

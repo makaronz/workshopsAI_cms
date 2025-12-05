@@ -535,6 +535,40 @@ class EmailService {
     });
   }
 
+  async handleWebhookEvent(provider: string, event: any): Promise<void> {
+    console.log(`Received ${provider} webhook:`, event);
+
+    let messageId: string | undefined;
+    let status: string | undefined;
+
+    if (provider === 'sendgrid') {
+      messageId = event.custom_args?.messageId;
+      if (event.event === 'delivered') status = 'delivered';
+      else if (event.event === 'open') status = 'opened';
+      else if (event.event === 'click') status = 'clicked';
+      else if (event.event === 'bounce') status = 'bounced';
+      else if (event.event === 'dropped') status = 'failed';
+    } else if (provider === 'mailgun') {
+      messageId = event['v:messageId'];
+      if (event.event === 'delivered') status = 'delivered';
+      else if (event.event === 'opened') status = 'opened';
+      else if (event.event === 'clicked') status = 'clicked';
+      else if (event.event === 'failed') status = 'failed';
+    }
+
+    if (messageId && status) {
+      await db
+        .update(emailLogs)
+        .set({
+          status: status as any,
+          updatedAt: new Date(),
+          ...(status === 'opened' ? { openedAt: new Date() } : {}),
+          ...(status === 'clicked' ? { lastClickedAt: new Date() } : {}),
+        })
+        .where(eq(emailLogs.messageId, messageId));
+    }
+  }
+
   // Analytics methods
   async getEmailStats(startDate?: Date, endDate?: Date): Promise<any> {
     const whereConditions = [];

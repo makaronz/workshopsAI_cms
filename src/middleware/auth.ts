@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken';
 import { db, users } from '../config/postgresql-database';
 import { eq, and } from 'drizzle-orm';
 
+import { UserRole } from '../services/authService';
+
 // Extend Express Request type to include user
 declare global {
   namespace Express {
@@ -10,8 +12,9 @@ declare global {
       user?: {
         id: string;
         email: string;
-        role: string;
+        role: UserRole;
         name: string;
+        sessionId: string;
       };
     }
   }
@@ -87,7 +90,10 @@ export const authenticateJWT = async (
     }
 
     // Attach user to request
-    req.user = user[0];
+    req.user = {
+      ...user[0],
+      sessionId: 'current-session',
+    };
     next();
     return;
   } catch (error) {
@@ -146,7 +152,7 @@ export const authorizeRoles = (allowedRoles: string[]) => {
       });
     }
 
-    next();
+    return next();
   };
 };
 
@@ -197,7 +203,10 @@ export const optionalAuth = async (
       .limit(1);
 
     if (user && user.length > 0) {
-      req.user = user[0];
+      req.user = {
+        ...user[0],
+        sessionId: 'current-session',
+      };
     }
 
     next();
@@ -241,7 +250,7 @@ export const canAccessQuestionnaire = async (
       });
     }
 
-    next();
+    return next();
   } catch (error) {
     console.error('Questionnaire access check error:', error);
     res.status(500).json({

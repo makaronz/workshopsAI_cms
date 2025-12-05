@@ -142,16 +142,16 @@ export class AuthService {
         hasJwtSecret: !!JWT_SECRET,
         jwtSecretLength: JWT_SECRET?.length || 0
       });
-      
+
       const payload = jwt.verify(token, JWT_SECRET) as JWTPayload;
-      
+
       console.log('✅ [AUTH SERVICE] Token verified successfully:', {
         userId: payload.userId,
         email: payload.email,
         role: payload.role,
         sessionId: payload.sessionId
       });
-      
+
       return payload;
     } catch (error: any) {
       console.error('❌ [AUTH SERVICE] Token verification failed:', {
@@ -255,7 +255,7 @@ export class AuthService {
 
   // Check if user has permission
   static hasPermission(userRole: UserRole, permission: string): boolean {
-    const permissions = ROLE_PERMISSIONS[userRole] as string[];
+    const permissions = ROLE_PERMISSIONS[userRole] as unknown as string[];
     return permissions.includes('*') || permissions.includes(permission);
   }
 
@@ -482,7 +482,7 @@ export class AuthService {
     // Find the refresh token in Redis - we need to iterate through user tokens
     // This is less efficient but necessary for security
     // In a production system, you might want to maintain a reverse index
-    const users = await db
+    const allUsers = await db
       .select({ id: users.id, email: users.email, role: users.role })
       .from(users)
       .where(eq(users.isActive, true))
@@ -491,7 +491,7 @@ export class AuthService {
     let tokenData = null;
     let userRecord = null;
 
-    for (const user of users) {
+    for (const user of allUsers) {
       tokenData = await redisService.getRefreshToken(user.id, refreshToken);
       if (tokenData) {
         userRecord = user;
@@ -640,6 +640,7 @@ declare global {
         id: string;
         email: string;
         role: UserRole;
+        name: string;
         sessionId: string;
       };
     }

@@ -10,6 +10,8 @@ import translations, {
   BilingualContent,
 } from './translations';
 
+export type { Language, TranslationKey, BilingualText, BilingualContent };
+
 class I18nManager {
   private currentLanguage: Language = 'pl';
   private fallbackLanguage: Language = 'en';

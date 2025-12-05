@@ -3,13 +3,14 @@ import { body, query, param, validationResult } from 'express-validator';
 import rateLimit from 'express-rate-limit';
 import { emailService } from '../../services/emailService';
 import { emailQueueService } from '../../services/emailQueue';
+import { db } from '../../config/database';
 import {
-  db,
   emailLogs,
   emailConsents,
   emailBlacklist,
 } from '../../models/postgresql-schema';
 import { eq, and, gte, lte, desc, sql } from 'drizzle-orm';
+import { emailConfig } from '../../config/email';
 
 const router = Router();
 
@@ -102,14 +103,14 @@ router.post(
         { immediate },
       );
 
-      res.json({
+      return res.json({
         success: true,
         messageId: result.messageId,
         providerMessageId: result.providerMessageId,
       });
     } catch (error) {
       console.error('Failed to send email:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Failed to send email',
       });
@@ -158,13 +159,13 @@ router.post(
         priority: 'high',
       });
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Workshop invitation sent successfully',
       });
     } catch (error) {
       console.error('Failed to send workshop invitation:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error:
           error instanceof Error
@@ -212,13 +213,13 @@ router.post(
         priority: 'high',
       });
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Session reminder sent successfully',
       });
     } catch (error) {
       console.error('Failed to send session reminder:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error:
           error instanceof Error
@@ -270,13 +271,13 @@ router.post(
         language,
       });
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Questionnaire reminder sent successfully',
       });
     } catch (error) {
       console.error('Failed to send questionnaire reminder:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error:
           error instanceof Error
@@ -353,15 +354,15 @@ router.get(
       const whereConditions: any[] = [];
 
       if (type) {
-        whereConditions.push(eq(emailLogs.type, type as string));
+        whereConditions.push(eq(emailLogs.type, type as any));
       }
 
       if (status) {
-        whereConditions.push(eq(emailLogs.status, status as string));
+        whereConditions.push(eq(emailLogs.status, status as any));
       }
 
       if (userId) {
-        whereConditions.push(eq(emailLogs.userId, Number(userId)));
+        whereConditions.push(eq(emailLogs.userId, String(userId)));
       }
 
       if (workshopId) {
@@ -405,7 +406,7 @@ router.get(
           .where(whereClause),
       ]);
 
-      res.json({
+      return res.json({
         success: true,
         data: logs,
         pagination: {
@@ -417,7 +418,7 @@ router.get(
       });
     } catch (error) {
       console.error('Failed to get email logs:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error:
           error instanceof Error ? error.message : 'Failed to get email logs',
@@ -450,13 +451,13 @@ router.get(
         endDate ? new Date(endDate as string) : undefined,
       );
 
-      res.json({
+      return res.json({
         success: true,
         data: stats,
       });
     } catch (error) {
       console.error('Failed to get email statistics:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error:
           error instanceof Error
@@ -472,13 +473,13 @@ router.get('/queue/status', async (req: Request, res: Response) => {
   try {
     const queueStatus = await emailQueueService.getQueueStatus();
 
-    res.json({
+    return res.json({
       success: true,
       data: queueStatus,
     });
   } catch (error) {
     console.error('Failed to get queue status:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error:
         error instanceof Error ? error.message : 'Failed to get queue status',
@@ -491,13 +492,13 @@ router.post('/queue/pause', async (req: Request, res: Response) => {
   try {
     await emailQueueService.pauseQueue();
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Email queue paused successfully',
     });
   } catch (error) {
     console.error('Failed to pause queue:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to pause queue',
     });
@@ -509,13 +510,13 @@ router.post('/queue/resume', async (req: Request, res: Response) => {
   try {
     await emailQueueService.resumeQueue();
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Email queue resumed successfully',
     });
   } catch (error) {
     console.error('Failed to resume queue:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to resume queue',
     });
@@ -587,13 +588,13 @@ router.post(
         });
       }
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Email consent updated successfully',
       });
     } catch (error) {
       console.error('Failed to update email consent:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error:
           error instanceof Error
@@ -610,13 +611,13 @@ router.post('/webhook/sendgrid', async (req: Request, res: Response) => {
     const events = req.body;
 
     for (const event of events) {
-      await this.handleWebhookEvent('sendgrid', event);
+      await emailService.handleWebhookEvent('sendgrid', event);
     }
 
-    res.status(200).send('OK');
+    return res.status(200).send('OK');
   } catch (error) {
     console.error('SendGrid webhook error:', error);
-    res.status(500).send('Error');
+    return res.status(500).send('Error');
   }
 });
 
@@ -626,16 +627,16 @@ router.post('/webhook/mailgun', async (req: Request, res: Response) => {
 
     if (Array.isArray(events)) {
       for (const event of events) {
-        await this.handleWebhookEvent('mailgun', event);
+        await emailService.handleWebhookEvent('mailgun', event);
       }
     } else {
-      await this.handleWebhookEvent('mailgun', events);
+      await emailService.handleWebhookEvent('mailgun', events);
     }
 
-    res.status(200).send('OK');
+    return res.status(200).send('OK');
   } catch (error) {
     console.error('Mailgun webhook error:', error);
-    res.status(500).send('Error');
+    return res.status(500).send('Error');
   }
 });
 
@@ -682,13 +683,13 @@ router.post(
         })
         .where(eq(emailConsents.email, emailLog[0].toEmail));
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Successfully unsubscribed from emails',
       });
     } catch (error) {
       console.error('Failed to unsubscribe:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Failed to unsubscribe',
       });
