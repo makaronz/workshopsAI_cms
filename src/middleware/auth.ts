@@ -5,20 +5,7 @@ import { eq, and } from 'drizzle-orm';
 
 import { UserRole } from '../services/authService';
 
-// Extend Express Request type to include user
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        email: string;
-        role: UserRole;
-        name: string;
-        sessionId: string;
-      };
-    }
-  }
-}
+
 
 interface JWTPayload {
   userId: string;

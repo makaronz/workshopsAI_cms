@@ -302,7 +302,7 @@ async function checkLLMServicesHealth() {
 // ===== API ROUTES WITH ENHANCED SECURITY =====
 
 // Apply authentication rate limiting to auth routes
-app.use('/api/v1/auth', authRateLimit, authRoutes);
+app.use('/api/v1/auth', rateLimiters.auth, authRoutes);
 
 // Apply DPIA validation to data processing routes
 app.use('/api/v1/responses', dpiaValidation('research_analysis'), responseRoutes);

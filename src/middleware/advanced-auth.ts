@@ -80,7 +80,7 @@ export const createTokens = async (user: any, ip: string, userAgent: string) => 
       issuer: JWT_CONFIG.issuer,
       audience: JWT_CONFIG.audience,
       algorithm: JWT_CONFIG.algorithm,
-    },
+    } as jwt.SignOptions,
   );
 
   // Create refresh token with longer expiry
@@ -96,7 +96,7 @@ export const createTokens = async (user: any, ip: string, userAgent: string) => 
       issuer: JWT_CONFIG.issuer,
       audience: JWT_CONFIG.audience,
       algorithm: JWT_CONFIG.algorithm,
-    },
+    } as jwt.SignOptions,
   );
 
   // Store refresh token with rotation support
@@ -139,12 +139,13 @@ export const authenticateJWT = async (
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Unauthorized',
         message: 'Authentication required',
         code: 'AUTH_MISSING_TOKEN',
       });
+      return;
     }
 
     const token = authHeader.substring(7); // Remove "Bearer " prefix
@@ -155,12 +156,13 @@ export const authenticateJWT = async (
     // Validate session
     const session = activeSessions.get(decoded.sessionId);
     if (!session) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Unauthorized',
         message: 'Invalid session',
         code: 'AUTH_INVALID_SESSION',
       });
+      return;
     }
 
     // Update session activity
@@ -185,16 +187,21 @@ export const authenticateJWT = async (
       .limit(1);
 
     if (!user || user.length === 0) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Unauthorized',
         message: 'User not found or inactive',
         code: 'AUTH_USER_NOT_FOUND',
       });
+      return;
     }
 
     // Attach user and session to request
-    req.user = user[0];
+    // Attach user and session to request
+    req.user = {
+      ...user[0],
+      sessionId: decoded.sessionId,
+    };
     req.session = {
       id: decoded.sessionId,
       ip: session.ip,
@@ -202,33 +209,37 @@ export const authenticateJWT = async (
     };
 
     next();
+    return;
   } catch (error) {
     console.error('JWT authentication error:', error);
 
     if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Unauthorized',
         message: 'Invalid token',
         code: 'AUTH_INVALID_TOKEN',
       });
+      return;
     }
 
     if (error instanceof jwt.TokenExpiredError) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Unauthorized',
         message: 'Token expired',
         code: 'AUTH_TOKEN_EXPIRED',
       });
+      return;
     }
 
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       error: 'Internal Server Error',
       message: 'Authentication error',
       code: 'AUTH_ERROR',
     });
+    return;
   }
 };
 
@@ -240,12 +251,13 @@ export const refreshToken = async (req: Request, res: Response) => {
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Unauthorized',
         message: 'Refresh token required',
         code: 'REFRESH_MISSING_TOKEN',
       });
+      return;
     }
 
     // Verify refresh token
@@ -256,12 +268,13 @@ export const refreshToken = async (req: Request, res: Response) => {
     if (!storedToken || storedToken.expiresAt < new Date()) {
       // Token not found or expired - revoke all tokens in family
       await revokeTokenFamily(decoded.tokenFamily);
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Unauthorized',
         message: 'Invalid or expired refresh token',
         code: 'REFRESH_INVALID_TOKEN',
       });
+      return;
     }
 
     // Get user from database
@@ -280,19 +293,20 @@ export const refreshToken = async (req: Request, res: Response) => {
       .limit(1);
 
     if (!user || user.length === 0) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         error: 'Unauthorized',
         message: 'User not found or inactive',
         code: 'REFRESH_USER_NOT_FOUND',
       });
+      return;
     }
 
     // Create new tokens (rotation)
     const tokens = await createTokens(
       user[0],
-      req.ip,
-      req.headers['user-agent'] || '',
+      req.ip || '',
+      (req.headers['user-agent'] as string) || '',
     );
 
     // Remove old refresh token
@@ -303,6 +317,7 @@ export const refreshToken = async (req: Request, res: Response) => {
       data: tokens,
       message: 'Tokens refreshed successfully',
     });
+    return;
   } catch (error) {
     console.error('Refresh token error:', error);
     res.status(401).json({
@@ -321,11 +336,12 @@ export const logout = async (req: Request, res: Response) => {
   try {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Bad Request',
         message: 'Token required for logout',
       });
+      return;
     }
 
     const token = authHeader.substring(7);
@@ -345,6 +361,7 @@ export const logout = async (req: Request, res: Response) => {
       success: true,
       message: 'Logged out successfully',
     });
+    return;
   } catch (error) {
     console.error('Logout error:', error);
     res.status(500).json({
@@ -576,28 +593,7 @@ export const comparePassword = async (password: string, hash: string): Promise<b
   }
 };
 
-/**
- * Extend Express Request type
- */
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        email: string;
-        role: string;
-        name: string;
-        isActive?: boolean;
-        lastLoginAt?: Date;
-      };
-      session?: {
-        id: string;
-        ip: string;
-        userAgent: string;
-      };
-    }
-  }
-}
+
 
 // Default export for backward compatibility if needed
 export default authenticateJWT;

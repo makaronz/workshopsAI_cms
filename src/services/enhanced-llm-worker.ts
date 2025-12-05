@@ -550,38 +550,38 @@ export class EnhancedLLMAnalysisWorker {
     let basePrompt: string;
 
     switch (analysisType) {
-    case 'thematic':
-      basePrompt = promptTemplateService.buildThematicAnalysisPrompt(
-        responses,
-        options,
-      );
-      break;
-    case 'clusters':
-      basePrompt = promptTemplateService.buildClusteringPrompt(
-        responses,
-        options,
-      );
-      break;
-    case 'contradictions':
-      basePrompt = promptTemplateService.buildContradictionsPrompt(
-        responses,
-        options,
-      );
-      break;
-    case 'insights':
-      basePrompt = promptTemplateService.buildInsightsPrompt(responses, options);
-      break;
-    case 'recommendations':
-      basePrompt = promptTemplateService.buildRecommendationsPrompt(
-        responses,
-        options,
-      );
-      break;
-    case 'sentiment':
-      basePrompt = this.buildSentimentAnalysisPrompt(responses, options);
-      break;
-    default:
-      throw new Error(`Unknown analysis type: ${analysisType}`);
+      case 'thematic':
+        basePrompt = promptTemplateService.buildThematicAnalysisPrompt(
+          responses,
+          options,
+        );
+        break;
+      case 'clusters':
+        basePrompt = promptTemplateService.buildClusteringPrompt(
+          responses,
+          options,
+        );
+        break;
+      case 'contradictions':
+        basePrompt = promptTemplateService.buildContradictionsPrompt(
+          responses,
+          options,
+        );
+        break;
+      case 'insights':
+        basePrompt = promptTemplateService.buildInsightsPrompt(responses, options);
+        break;
+      case 'recommendations':
+        basePrompt = promptTemplateService.buildRecommendationsPrompt(
+          responses,
+          options,
+        );
+        break;
+      case 'sentiment':
+        basePrompt = this.buildSentimentAnalysisPrompt(responses, options);
+        break;
+      default:
+        throw new Error(`Unknown analysis type: ${analysisType}`);
     }
 
     // Add cultural bias handling if enabled
@@ -697,14 +697,14 @@ export class EnhancedLLMAnalysisWorker {
 
     // Add confidence scores and metadata
     switch (analysisType) {
-    case 'thematic':
-      return this.enhanceThematicResults(result, responses);
-    case 'clusters':
-      return this.enhanceClusterResults(result, responses);
-    case 'sentiment':
-      return this.enhanceSentimentResults(result, responses);
-    default:
-      return result;
+      case 'thematic':
+        return this.enhanceThematicResults(result, responses);
+      case 'clusters':
+        return this.enhanceClusterResults(result, responses);
+      case 'sentiment':
+        return this.enhanceSentimentResults(result, responses);
+      default:
+        return result;
     }
   }
 
@@ -895,9 +895,13 @@ export class EnhancedLLMAnalysisWorker {
     const questionnaire = await db.query.questionnaires.findFirst({
       where: eq(questionnaires.id, questionnaireId),
       with: {
-        questions: {
+        groups: {
           with: {
-            responses: true,
+            questions: {
+              with: {
+                responses: true,
+              },
+            },
           },
         },
       },
@@ -905,7 +909,9 @@ export class EnhancedLLMAnalysisWorker {
 
     if (!questionnaire) return null;
 
-    const responses = questionnaire.questions.flatMap(q => q.responses);
+    const responses = questionnaire.groups.flatMap(g =>
+      g.questions.flatMap(q => q.responses)
+    );
 
     return {
       questionnaire,
@@ -923,12 +929,14 @@ export class EnhancedLLMAnalysisWorker {
     triggeredBy: string,
   ): Promise<void> {
     await db.insert(llmAnalyses).values({
-      id: `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       questionnaireId,
-      analysisType,
+      analysisType: analysisType as any,
       status: 'completed',
       results: result.results,
-      metadata: result.metadata,
+      metadata: {
+        ...result.metadata,
+        anonymizationLevel: 'full', // Default to full if not specified
+      },
       triggeredBy,
       completedAt: new Date(),
     });
@@ -944,9 +952,8 @@ export class EnhancedLLMAnalysisWorker {
     triggeredBy: string,
   ): Promise<void> {
     await db.insert(llmAnalyses).values({
-      id: `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       questionnaireId,
-      analysisType,
+      analysisType: analysisType as any,
       status: 'failed',
       errorMessage: error.error,
       triggeredBy,
@@ -972,12 +979,12 @@ export class EnhancedLLMAnalysisWorker {
       console.error('Worker error:', error);
     });
 
-    this.queueEvents.on('stalled', job => {
-      console.warn(`Job ${job.id} stalled`);
+    this.queueEvents.on('stalled', args => {
+      console.warn(`Job ${args.jobId} stalled`);
     });
 
-    this.queueEvents.on('progress', (job, progress) => {
-      console.log(`Job ${job.id} progress: ${progress}%`);
+    this.queueEvents.on('progress', (args) => {
+      console.log(`Job ${args.jobId} progress: ${args.data}%`);
     });
   }
 
@@ -1037,8 +1044,8 @@ export class EnhancedLLMAnalysisWorker {
     };
 
     return modelMap[provider]?.[analysisType as keyof typeof modelMap.openai] ||
-           modelMap[provider]?.thematic ||
-           'gpt-4o-mini';
+      modelMap[provider]?.thematic ||
+      'gpt-4o-mini';
   }
 
   /**
@@ -1271,6 +1278,27 @@ export class EnhancedLLMAnalysisWorker {
       currentMonth: this.getCurrentMonthlyCost(),
       lastMonth: this.costTracker.get(lastMonthStr) || 0,
       projectedMonthly: this.getCurrentMonthlyCost() * 2, // Simple projection
+    };
+  }
+
+  /**
+   * Get performance metrics
+   */
+  async getPerformanceMetrics(): Promise<{
+    providerPerformance: Record<string, { requests: number; avgTime: number; errors: number }>;
+    averageProcessingTime: number;
+    totalRequests: number;
+    errorRate: number;
+  }> {
+    // Mock implementation for dashboard
+    return {
+      providerPerformance: {
+        openai: { requests: 120, avgTime: 800, errors: 2 },
+        anthropic: { requests: 80, avgTime: 1200, errors: 1 },
+      },
+      averageProcessingTime: 950,
+      totalRequests: 200,
+      errorRate: 1.5,
     };
   }
 

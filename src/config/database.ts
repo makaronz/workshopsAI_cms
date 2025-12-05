@@ -1,6 +1,9 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
-import * as schema from '../models/postgresql-schema';
+import * as pgSchema from '../models/postgresql-schema';
+import * as llmSchema from '../models/llm-schema';
+
+const schema = { ...pgSchema, ...llmSchema };
 
 // Database configuration for PostgreSQL
 const connectionString = process.env['DATABASE_URL'] ||

@@ -14,6 +14,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 import { users, workshops } from './postgresql-schema';
+export { users, workshops };
 
 // Enum definitions
 export const questionnaireStatusEnum = pgEnum('questionnaireStatus', [

@@ -632,17 +632,4 @@ export class AuthService {
   }
 }
 
-// Extend Express Request interface
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        email: string;
-        role: UserRole;
-        name: string;
-        sessionId: string;
-      };
-    }
-  }
-}
+
