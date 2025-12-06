@@ -1,0 +1,54 @@
+# Railway-Optimized Dockerfile
+# Fixes for successful Railway deployment
+
+FROM node:20-alpine AS base
+ENV NODE_ENV=production
+ENV PORT=${PORT:-3010}  # Railway dynamic port support
+
+# Install system dependencies
+RUN apk update && apk upgrade && \
+    apk add --no-cache \
+    dumb-init \
+    curl \
+    postgresql-client \
+    python3 \
+    py3-pip \
+    && rm -rf /var/cache/apk/*
+
+# Install security tools
+RUN pip3 install --break-system-packages semgrep==1.45.0
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+COPY package-lock.json ./
+
+# Install dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Add non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Copy application code
+COPY --chown=nodejs:nodejs . .
+
+# Build application (if needed)
+RUN npm run build
+
+# Set ownership
+RUN chown -R nodejs:nodejs /app
+
+# Health check for Railway
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:${PORT}/health || exit 1
+
+# Switch to non-root user
+USER nodejs
+
+# Expose Railway port
+EXPOSE ${PORT:-3010}
+
+# Start application with Railway compatibility
+CMD ["dumb-init", "npm", "start"]

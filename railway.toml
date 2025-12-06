@@ -1,9 +1,9 @@
-# Railway.app Configuration
-# Automatyczny deployment z PostgreSQL i Redis
+# Railway.app Configuration for WorkshopsAI CMS
+# Fixed configuration for successful deployment
 
 [build]
-builder = "nixpacks"
-buildCommand = "npm install && npm run build"
+builder = "dockerfile"
+dockerfilePath = "Dockerfile.railway"
 
 [deploy]
 startCommand = "npm start"
@@ -12,10 +12,23 @@ healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
-# Automatyczne uruchomienie migracji
+# Database migration command
 [deploy.migrations]
 command = "npm run db:migrate"
 
-# Zmienne środowiskowe (Railway automatycznie dodaje DATABASE_URL i REDIS_URL)
+# Application service configuration
 [[services]]
 name = "app"
+sourceDir = "/"
+healthCheckPath = "/health"
+healthCheckTimeout = 100
+
+# Environment variables (Railway automatically provides DATABASE_URL and REDIS_URL)
+[services.variables]
+NODE_ENV = "production"
+PORT = "3010"
+
+# Auto-scaling configuration
+[scale]
+minInstances = 1
+maxInstances = 3
