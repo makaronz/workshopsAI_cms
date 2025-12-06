@@ -1,18 +1,24 @@
-# Nixpacks configuration for Railway
-# Optymalizacja build process
+# Nixpacks configuration for Railway deployment
+# Optimized for successful build and deployment
 
 [phases.setup]
 nixPkgs = ["nodejs-20_x", "npm-9_x"]
+aptPkgs = ["...", "curl"]
 
 [phases.install]
-cmds = ["npm ci --only=production"]
+cmds = ["npm ci"]
 
 [phases.build]
 cmds = ["npm run build"]
 
 [start]
 cmd = "npm start"
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
 
 [variables]
 NODE_ENV = "production"
+PORT = "3010"
 NPM_CONFIG_PRODUCTION = "false"  # Allow devDependencies for build
