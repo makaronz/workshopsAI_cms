@@ -80,7 +80,7 @@
     "security:penetration-test": "npm run security:zap && npm run security:audit",
     "security:vulnerability-scan": "npm audit && npm run security:scan && npm run security:zap-spider",
     "docker:build": "docker build -t workshopsai-cms .",
-    "docker:run": "docker run -p 3001:3001 workshopsai-cms",
+    "docker:run": "docker run -p 3010:3010 workshopsai-cms",
     "docker:dev": "docker-compose -f docker-compose.dev.yml up",
     "docker:prod": "docker-compose -f docker-compose.prod.yml up"
   },

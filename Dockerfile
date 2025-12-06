@@ -42,7 +42,7 @@ ENV DETECT_CHROMEDRIVER_VERSION=false
 RUN npm ci
 COPY . .
 USER nodejs
-EXPOSE 3001
+EXPOSE 3010
 CMD ["npm", "run", "dev"]
 
 # Stage 3: Build stage
@@ -80,7 +80,7 @@ COPY --from=builder --chown=nodejs:nodejs /app/migrations ./migrations
 
 # Health check with curl
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-3001}/health || exit 1
+    CMD curl -f http://localhost:${PORT:-3010}/health || exit 1
 
 # Environment variables
 ENV NODE_ENV=production
@@ -90,7 +90,7 @@ ENV PORT=3010
 USER nodejs
 
 # Expose port
-EXPOSE 3001
+EXPOSE 3010
 
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
