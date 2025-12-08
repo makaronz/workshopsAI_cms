@@ -582,7 +582,7 @@ export class VectorPerformanceMonitor {
       query: item.query,
       timestamp: item.timestamp,
       duration: item.duration || 0,
-      results: item.resultsFound || 0,
+      results: item.results || 0,
     }));
   }
 

@@ -325,7 +325,7 @@ export class RAGQueryEngine {
     const originalDoc = await db.query.document_embeddings.findFirst({
       where: and(
         eq(document_embeddings.documentId, documentId),
-        eq(document_embeddings.documentType, documentType),
+        eq(document_embeddings.documentType, documentType as any),
       ),
     });
 
@@ -657,7 +657,7 @@ export class RAGQueryEngine {
       await db.insert(vector_search_queries).values({
         id: queryId,
         queryText,
-        queryEmbedding: `[${queryEmbedding.join(',')}]`,
+        queryEmbedding: queryEmbedding as any, // Vector type requires array of numbers
         resultsFound: contextDocuments.length,
         avgSimilarity:
           contextDocuments.length > 0

@@ -29,11 +29,11 @@ export type {
 export { VectorIndexManager } from './vectorIndexManager';
 export { vectorIndexManager } from './vectorIndexManager';
 export type {
-  VectorIndexConfig,
   IndexPerformanceMetrics,
   IndexOptimizationRecommendation,
   IndexHealthStatus,
 } from './vectorIndexManager';
+export type { VectorIndexConfig } from './vectorDatabaseManager';
 
 export { SemanticSearchService } from './semanticSearchService';
 export { semanticSearchService } from './semanticSearchService';

@@ -2,13 +2,14 @@ import {
   ragQueryEngine,
   type RAGQueryOptions,
   type RAGQueryResult,
+  type RAGQueryType,
 } from './ragQueryEngine';
 import { embeddingService } from './embeddingService';
 import {
   vectorDatabaseManager,
   type VectorSearchOptions,
 } from './vectorDatabaseManager';
-import { client, db } from '../../config/postgresql-database';
+import { db } from '../../config/database';
 import {
   document_embeddings,
   vector_search_queries,
@@ -487,7 +488,7 @@ export class SemanticSearchService {
       offset,
     });
 
-    return history.map(item => ({
+    return history.map((item: any) => ({
       query: item.queryText,
       timestamp: item.createdAt,
       resultCount: item.resultsFound || 0,
@@ -718,7 +719,7 @@ export class SemanticSearchService {
       limit,
     });
 
-    return history.map(item => item.queryText);
+    return history.map((item: any) => item.queryText);
   }
 
   private async getContentBasedSuggestions(

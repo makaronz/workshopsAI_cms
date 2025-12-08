@@ -1,8 +1,5 @@
-import { client, db } from '../../config/postgresql-database';
-import {
-  vectorDatabaseManager,
-  type VectorIndexConfig,
-} from './vectorDatabaseManager';
+import { db } from '../../config/database';
+import { vectorDatabaseManager } from './vectorDatabaseManager';
 import {
   vector_index_configs,
   document_embeddings,
@@ -81,14 +78,14 @@ export class VectorIndexManager {
       forceRecreate?: boolean;
     } = {},
   ): Promise<string> {
-    const { metric = 'cosine', type = 'auto', forceRecreate = false } = options;
+    const { metric = 'cosine', type, forceRecreate = false } = options;
 
     // Get table statistics
     const stats = await this.getTableStatistics(tableName);
 
     // Determine optimal index type
     const indexType =
-      type === 'auto' ? this.determineOptimalIndexType(stats) : type;
+      !type || type === 'auto' ? this.determineOptimalIndexType(stats) : type;
 
     // Calculate index parameters
     const indexParams = this.calculateIndexParameters(indexType, stats);

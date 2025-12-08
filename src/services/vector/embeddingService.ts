@@ -244,7 +244,7 @@ export class EmbeddingService {
         });
 
         embedding = response.data[0].embedding;
-        tokens = response.data[0].usage?.total_tokens || 0;
+        tokens = response.usage?.total_tokens || 0;
         cost = (tokens / 1000) * modelConfig.costPer1kTokens;
       } else if (modelConfig.provider === 'local') {
         // Local model implementation
@@ -612,14 +612,15 @@ export class EmbeddingService {
 
     const processingTime = Date.now() - startTime;
 
+    const totalTokens = response.usage?.total_tokens || 0;
+    const tokensPerItem = texts.length > 0 ? Math.floor(totalTokens / texts.length) : 0;
+    
     return response.data.map((embedding, index) => ({
       vector: embedding.embedding,
       model: modelConfig.name,
       dimensions: modelConfig.dimensions,
-      tokens: embedding.usage?.total_tokens || 0,
-      cost:
-        ((embedding.usage?.total_tokens || 0) / 1000) *
-        modelConfig.costPer1kTokens,
+      tokens: tokensPerItem,
+      cost: (tokensPerItem / 1000) * modelConfig.costPer1kTokens,
       processingTime,
       confidence: this.calculateConfidence(embedding.embedding, texts[index]),
       language: 'en', // OpenAI doesn't provide language info

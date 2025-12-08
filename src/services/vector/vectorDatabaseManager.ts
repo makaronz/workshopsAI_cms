@@ -1,4 +1,5 @@
-import { client, db } from '../../config/postgresql-database';
+import { db } from '../../config/database';
+import { client } from '../../config/postgresql-database';
 import { eq, and, inArray, sql, lte, gte, desc, asc } from 'drizzle-orm';
 import {
   document_embeddings,
@@ -224,85 +225,93 @@ export class VectorDatabaseManager {
     } = options;
 
     try {
-      let query = client`
-        SELECT
-          id, document_id, document_type, content, language,
-          embedding_model, created_at, updated_at
-      `;
-
-      if (includeMetadata) {
-        query = client`
-          SELECT
-            id, document_id, document_type, content, language,
-            embedding_model, created_at, updated_at, metadata
-        `;
-      }
+      const selectFields = includeMetadata
+        ? 'id, document_id, document_type, content, language, embedding_model, created_at, updated_at, metadata'
+        : 'id, document_id, document_type, content, language, embedding_model, created_at, updated_at';
 
       const vectorString = `[${queryEmbedding.join(',')}]`;
 
       // Build query based on metric
-      let similarityFunction;
+      let similarityFunction: any;
       switch (metric) {
         case 'cosine':
-          similarityFunction = client`1 - (embedding <=> ${client(vectorString)})`;
+          similarityFunction = sql`1 - (embedding <=> ${vectorString}::vector)`;
           break;
         case 'l2':
-          similarityFunction = client`embedding <-> ${client(vectorString)}`;
+          similarityFunction = sql`embedding <-> ${vectorString}::vector`;
           break;
         case 'inner_product':
-          similarityFunction = client`(embedding <#> ${client(vectorString)})`;
+          similarityFunction = sql`(embedding <#> ${vectorString}::vector)`;
           break;
         default:
-          similarityFunction = client`1 - (embedding <=> ${client(vectorString)})`;
+          similarityFunction = sql`1 - (embedding <=> ${vectorString}::vector)`;
       }
 
-      let finalQuery = query`
-        FROM document_embeddings
-        WHERE 1=1
-      `;
+      // Build query using Drizzle ORM
+      let whereConditions: any[] = [];
 
       // Add filters
       if (filters.documentType?.length) {
-        finalQuery = finalQuery`AND document_type = ANY(${filters.documentType})`;
+        whereConditions.push(inArray(document_embeddings.documentType, filters.documentType as any));
       }
 
       if (filters.language?.length) {
-        finalQuery = finalQuery`AND language = ANY(${filters.language})`;
+        whereConditions.push(inArray(document_embeddings.language, filters.language as any));
       }
 
       if (filters.embeddingModel?.length) {
-        finalQuery = finalQuery`AND embedding_model = ANY(${filters.embeddingModel})`;
+        whereConditions.push(inArray(document_embeddings.embeddingModel, filters.embeddingModel as any));
       }
 
       if (filters.createdAfter) {
-        finalQuery = finalQuery`AND created_at >= ${filters.createdAfter}`;
+        whereConditions.push(gte(document_embeddings.createdAt, filters.createdAfter));
       }
 
       if (filters.createdBefore) {
-        finalQuery = finalQuery`AND created_at <= ${filters.createdBefore}`;
+        whereConditions.push(lte(document_embeddings.createdAt, filters.createdBefore));
       }
 
-      // Add similarity threshold condition
-      finalQuery = finalQuery`AND ${similarityFunction} >= ${threshold}`;
+      // Use raw SQL for vector similarity search as Drizzle doesn't fully support pgvector operations
+      const vectorArray = queryEmbedding;
+      const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
+      
+      // Build raw SQL query for vector similarity
+      const metricSQL = metric === 'cosine' 
+        ? sql`1 - (embedding <=> ${vectorArray}::vector)`
+        : metric === 'l2'
+        ? sql`embedding <-> ${vectorArray}::vector`
+        : sql`(embedding <#> ${vectorArray}::vector)`;
 
-      // Complete the query
-      const result = await client`
-        ${finalQuery}
-        ORDER BY ${similarityFunction} DESC
-        LIMIT ${limit}
-      `;
+      const results = await db
+        .select({
+          id: document_embeddings.id,
+          documentId: document_embeddings.documentId,
+          documentType: document_embeddings.documentType,
+          content: document_embeddings.content,
+          language: document_embeddings.language,
+          similarity: metricSQL.as('similarity'),
+          metadata: includeMetadata ? document_embeddings.metadata : undefined,
+          embeddingModel: document_embeddings.embeddingModel,
+          createdAt: document_embeddings.createdAt,
+          confidenceScore: document_embeddings.confidenceScore,
+        })
+        .from(document_embeddings)
+        .where(whereClause)
+        .having(sql`${metricSQL} >= ${threshold}`)
+        .orderBy(desc(metricSQL))
+        .limit(limit);
 
-      return result.map((row: any) => ({
+      return results.map((row: any) => ({
         id: row.id,
-        documentId: row.document_id,
-        documentType: row.document_type,
+        documentId: row.documentId,
+        documentType: row.documentType,
         content: row.content,
         language: row.language,
-        similarity: parseFloat(row.similarity),
+        similarity: typeof row.similarity === 'number' ? row.similarity : parseFloat(String(row.similarity)),
         metadata: includeMetadata ? row.metadata : undefined,
-        embeddingModel: row.embedding_model,
-        createdAt: row.created_at,
-        confidence: row.metadata?.confidenceScore,
+        embeddingModel: row.embeddingModel,
+        createdAt: row.createdAt,
+        confidence: row.confidenceScore,
       }));
     } catch (error) {
       logger.error('Vector similarity search failed:', error);
