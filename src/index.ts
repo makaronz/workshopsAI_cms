@@ -360,6 +360,15 @@ const startServer = async () => {
     // Performance monitoring routes are already initialized in initializePerformanceSystem()
     console.log('📊 Performance monitoring routes initialized');
 
+    // Only listen if not running in a function/imported context (optional logic check)
+    // But for simplicity, we just check if main
+  } catch (error) {
+    console.error('Failed to initialize services:', error);
+  }
+};
+
+if (require.main === module) {
+  startServer().then(() => {
     server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT} in ${NODE_ENV} mode`);
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
@@ -372,13 +381,17 @@ const startServer = async () => {
       console.log('📱 Real-time preview functionality available');
       console.log('📈 Performance monitoring available at /api/v1/performance');
     });
-  } catch (error) {
-    console.error('Failed to start server:', error);
+  }).catch(err => {
+    console.error('Startup error:', err);
     process.exit(1);
-  }
-};
+  });
+} else {
+  // If imported, we still want to initialize services but not listen
+  // Note: initializing services might connect to DB/Redis, which is fine for Cloud Functions cold start
+  // but we need to handle the async nature.
+  // For Cloud Functions, we might need to export a wrapped version that ensures initialization.
+  
+  // We'll export an init function
+}
 
-startServer();
-
-export { app, server };
-// Trigger restart Fri Nov 21 06:13:35 CET 2025
+export { app, server, startServer };
