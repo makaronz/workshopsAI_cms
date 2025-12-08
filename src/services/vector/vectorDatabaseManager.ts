@@ -225,27 +225,8 @@ export class VectorDatabaseManager {
     } = options;
 
     try {
-      const selectFields = includeMetadata
-        ? 'id, document_id, document_type, content, language, embedding_model, created_at, updated_at, metadata'
-        : 'id, document_id, document_type, content, language, embedding_model, created_at, updated_at';
-
+      // Convert embedding array to string format for pgvector
       const vectorString = `[${queryEmbedding.join(',')}]`;
-
-      // Build query based on metric
-      let similarityFunction: any;
-      switch (metric) {
-        case 'cosine':
-          similarityFunction = sql`1 - (embedding <=> ${vectorString}::vector)`;
-          break;
-        case 'l2':
-          similarityFunction = sql`embedding <-> ${vectorString}::vector`;
-          break;
-        case 'inner_product':
-          similarityFunction = sql`(embedding <#> ${vectorString}::vector)`;
-          break;
-        default:
-          similarityFunction = sql`1 - (embedding <=> ${vectorString}::vector)`;
-      }
 
       // Build query using Drizzle ORM
       let whereConditions: any[] = [];
@@ -271,16 +252,18 @@ export class VectorDatabaseManager {
         whereConditions.push(lte(document_embeddings.createdAt, filters.createdBefore));
       }
 
-      // Use raw SQL for vector similarity search as Drizzle doesn't fully support pgvector operations
-      const vectorArray = queryEmbedding;
-      const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
-      
-      // Build raw SQL query for vector similarity
+      // Build vector similarity metric SQL expression using stringified vector
+      // Using string format ensures proper parameterization with pgvector
       const metricSQL = metric === 'cosine' 
-        ? sql`1 - (embedding <=> ${vectorArray}::vector)`
+        ? sql`1 - (embedding <=> ${vectorString}::vector)`
         : metric === 'l2'
-        ? sql`embedding <-> ${vectorArray}::vector`
-        : sql`(embedding <#> ${vectorArray}::vector)`;
+        ? sql`embedding <-> ${vectorString}::vector`
+        : sql`(embedding <#> ${vectorString}::vector)`;
+
+      // Add similarity threshold to where conditions (row-level filter, not aggregation)
+      whereConditions.push(sql`${metricSQL} >= ${threshold}`);
+
+      const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
       const results = await db
         .select({
@@ -297,7 +280,6 @@ export class VectorDatabaseManager {
         })
         .from(document_embeddings)
         .where(whereClause)
-        .having(sql`${metricSQL} >= ${threshold}`)
         .orderBy(desc(metricSQL))
         .limit(limit);
 
