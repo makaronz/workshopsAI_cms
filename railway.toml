@@ -2,7 +2,8 @@
 # Simplified for successful deployment
 
 [build]
-builder = "NIXPACKS"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.production"
 
 [deploy]
 startCommand = "npm start"
