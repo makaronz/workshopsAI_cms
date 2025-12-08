@@ -28,9 +28,6 @@ export default defineConfig({
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              },
-              cacheKeyWillBeUsed: async ({ request }) => {
-                return `${request.url}?version=${Date.now()}`;
               }
             }
           }
@@ -80,14 +77,7 @@ export default defineConfig({
       }
     },
     cssCodeSplit: false,
-    sourcemap: true,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
-      }
-    }
+    sourcemap: true
   },
   server: {
     port: 3000,
