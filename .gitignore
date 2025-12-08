@@ -256,3 +256,4 @@ env_te.txt
 .cursor/mcp.json
 .todo2/
 .cursor/Dockerfile
+.idx/mcp.json
