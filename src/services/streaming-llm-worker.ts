@@ -375,8 +375,8 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
             throw new Error('Stream cancelled');
           }
 
-          if (chunk.type === 'content_block') {
-            const content = chunk.content?.text || '';
+          if (chunk.type === 'content_block_delta' && 'delta' in chunk) {
+            const content = chunk.delta.type === 'text_delta' ? chunk.delta.text : '';
             accumulatedResult += content;
 
             // Send progress update
@@ -414,7 +414,7 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
 
       // Save analysis result
       await this.saveAnalysisResult(
-        options.questionnaireId || questionnaireId,
+        questionnaireId,
         analysisType,
         {
           type: analysisType,
@@ -477,17 +477,22 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
   private async getQuestionnaireWithStreamingResponses(questionnaireId: string) {
     // Cache questionnaire metadata
     const cacheKey = `questionnaire:${questionnaireId}`;
-    if (this.cache.has(cacheKey)) {
-      return this.cache.get(cacheKey).data;
+    const cached = this.cache.get(cacheKey);
+    if (cached) {
+      return cached.data;
     }
 
     const questionnaire = await db.query.questionnaires.findFirst({
       where: eq(questionnaires.id, questionnaireId),
       with: {
-        questions: {
+        questionGroups: {
           with: {
-            responses: {
-              limit: 100, // Limit initial batch
+            questions: {
+              with: {
+                responses: {
+                  limit: 100, // Limit initial batch
+                },
+              },
             },
           },
         },
@@ -498,7 +503,9 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
 
     const result = {
       questionnaire,
-      responses: questionnaire.questions.flatMap(q => q.responses),
+      responses: questionnaire.questionGroups.flatMap((qg: any) => 
+        qg.questions.flatMap((q: any) => q.responses || [])
+      ),
     };
 
     // Cache questionnaire metadata
@@ -636,8 +643,13 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
         ],
       });
 
+      const textContent = response.content
+        .filter((block: any) => block.type === 'text')
+        .map((block: any) => block.text)
+        .join('');
+
       return {
-        content: response.content[0].text || '',
+        content: textContent,
         usage: response.usage,
       };
     }
@@ -720,9 +732,8 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
     triggeredBy: string,
   ): Promise<void> => {
     await db.insert(llmAnalyses).values({
-      id: `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       questionnaireId,
-      analysisType,
+      analysisType: analysisType as 'thematic' | 'clusters' | 'contradictions' | 'insights' | 'recommendations',
       status: 'completed',
       results: result.results,
       metadata: result.metadata,
@@ -790,7 +801,7 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
     model: string,
     tokens: number,
   ): number => {
-    const pricing = {
+    const pricing: Record<string, Record<string, { input: number; output: number }>> = {
       openai: {
         'gpt-4o-mini': { input: 0.00015, output: 0.0006 },
         'gpt-4-turbo-preview': { input: 0.01, output: 0.03 },
@@ -801,9 +812,11 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
       },
     };
 
-    const modelPricing = pricing[provider]?.[model as keyof typeof pricing.openai] ||
-                         pricing[provider]?.['gpt-4o-mini'] ||
-                         pricing['openai']['gpt-4o-mini'];
+    const providerPricing = pricing[provider];
+    const modelPricing = providerPricing?.[model] || 
+                         providerPricing?.['gpt-4o-mini'] ||
+                         pricing['openai']?.['gpt-4o-mini'] ||
+                         { input: 0.00015, output: 0.0006 };
 
     const inputTokens = tokens * 0.7;
     const outputTokens = tokens * 0.3;
@@ -890,8 +903,8 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
       console.error('Streaming worker error:', error);
     });
 
-    this.queueEvents.on('stalled', job => {
-      console.warn(`Streaming job ${job.id} stalled`);
+    this.queueEvents.on('stalled', (job: { id?: string }) => {
+      console.warn(`Streaming job ${job.id || 'unknown'} stalled`);
     });
   }
 
@@ -938,7 +951,14 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
     paused: number;
   }> {
     const counts = await this.queue.getJobCounts();
-    return counts;
+    return {
+      waiting: counts.waiting || 0,
+      active: counts.active || 0,
+      completed: counts.completed || 0,
+      failed: counts.failed || 0,
+      delayed: counts.delayed || 0,
+      paused: counts.paused || 0,
+    };
   }
 
   /**
