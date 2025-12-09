@@ -60,7 +60,6 @@ export class WorkshopService {
     const [workshop] = await db
       .insert(workshops)
       .values({
-        id: workshopId,
         titleI18n: { [data.language || 'pl']: data.title },
         slug,
         subtitleI18n: data.subtitle ? { [data.language || 'pl']: data.subtitle } : undefined,
@@ -78,7 +77,11 @@ export class WorkshopService {
         gallery: data.gallery,
         requirementsI18n: data.requirements ? { [data.language || 'pl']: data.requirements } : undefined,
         objectivesI18n: data.objectives ? { [data.language || 'pl']: data.objectives } : undefined,
-        materials: data.materials,
+        materials: data.materials?.filter(m => m.name && m.url && m.type).map(m => ({
+          name: m.name,
+          url: m.url,
+          type: m.type
+        })) || [],
         createdBy: userId,
         status: 'draft',
       })

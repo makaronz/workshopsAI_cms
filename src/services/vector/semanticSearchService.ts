@@ -9,7 +9,7 @@ import {
   vectorDatabaseManager,
   type VectorSearchOptions,
 } from './vectorDatabaseManager';
-import { db } from '../../config/database';
+import { db, client } from '../../config/database';
 import {
   document_embeddings,
   vector_search_queries,

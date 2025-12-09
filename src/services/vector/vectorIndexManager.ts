@@ -1,4 +1,4 @@
-import { db } from '../../config/database';
+import { db, client } from '../../config/database';
 import { vectorDatabaseManager } from './vectorDatabaseManager';
 import {
   vector_index_configs,
@@ -74,7 +74,7 @@ export class VectorIndexManager {
     columnName: string = 'embedding',
     options: {
       metric?: 'cosine' | 'l2' | 'inner_product';
-      type?: 'ivfflat' | 'hnsw' | 'exact';
+      type?: 'ivfflat' | 'hnsw' | 'exact' | 'auto';
       forceRecreate?: boolean;
     } = {},
   ): Promise<string> {
@@ -570,14 +570,14 @@ export class VectorIndexManager {
       const usage = Math.random(); // Mock calculation
 
       healthStatuses.push({
-        indexName: config.indexName,
-        isActive: config.isActive,
-        tableSize: config.sizeEstimate || 0,
-        indexSize: config.sizeEstimate || 0,
-        lastAnalyzed: config.updatedAt,
+        indexName: config.indexName as string,
+        isActive: Boolean(config.isActive),
+        tableSize: Number(config.sizeEstimate || 0),
+        indexSize: Number(config.sizeEstimate || 0),
+        lastAnalyzed: new Date(config.updatedAt as string),
         fragmentation,
         usage,
-        performance: config.performance || {
+        performance: config.performance as IndexPerformanceMetrics || {
           queryCount: 0,
           avgQueryTime: 0,
           indexSize: 0,

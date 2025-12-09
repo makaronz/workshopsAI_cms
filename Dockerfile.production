@@ -13,7 +13,7 @@ RUN npm run build
 FROM node:20-alpine AS backend-builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --omit=dev || npm install
 COPY tsconfig.json ./
 COPY src/ ./src/
 RUN npx tsc
@@ -24,7 +24,7 @@ WORKDIR /app
 
 # Install production dependencies only
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev --silent || npm install --omit=dev --silent && npm cache clean --force
 
 # Copy built files from builders
 COPY --from=backend-builder /app/dist ./dist
