@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "workshopsaicms"
+    "default": "workshopsai-cms"
   },
   "targets": {},
   "etags": {}

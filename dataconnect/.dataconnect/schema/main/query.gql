@@ -1,0 +1,320 @@
+extend type Query {
+  """
+  ✨ Look up a single `Instructor` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  instructor(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Instructor_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Instructor_FirstRow
+  ): Instructor @fdc_generated(from: "Instructor", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `Organizer` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  organizer(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Organizer_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Organizer_FirstRow
+  ): Organizer @fdc_generated(from: "Organizer", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `Participant` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  participant(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Participant_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Participant_FirstRow
+  ): Participant @fdc_generated(from: "Participant", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `Registration` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  registration(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Registration_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Registration_FirstRow
+  ): Registration @fdc_generated(from: "Registration", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `Session` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  session(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Session_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Session_FirstRow
+  ): Session @fdc_generated(from: "Session", purpose: QUERY_SINGLE)
+  """
+  ✨ Look up a single `Workshop` based on `id`, `key` or `first` and return selected fields (or `null` if not found).
+  """
+  workshop(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Workshop_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Workshop_FirstRow
+  ): Workshop @fdc_generated(from: "Workshop", purpose: QUERY_SINGLE)
+  """
+  ✨ List `Instructor` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  instructors(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: Instructor_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [Instructor_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: Instructor_Having
+  ): [Instructor!]! @fdc_generated(from: "Instructor", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `Organizer` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  organizers(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: Organizer_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [Organizer_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: Organizer_Having
+  ): [Organizer!]! @fdc_generated(from: "Organizer", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `Participant` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  participants(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: Participant_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [Participant_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: Participant_Having
+  ): [Participant!]! @fdc_generated(from: "Participant", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `Registration` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  registrations(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: Registration_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [Registration_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: Registration_Having
+  ): [Registration!]! @fdc_generated(from: "Registration", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `Session` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  sessions(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: Session_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [Session_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: Session_Having
+  ): [Session!]! @fdc_generated(from: "Session", purpose: QUERY_MULTIPLE)
+  """
+  ✨ List `Workshop` objects in the table and return selected fields, optionally filtered by `where` conditions
+  """
+  workshops(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: Workshop_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [Workshop_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: Workshop_Having
+  ): [Workshop!]! @fdc_generated(from: "Workshop", purpose: QUERY_MULTIPLE)
+}

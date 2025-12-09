@@ -1,0 +1,1634 @@
+"""
+✨ `Instructor_KeyOutput` returns the primary key fields of table type `Instructor`.
+
+It has the same format as `Instructor_Key`, but is only used as mutation return value.
+"""
+scalar Instructor_KeyOutput
+"""
+✨ `Organizer_KeyOutput` returns the primary key fields of table type `Organizer`.
+
+It has the same format as `Organizer_Key`, but is only used as mutation return value.
+"""
+scalar Organizer_KeyOutput
+"""
+✨ `Participant_KeyOutput` returns the primary key fields of table type `Participant`.
+
+It has the same format as `Participant_Key`, but is only used as mutation return value.
+"""
+scalar Participant_KeyOutput
+"""
+✨ `Registration_KeyOutput` returns the primary key fields of table type `Registration`.
+
+It has the same format as `Registration_Key`, but is only used as mutation return value.
+"""
+scalar Registration_KeyOutput
+"""
+✨ `Session_KeyOutput` returns the primary key fields of table type `Session`.
+
+It has the same format as `Session_Key`, but is only used as mutation return value.
+"""
+scalar Session_KeyOutput
+"""
+✨ `Workshop_KeyOutput` returns the primary key fields of table type `Workshop`.
+
+It has the same format as `Workshop_Key`, but is only used as mutation return value.
+"""
+scalar Workshop_KeyOutput
+"""
+✨ Generated data input type for table 'Instructor'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input Instructor_Data {
+  """
+  ✨ Generated from Field `Instructor`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Instructor`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Instructor`.`bio` of type `String`
+  """
+  bio: String
+  """
+  ✨ `_expr` server value variant of `bio` (✨ Generated from Field `Instructor`.`bio` of type `String`)
+  """
+  bio_expr: String_Expr
+  """
+  ✨ Generated from Field `Instructor`.`displayName` of type `String!`
+  """
+  displayName: String
+  """
+  ✨ `_expr` server value variant of `displayName` (✨ Generated from Field `Instructor`.`displayName` of type `String!`)
+  """
+  displayName_expr: String_Expr
+  """
+  ✨ Generated from Field `Instructor`.`email` of type `String!`
+  """
+  email: String
+  """
+  ✨ `_expr` server value variant of `email` (✨ Generated from Field `Instructor`.`email` of type `String!`)
+  """
+  email_expr: String_Expr
+  """
+  ✨ Generated from Field `Instructor`.`specialties` of type `String`
+  """
+  specialties: String
+  """
+  ✨ `_expr` server value variant of `specialties` (✨ Generated from Field `Instructor`.`specialties` of type `String`)
+  """
+  specialties_expr: String_Expr
+}
+"""
+✨ Generated filter input type for table 'Instructor'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Instructor_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [Instructor_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: Instructor_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [Instructor_Filter!]
+  """
+  ✨ Generated from Field `Instructor`.`id` of type `UUID!`
+  """
+  id: UUID_Filter
+  """
+  ✨ Generated from Field `Instructor`.`bio` of type `String`
+  """
+  bio: String_Filter
+  """
+  ✨ Generated from Field `Instructor`.`displayName` of type `String!`
+  """
+  displayName: String_Filter
+  """
+  ✨ Generated from Field `Instructor`.`email` of type `String!`
+  """
+  email: String_Filter
+  """
+  ✨ Generated from Field `Instructor`.`specialties` of type `String`
+  """
+  specialties: String_Filter
+  """
+  ✨ Generated from Field `Instructor`.`sessions_on_instructor` of type `[Session!]!`
+  """
+  sessions_on_instructor: Session_ListFilter
+}
+"""
+✨ Generated first-row input type for table 'Instructor'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input Instructor_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [Instructor_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: Instructor_Filter
+}
+"""
+✨ Generated having input type for table 'Instructor'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Instructor_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [Instructor_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: Instructor_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [Instructor_Having!]
+  """
+  ✨ Generated from Field `Instructor`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `Instructor`.`bio_count` of type `Int!`
+  """
+  bio_count: Int_Filter
+  """
+  ✨ Generated from Field `Instructor`.`displayName_count` of type `Int!`
+  """
+  displayName_count: Int_Filter
+  """
+  ✨ Generated from Field `Instructor`.`email_count` of type `Int!`
+  """
+  email_count: Int_Filter
+  """
+  ✨ Generated from Field `Instructor`.`id_count` of type `Int!`
+  """
+  id_count: Int_Filter
+  """
+  ✨ Generated from Field `Instructor`.`specialties_count` of type `Int!`
+  """
+  specialties_count: Int_Filter
+}
+"""
+✨ Generated key input type for table 'Instructor'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input Instructor_Key {
+  """
+  ✨ Generated from Field `Instructor`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Instructor`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+}
+"""
+✨ Generated list filter input type for table 'Instructor'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input Instructor_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: Instructor_Filter
+}
+"""
+✨ Generated order input type for table 'Instructor'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input Instructor_Order {
+  """
+  ✨ Generated from Field `Instructor`.`id` of type `UUID!`
+  """
+  id: OrderDirection
+  """
+  ✨ Generated from Field `Instructor`.`bio` of type `String`
+  """
+  bio: OrderDirection
+  """
+  ✨ Generated from Field `Instructor`.`displayName` of type `String!`
+  """
+  displayName: OrderDirection
+  """
+  ✨ Generated from Field `Instructor`.`email` of type `String!`
+  """
+  email: OrderDirection
+  """
+  ✨ Generated from Field `Instructor`.`specialties` of type `String`
+  """
+  specialties: OrderDirection
+  """
+  ✨ Generated from Field `Instructor`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `Instructor`.`bio_count` of type `Int!`
+  """
+  bio_count: OrderDirection
+  """
+  ✨ Generated from Field `Instructor`.`displayName_count` of type `Int!`
+  """
+  displayName_count: OrderDirection
+  """
+  ✨ Generated from Field `Instructor`.`email_count` of type `Int!`
+  """
+  email_count: OrderDirection
+  """
+  ✨ Generated from Field `Instructor`.`id_count` of type `Int!`
+  """
+  id_count: OrderDirection
+  """
+  ✨ Generated from Field `Instructor`.`specialties_count` of type `Int!`
+  """
+  specialties_count: OrderDirection
+}
+"""
+✨ Generated data input type for table 'Organizer'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input Organizer_Data {
+  """
+  ✨ Generated from Field `Organizer`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Organizer`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Organizer`.`contactPhone` of type `String`
+  """
+  contactPhone: String
+  """
+  ✨ `_expr` server value variant of `contactPhone` (✨ Generated from Field `Organizer`.`contactPhone` of type `String`)
+  """
+  contactPhone_expr: String_Expr
+  """
+  ✨ Generated from Field `Organizer`.`displayName` of type `String!`
+  """
+  displayName: String
+  """
+  ✨ `_expr` server value variant of `displayName` (✨ Generated from Field `Organizer`.`displayName` of type `String!`)
+  """
+  displayName_expr: String_Expr
+  """
+  ✨ Generated from Field `Organizer`.`email` of type `String!`
+  """
+  email: String
+  """
+  ✨ `_expr` server value variant of `email` (✨ Generated from Field `Organizer`.`email` of type `String!`)
+  """
+  email_expr: String_Expr
+  """
+  ✨ Generated from Field `Organizer`.`organizationName` of type `String`
+  """
+  organizationName: String
+  """
+  ✨ `_expr` server value variant of `organizationName` (✨ Generated from Field `Organizer`.`organizationName` of type `String`)
+  """
+  organizationName_expr: String_Expr
+}
+"""
+✨ Generated filter input type for table 'Organizer'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Organizer_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [Organizer_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: Organizer_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [Organizer_Filter!]
+  """
+  ✨ Generated from Field `Organizer`.`id` of type `UUID!`
+  """
+  id: UUID_Filter
+  """
+  ✨ Generated from Field `Organizer`.`contactPhone` of type `String`
+  """
+  contactPhone: String_Filter
+  """
+  ✨ Generated from Field `Organizer`.`displayName` of type `String!`
+  """
+  displayName: String_Filter
+  """
+  ✨ Generated from Field `Organizer`.`email` of type `String!`
+  """
+  email: String_Filter
+  """
+  ✨ Generated from Field `Organizer`.`organizationName` of type `String`
+  """
+  organizationName: String_Filter
+  """
+  ✨ Generated from Field `Organizer`.`workshops_on_organizer` of type `[Workshop!]!`
+  """
+  workshops_on_organizer: Workshop_ListFilter
+}
+"""
+✨ Generated first-row input type for table 'Organizer'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input Organizer_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [Organizer_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: Organizer_Filter
+}
+"""
+✨ Generated having input type for table 'Organizer'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Organizer_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [Organizer_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: Organizer_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [Organizer_Having!]
+  """
+  ✨ Generated from Field `Organizer`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `Organizer`.`contactPhone_count` of type `Int!`
+  """
+  contactPhone_count: Int_Filter
+  """
+  ✨ Generated from Field `Organizer`.`displayName_count` of type `Int!`
+  """
+  displayName_count: Int_Filter
+  """
+  ✨ Generated from Field `Organizer`.`email_count` of type `Int!`
+  """
+  email_count: Int_Filter
+  """
+  ✨ Generated from Field `Organizer`.`id_count` of type `Int!`
+  """
+  id_count: Int_Filter
+  """
+  ✨ Generated from Field `Organizer`.`organizationName_count` of type `Int!`
+  """
+  organizationName_count: Int_Filter
+}
+"""
+✨ Generated key input type for table 'Organizer'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input Organizer_Key {
+  """
+  ✨ Generated from Field `Organizer`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Organizer`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+}
+"""
+✨ Generated list filter input type for table 'Organizer'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input Organizer_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: Organizer_Filter
+}
+"""
+✨ Generated order input type for table 'Organizer'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input Organizer_Order {
+  """
+  ✨ Generated from Field `Organizer`.`id` of type `UUID!`
+  """
+  id: OrderDirection
+  """
+  ✨ Generated from Field `Organizer`.`contactPhone` of type `String`
+  """
+  contactPhone: OrderDirection
+  """
+  ✨ Generated from Field `Organizer`.`displayName` of type `String!`
+  """
+  displayName: OrderDirection
+  """
+  ✨ Generated from Field `Organizer`.`email` of type `String!`
+  """
+  email: OrderDirection
+  """
+  ✨ Generated from Field `Organizer`.`organizationName` of type `String`
+  """
+  organizationName: OrderDirection
+  """
+  ✨ Generated from Field `Organizer`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `Organizer`.`contactPhone_count` of type `Int!`
+  """
+  contactPhone_count: OrderDirection
+  """
+  ✨ Generated from Field `Organizer`.`displayName_count` of type `Int!`
+  """
+  displayName_count: OrderDirection
+  """
+  ✨ Generated from Field `Organizer`.`email_count` of type `Int!`
+  """
+  email_count: OrderDirection
+  """
+  ✨ Generated from Field `Organizer`.`id_count` of type `Int!`
+  """
+  id_count: OrderDirection
+  """
+  ✨ Generated from Field `Organizer`.`organizationName_count` of type `Int!`
+  """
+  organizationName_count: OrderDirection
+}
+"""
+✨ Generated data input type for table 'Participant'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input Participant_Data {
+  """
+  ✨ Generated from Field `Participant`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Participant`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Participant`.`contactPhone` of type `String`
+  """
+  contactPhone: String
+  """
+  ✨ `_expr` server value variant of `contactPhone` (✨ Generated from Field `Participant`.`contactPhone` of type `String`)
+  """
+  contactPhone_expr: String_Expr
+  """
+  ✨ Generated from Field `Participant`.`displayName` of type `String!`
+  """
+  displayName: String
+  """
+  ✨ `_expr` server value variant of `displayName` (✨ Generated from Field `Participant`.`displayName` of type `String!`)
+  """
+  displayName_expr: String_Expr
+  """
+  ✨ Generated from Field `Participant`.`email` of type `String!`
+  """
+  email: String
+  """
+  ✨ `_expr` server value variant of `email` (✨ Generated from Field `Participant`.`email` of type `String!`)
+  """
+  email_expr: String_Expr
+}
+"""
+✨ Generated filter input type for table 'Participant'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Participant_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [Participant_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: Participant_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [Participant_Filter!]
+  """
+  ✨ Generated from Field `Participant`.`id` of type `UUID!`
+  """
+  id: UUID_Filter
+  """
+  ✨ Generated from Field `Participant`.`contactPhone` of type `String`
+  """
+  contactPhone: String_Filter
+  """
+  ✨ Generated from Field `Participant`.`displayName` of type `String!`
+  """
+  displayName: String_Filter
+  """
+  ✨ Generated from Field `Participant`.`email` of type `String!`
+  """
+  email: String_Filter
+  """
+  ✨ Generated from Field `Participant`.`registrations_on_participant` of type `[Registration!]!`
+  """
+  registrations_on_participant: Registration_ListFilter
+}
+"""
+✨ Generated first-row input type for table 'Participant'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input Participant_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [Participant_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: Participant_Filter
+}
+"""
+✨ Generated having input type for table 'Participant'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Participant_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [Participant_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: Participant_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [Participant_Having!]
+  """
+  ✨ Generated from Field `Participant`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `Participant`.`contactPhone_count` of type `Int!`
+  """
+  contactPhone_count: Int_Filter
+  """
+  ✨ Generated from Field `Participant`.`displayName_count` of type `Int!`
+  """
+  displayName_count: Int_Filter
+  """
+  ✨ Generated from Field `Participant`.`email_count` of type `Int!`
+  """
+  email_count: Int_Filter
+  """
+  ✨ Generated from Field `Participant`.`id_count` of type `Int!`
+  """
+  id_count: Int_Filter
+}
+"""
+✨ Generated key input type for table 'Participant'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input Participant_Key {
+  """
+  ✨ Generated from Field `Participant`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Participant`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+}
+"""
+✨ Generated list filter input type for table 'Participant'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input Participant_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: Participant_Filter
+}
+"""
+✨ Generated order input type for table 'Participant'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input Participant_Order {
+  """
+  ✨ Generated from Field `Participant`.`id` of type `UUID!`
+  """
+  id: OrderDirection
+  """
+  ✨ Generated from Field `Participant`.`contactPhone` of type `String`
+  """
+  contactPhone: OrderDirection
+  """
+  ✨ Generated from Field `Participant`.`displayName` of type `String!`
+  """
+  displayName: OrderDirection
+  """
+  ✨ Generated from Field `Participant`.`email` of type `String!`
+  """
+  email: OrderDirection
+  """
+  ✨ Generated from Field `Participant`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `Participant`.`contactPhone_count` of type `Int!`
+  """
+  contactPhone_count: OrderDirection
+  """
+  ✨ Generated from Field `Participant`.`displayName_count` of type `Int!`
+  """
+  displayName_count: OrderDirection
+  """
+  ✨ Generated from Field `Participant`.`email_count` of type `Int!`
+  """
+  email_count: OrderDirection
+  """
+  ✨ Generated from Field `Participant`.`id_count` of type `Int!`
+  """
+  id_count: OrderDirection
+}
+"""
+✨ Generated data input type for table 'Registration'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input Registration_Data {
+  """
+  ✨ Generated from Field `Registration`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Registration`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Registration`.`participantId` of type `UUID`
+  """
+  participantId: UUID
+  """
+  ✨ `_expr` server value variant of `participantId` (✨ Generated from Field `Registration`.`participantId` of type `UUID`)
+  """
+  participantId_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Registration`.`sessionId` of type `UUID`
+  """
+  sessionId: UUID
+  """
+  ✨ `_expr` server value variant of `sessionId` (✨ Generated from Field `Registration`.`sessionId` of type `UUID`)
+  """
+  sessionId_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Registration`.`participant` of type `Participant`
+  """
+  participant: Participant_Key
+  """
+  ✨ Generated from Field `Registration`.`session` of type `Session`
+  """
+  session: Session_Key
+  """
+  ✨ Generated from Field `Registration`.`paymentInfo` of type `String`
+  """
+  paymentInfo: String
+  """
+  ✨ `_expr` server value variant of `paymentInfo` (✨ Generated from Field `Registration`.`paymentInfo` of type `String`)
+  """
+  paymentInfo_expr: String_Expr
+  """
+  ✨ Generated from Field `Registration`.`registeredAt` of type `Timestamp!`
+  """
+  registeredAt: Timestamp
+  """
+  ✨ `_expr` server value variant of `registeredAt` (✨ Generated from Field `Registration`.`registeredAt` of type `Timestamp!`)
+  """
+  registeredAt_expr: Timestamp_Expr
+  """
+  ✨ `_time` server value variant of `registeredAt` (✨ Generated from Field `Registration`.`registeredAt` of type `Timestamp!`)
+  """
+  registeredAt_time: Timestamp_Relative
+  """
+  ✨ `_update` server value variant of `registeredAt` (✨ Generated from Field `Registration`.`registeredAt` of type `Timestamp!`)
+  """
+  registeredAt_update: [Timestamp_Update!]
+  """
+  ✨ Generated from Field `Registration`.`status` of type `String!`
+  """
+  status: String
+  """
+  ✨ `_expr` server value variant of `status` (✨ Generated from Field `Registration`.`status` of type `String!`)
+  """
+  status_expr: String_Expr
+}
+"""
+✨ Generated filter input type for table 'Registration'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Registration_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [Registration_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: Registration_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [Registration_Filter!]
+  """
+  ✨ Generated from Field `Registration`.`id` of type `UUID!`
+  """
+  id: UUID_Filter
+  """
+  ✨ Generated from Field `Registration`.`participantId` of type `UUID`
+  """
+  participantId: UUID_Filter
+  """
+  ✨ Generated from Field `Registration`.`sessionId` of type `UUID`
+  """
+  sessionId: UUID_Filter
+  """
+  ✨ Generated from Field `Registration`.`participant` of type `Participant`
+  """
+  participant: Participant_Filter
+  """
+  ✨ Generated from Field `Registration`.`session` of type `Session`
+  """
+  session: Session_Filter
+  """
+  ✨ Generated from Field `Registration`.`paymentInfo` of type `String`
+  """
+  paymentInfo: String_Filter
+  """
+  ✨ Generated from Field `Registration`.`registeredAt` of type `Timestamp!`
+  """
+  registeredAt: Timestamp_Filter
+  """
+  ✨ Generated from Field `Registration`.`status` of type `String!`
+  """
+  status: String_Filter
+}
+"""
+✨ Generated first-row input type for table 'Registration'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input Registration_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [Registration_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: Registration_Filter
+}
+"""
+✨ Generated having input type for table 'Registration'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Registration_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [Registration_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: Registration_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [Registration_Having!]
+  """
+  ✨ Generated from Field `Registration`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `Registration`.`id_count` of type `Int!`
+  """
+  id_count: Int_Filter
+  """
+  ✨ Generated from Field `Registration`.`participantId_count` of type `Int!`
+  """
+  participantId_count: Int_Filter
+  """
+  ✨ Generated from Field `Registration`.`paymentInfo_count` of type `Int!`
+  """
+  paymentInfo_count: Int_Filter
+  """
+  ✨ Generated from Field `Registration`.`registeredAt_count` of type `Int!`
+  """
+  registeredAt_count: Int_Filter
+  """
+  ✨ Generated from Field `Registration`.`sessionId_count` of type `Int!`
+  """
+  sessionId_count: Int_Filter
+  """
+  ✨ Generated from Field `Registration`.`status_count` of type `Int!`
+  """
+  status_count: Int_Filter
+  """
+  ✨ Generated from Field `Registration`.`registeredAt_min` of type `Timestamp`
+  """
+  registeredAt_min: Timestamp_Filter
+  """
+  ✨ Generated from Field `Registration`.`registeredAt_max` of type `Timestamp`
+  """
+  registeredAt_max: Timestamp_Filter
+}
+"""
+✨ Generated key input type for table 'Registration'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input Registration_Key {
+  """
+  ✨ Generated from Field `Registration`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Registration`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+}
+"""
+✨ Generated list filter input type for table 'Registration'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input Registration_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: Registration_Filter
+}
+"""
+✨ Generated order input type for table 'Registration'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input Registration_Order {
+  """
+  ✨ Generated from Field `Registration`.`id` of type `UUID!`
+  """
+  id: OrderDirection
+  """
+  ✨ Generated from Field `Registration`.`participantId` of type `UUID`
+  """
+  participantId: OrderDirection
+  """
+  ✨ Generated from Field `Registration`.`sessionId` of type `UUID`
+  """
+  sessionId: OrderDirection
+  """
+  ✨ Generated from Field `Registration`.`participant` of type `Participant`
+  """
+  participant: Participant_Order
+  """
+  ✨ Generated from Field `Registration`.`session` of type `Session`
+  """
+  session: Session_Order
+  """
+  ✨ Generated from Field `Registration`.`paymentInfo` of type `String`
+  """
+  paymentInfo: OrderDirection
+  """
+  ✨ Generated from Field `Registration`.`registeredAt` of type `Timestamp!`
+  """
+  registeredAt: OrderDirection
+  """
+  ✨ Generated from Field `Registration`.`status` of type `String!`
+  """
+  status: OrderDirection
+  """
+  ✨ Generated from Field `Registration`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `Registration`.`id_count` of type `Int!`
+  """
+  id_count: OrderDirection
+  """
+  ✨ Generated from Field `Registration`.`participantId_count` of type `Int!`
+  """
+  participantId_count: OrderDirection
+  """
+  ✨ Generated from Field `Registration`.`paymentInfo_count` of type `Int!`
+  """
+  paymentInfo_count: OrderDirection
+  """
+  ✨ Generated from Field `Registration`.`registeredAt_count` of type `Int!`
+  """
+  registeredAt_count: OrderDirection
+  """
+  ✨ Generated from Field `Registration`.`sessionId_count` of type `Int!`
+  """
+  sessionId_count: OrderDirection
+  """
+  ✨ Generated from Field `Registration`.`status_count` of type `Int!`
+  """
+  status_count: OrderDirection
+  """
+  ✨ Generated from Field `Registration`.`registeredAt_min` of type `Timestamp`
+  """
+  registeredAt_min: OrderDirection
+  """
+  ✨ Generated from Field `Registration`.`registeredAt_max` of type `Timestamp`
+  """
+  registeredAt_max: OrderDirection
+}
+"""
+✨ Generated data input type for table 'Session'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input Session_Data {
+  """
+  ✨ Generated from Field `Session`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Session`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Session`.`instructorId` of type `UUID`
+  """
+  instructorId: UUID
+  """
+  ✨ `_expr` server value variant of `instructorId` (✨ Generated from Field `Session`.`instructorId` of type `UUID`)
+  """
+  instructorId_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Session`.`workshopId` of type `UUID`
+  """
+  workshopId: UUID
+  """
+  ✨ `_expr` server value variant of `workshopId` (✨ Generated from Field `Session`.`workshopId` of type `UUID`)
+  """
+  workshopId_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Session`.`instructor` of type `Instructor`
+  """
+  instructor: Instructor_Key
+  """
+  ✨ Generated from Field `Session`.`workshop` of type `Workshop`
+  """
+  workshop: Workshop_Key
+  """
+  ✨ Generated from Field `Session`.`date` of type `Date!`
+  """
+  date: Date
+  """
+  ✨ `_date` server value variant of `date` (✨ Generated from Field `Session`.`date` of type `Date!`)
+  """
+  date_date: Date_Relative
+  """
+  ✨ `_expr` server value variant of `date` (✨ Generated from Field `Session`.`date` of type `Date!`)
+  """
+  date_expr: Date_Expr
+  """
+  ✨ `_update` server value variant of `date` (✨ Generated from Field `Session`.`date` of type `Date!`)
+  """
+  date_update: [Date_Update!]
+  """
+  ✨ Generated from Field `Session`.`endTime` of type `String!`
+  """
+  endTime: String
+  """
+  ✨ `_expr` server value variant of `endTime` (✨ Generated from Field `Session`.`endTime` of type `String!`)
+  """
+  endTime_expr: String_Expr
+  """
+  ✨ Generated from Field `Session`.`isRegistrationOpen` of type `Boolean!`
+  """
+  isRegistrationOpen: Boolean
+  """
+  ✨ `_expr` server value variant of `isRegistrationOpen` (✨ Generated from Field `Session`.`isRegistrationOpen` of type `Boolean!`)
+  """
+  isRegistrationOpen_expr: Boolean_Expr
+  """
+  ✨ Generated from Field `Session`.`location` of type `String!`
+  """
+  location: String
+  """
+  ✨ `_expr` server value variant of `location` (✨ Generated from Field `Session`.`location` of type `String!`)
+  """
+  location_expr: String_Expr
+  """
+  ✨ Generated from Field `Session`.`notes` of type `String`
+  """
+  notes: String
+  """
+  ✨ `_expr` server value variant of `notes` (✨ Generated from Field `Session`.`notes` of type `String`)
+  """
+  notes_expr: String_Expr
+  """
+  ✨ Generated from Field `Session`.`startTime` of type `String!`
+  """
+  startTime: String
+  """
+  ✨ `_expr` server value variant of `startTime` (✨ Generated from Field `Session`.`startTime` of type `String!`)
+  """
+  startTime_expr: String_Expr
+}
+"""
+✨ Generated filter input type for table 'Session'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Session_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [Session_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: Session_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [Session_Filter!]
+  """
+  ✨ Generated from Field `Session`.`id` of type `UUID!`
+  """
+  id: UUID_Filter
+  """
+  ✨ Generated from Field `Session`.`instructorId` of type `UUID`
+  """
+  instructorId: UUID_Filter
+  """
+  ✨ Generated from Field `Session`.`workshopId` of type `UUID`
+  """
+  workshopId: UUID_Filter
+  """
+  ✨ Generated from Field `Session`.`instructor` of type `Instructor`
+  """
+  instructor: Instructor_Filter
+  """
+  ✨ Generated from Field `Session`.`workshop` of type `Workshop`
+  """
+  workshop: Workshop_Filter
+  """
+  ✨ Generated from Field `Session`.`date` of type `Date!`
+  """
+  date: Date_Filter
+  """
+  ✨ Generated from Field `Session`.`endTime` of type `String!`
+  """
+  endTime: String_Filter
+  """
+  ✨ Generated from Field `Session`.`isRegistrationOpen` of type `Boolean!`
+  """
+  isRegistrationOpen: Boolean_Filter
+  """
+  ✨ Generated from Field `Session`.`location` of type `String!`
+  """
+  location: String_Filter
+  """
+  ✨ Generated from Field `Session`.`notes` of type `String`
+  """
+  notes: String_Filter
+  """
+  ✨ Generated from Field `Session`.`startTime` of type `String!`
+  """
+  startTime: String_Filter
+  """
+  ✨ Generated from Field `Session`.`registrations_on_session` of type `[Registration!]!`
+  """
+  registrations_on_session: Registration_ListFilter
+}
+"""
+✨ Generated first-row input type for table 'Session'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input Session_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [Session_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: Session_Filter
+}
+"""
+✨ Generated having input type for table 'Session'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Session_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [Session_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: Session_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [Session_Having!]
+  """
+  ✨ Generated from Field `Session`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `Session`.`date_count` of type `Int!`
+  """
+  date_count: Int_Filter
+  """
+  ✨ Generated from Field `Session`.`endTime_count` of type `Int!`
+  """
+  endTime_count: Int_Filter
+  """
+  ✨ Generated from Field `Session`.`id_count` of type `Int!`
+  """
+  id_count: Int_Filter
+  """
+  ✨ Generated from Field `Session`.`instructorId_count` of type `Int!`
+  """
+  instructorId_count: Int_Filter
+  """
+  ✨ Generated from Field `Session`.`isRegistrationOpen_count` of type `Int!`
+  """
+  isRegistrationOpen_count: Int_Filter
+  """
+  ✨ Generated from Field `Session`.`location_count` of type `Int!`
+  """
+  location_count: Int_Filter
+  """
+  ✨ Generated from Field `Session`.`notes_count` of type `Int!`
+  """
+  notes_count: Int_Filter
+  """
+  ✨ Generated from Field `Session`.`startTime_count` of type `Int!`
+  """
+  startTime_count: Int_Filter
+  """
+  ✨ Generated from Field `Session`.`workshopId_count` of type `Int!`
+  """
+  workshopId_count: Int_Filter
+  """
+  ✨ Generated from Field `Session`.`date_min` of type `Date`
+  """
+  date_min: Date_Filter
+  """
+  ✨ Generated from Field `Session`.`date_max` of type `Date`
+  """
+  date_max: Date_Filter
+}
+"""
+✨ Generated key input type for table 'Session'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input Session_Key {
+  """
+  ✨ Generated from Field `Session`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Session`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+}
+"""
+✨ Generated list filter input type for table 'Session'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input Session_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: Session_Filter
+}
+"""
+✨ Generated order input type for table 'Session'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input Session_Order {
+  """
+  ✨ Generated from Field `Session`.`id` of type `UUID!`
+  """
+  id: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`instructorId` of type `UUID`
+  """
+  instructorId: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`workshopId` of type `UUID`
+  """
+  workshopId: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`instructor` of type `Instructor`
+  """
+  instructor: Instructor_Order
+  """
+  ✨ Generated from Field `Session`.`workshop` of type `Workshop`
+  """
+  workshop: Workshop_Order
+  """
+  ✨ Generated from Field `Session`.`date` of type `Date!`
+  """
+  date: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`endTime` of type `String!`
+  """
+  endTime: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`isRegistrationOpen` of type `Boolean!`
+  """
+  isRegistrationOpen: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`location` of type `String!`
+  """
+  location: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`notes` of type `String`
+  """
+  notes: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`startTime` of type `String!`
+  """
+  startTime: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`date_count` of type `Int!`
+  """
+  date_count: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`endTime_count` of type `Int!`
+  """
+  endTime_count: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`id_count` of type `Int!`
+  """
+  id_count: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`instructorId_count` of type `Int!`
+  """
+  instructorId_count: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`isRegistrationOpen_count` of type `Int!`
+  """
+  isRegistrationOpen_count: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`location_count` of type `Int!`
+  """
+  location_count: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`notes_count` of type `Int!`
+  """
+  notes_count: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`startTime_count` of type `Int!`
+  """
+  startTime_count: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`workshopId_count` of type `Int!`
+  """
+  workshopId_count: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`date_min` of type `Date`
+  """
+  date_min: OrderDirection
+  """
+  ✨ Generated from Field `Session`.`date_max` of type `Date`
+  """
+  date_max: OrderDirection
+}
+"""
+✨ Generated data input type for table 'Workshop'. It includes all necessary fields for creating or upserting rows into table.
+"""
+input Workshop_Data {
+  """
+  ✨ Generated from Field `Workshop`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Workshop`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Workshop`.`organizerId` of type `UUID`
+  """
+  organizerId: UUID
+  """
+  ✨ `_expr` server value variant of `organizerId` (✨ Generated from Field `Workshop`.`organizerId` of type `UUID`)
+  """
+  organizerId_expr: UUID_Expr
+  """
+  ✨ Generated from Field `Workshop`.`organizer` of type `Organizer`
+  """
+  organizer: Organizer_Key
+  """
+  ✨ Generated from Field `Workshop`.`capacity` of type `Int!`
+  """
+  capacity: Int
+  """
+  ✨ `_expr` server value variant of `capacity` (✨ Generated from Field `Workshop`.`capacity` of type `Int!`)
+  """
+  capacity_expr: Int_Expr
+  """
+  ✨ `_update` server value variant of `capacity` (✨ Generated from Field `Workshop`.`capacity` of type `Int!`)
+  """
+  capacity_update: [Int_Update!]
+  """
+  ✨ Generated from Field `Workshop`.`description` of type `String!`
+  """
+  description: String
+  """
+  ✨ `_expr` server value variant of `description` (✨ Generated from Field `Workshop`.`description` of type `String!`)
+  """
+  description_expr: String_Expr
+  """
+  ✨ Generated from Field `Workshop`.`prerequisites` of type `String`
+  """
+  prerequisites: String
+  """
+  ✨ `_expr` server value variant of `prerequisites` (✨ Generated from Field `Workshop`.`prerequisites` of type `String`)
+  """
+  prerequisites_expr: String_Expr
+  """
+  ✨ Generated from Field `Workshop`.`targetAudience` of type `String`
+  """
+  targetAudience: String
+  """
+  ✨ `_expr` server value variant of `targetAudience` (✨ Generated from Field `Workshop`.`targetAudience` of type `String`)
+  """
+  targetAudience_expr: String_Expr
+  """
+  ✨ Generated from Field `Workshop`.`title` of type `String!`
+  """
+  title: String
+  """
+  ✨ `_expr` server value variant of `title` (✨ Generated from Field `Workshop`.`title` of type `String!`)
+  """
+  title_expr: String_Expr
+}
+"""
+✨ Generated filter input type for table 'Workshop'. This input allows filtering objects using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Workshop_Filter {
+  """
+  Apply multiple filter conditions using `AND` logic.
+  """
+  _and: [Workshop_Filter!]
+  """
+  Negate the result of the provided filter condition.
+  """
+  _not: Workshop_Filter
+  """
+  Apply multiple filter conditions using `OR` logic.
+  """
+  _or: [Workshop_Filter!]
+  """
+  ✨ Generated from Field `Workshop`.`id` of type `UUID!`
+  """
+  id: UUID_Filter
+  """
+  ✨ Generated from Field `Workshop`.`organizerId` of type `UUID`
+  """
+  organizerId: UUID_Filter
+  """
+  ✨ Generated from Field `Workshop`.`organizer` of type `Organizer`
+  """
+  organizer: Organizer_Filter
+  """
+  ✨ Generated from Field `Workshop`.`capacity` of type `Int!`
+  """
+  capacity: Int_Filter
+  """
+  ✨ Generated from Field `Workshop`.`description` of type `String!`
+  """
+  description: String_Filter
+  """
+  ✨ Generated from Field `Workshop`.`prerequisites` of type `String`
+  """
+  prerequisites: String_Filter
+  """
+  ✨ Generated from Field `Workshop`.`targetAudience` of type `String`
+  """
+  targetAudience: String_Filter
+  """
+  ✨ Generated from Field `Workshop`.`title` of type `String!`
+  """
+  title: String_Filter
+  """
+  ✨ Generated from Field `Workshop`.`sessions_on_workshop` of type `[Session!]!`
+  """
+  sessions_on_workshop: Session_ListFilter
+}
+"""
+✨ Generated first-row input type for table 'Workshop'. This input selects the first row matching the filter criteria, ordered according to the specified conditions.
+"""
+input Workshop_FirstRow {
+  """
+  Order the result by the specified fields.
+  """
+  orderBy: [Workshop_Order!]
+  """
+  Filters rows based on the specified conditions.
+  """
+  where: Workshop_Filter
+}
+"""
+✨ Generated having input type for table 'Workshop'. This input allows you to filter groups during aggregate queries using various conditions. Use `_or`, `_and`, and `_not` to compose complex filters.
+"""
+input Workshop_Having {
+  """
+  Apply multiple Having conditions using `AND` logic.
+  """
+  _and: [Workshop_Having!]
+  """
+  Whether to apply DISTINCT to the aggregate function.
+  """
+  _distinct: Boolean
+  """
+  Negate the result of the provided Having condition.
+  """
+  _not: Workshop_Having
+  """
+  Apply multiple Having conditions using `OR` logic.
+  """
+  _or: [Workshop_Having!]
+  """
+  ✨ Generated from Field `Workshop`.`_count` of type `Int!`
+  """
+  _count: Int_Filter
+  """
+  ✨ Generated from Field `Workshop`.`capacity_count` of type `Int!`
+  """
+  capacity_count: Int_Filter
+  """
+  ✨ Generated from Field `Workshop`.`description_count` of type `Int!`
+  """
+  description_count: Int_Filter
+  """
+  ✨ Generated from Field `Workshop`.`id_count` of type `Int!`
+  """
+  id_count: Int_Filter
+  """
+  ✨ Generated from Field `Workshop`.`organizerId_count` of type `Int!`
+  """
+  organizerId_count: Int_Filter
+  """
+  ✨ Generated from Field `Workshop`.`prerequisites_count` of type `Int!`
+  """
+  prerequisites_count: Int_Filter
+  """
+  ✨ Generated from Field `Workshop`.`targetAudience_count` of type `Int!`
+  """
+  targetAudience_count: Int_Filter
+  """
+  ✨ Generated from Field `Workshop`.`title_count` of type `Int!`
+  """
+  title_count: Int_Filter
+  """
+  ✨ Generated from Field `Workshop`.`capacity_sum` of type `Int`
+  """
+  capacity_sum: Int_Filter
+  """
+  ✨ Generated from Field `Workshop`.`capacity_avg` of type `Float`
+  """
+  capacity_avg: Float_Filter
+  """
+  ✨ Generated from Field `Workshop`.`capacity_min` of type `Int`
+  """
+  capacity_min: Int_Filter
+  """
+  ✨ Generated from Field `Workshop`.`capacity_max` of type `Int`
+  """
+  capacity_max: Int_Filter
+}
+"""
+✨ Generated key input type for table 'Workshop'. It represents the primary key fields used to uniquely identify a row in the table.
+"""
+input Workshop_Key {
+  """
+  ✨ Generated from Field `Workshop`.`id` of type `UUID!`
+  """
+  id: UUID
+  """
+  ✨ `_expr` server value variant of `id` (✨ Generated from Field `Workshop`.`id` of type `UUID!`)
+  """
+  id_expr: UUID_Expr
+}
+"""
+✨ Generated list filter input type for table 'Workshop'. This input applies filtering logic based on the count or existence of related objects that matches certain criteria.
+"""
+input Workshop_ListFilter {
+  """
+  The desired number of objects that match the condition (defaults to at least one).
+  """
+  count: Int_Filter = {gt:0}
+  """
+  Condition of the related objects to filter for.
+  """
+  exist: Workshop_Filter
+}
+"""
+✨ Generated order input type for table 'Workshop'. This input defines the sorting order of rows in query results based on one or more fields.
+"""
+input Workshop_Order {
+  """
+  ✨ Generated from Field `Workshop`.`id` of type `UUID!`
+  """
+  id: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`organizerId` of type `UUID`
+  """
+  organizerId: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`organizer` of type `Organizer`
+  """
+  organizer: Organizer_Order
+  """
+  ✨ Generated from Field `Workshop`.`capacity` of type `Int!`
+  """
+  capacity: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`description` of type `String!`
+  """
+  description: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`prerequisites` of type `String`
+  """
+  prerequisites: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`targetAudience` of type `String`
+  """
+  targetAudience: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`title` of type `String!`
+  """
+  title: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`_count` of type `Int!`
+  """
+  _count: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`capacity_count` of type `Int!`
+  """
+  capacity_count: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`description_count` of type `Int!`
+  """
+  description_count: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`id_count` of type `Int!`
+  """
+  id_count: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`organizerId_count` of type `Int!`
+  """
+  organizerId_count: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`prerequisites_count` of type `Int!`
+  """
+  prerequisites_count: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`targetAudience_count` of type `Int!`
+  """
+  targetAudience_count: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`title_count` of type `Int!`
+  """
+  title_count: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`capacity_sum` of type `Int`
+  """
+  capacity_sum: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`capacity_avg` of type `Float`
+  """
+  capacity_avg: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`capacity_min` of type `Int`
+  """
+  capacity_min: OrderDirection
+  """
+  ✨ Generated from Field `Workshop`.`capacity_max` of type `Int`
+  """
+  capacity_max: OrderDirection
+}

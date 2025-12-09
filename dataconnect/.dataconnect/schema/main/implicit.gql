@@ -1,0 +1,56 @@
+extend type Instructor {
+  """
+  ✨ Implicit primary key field. It's a UUID column default to a generated new value. See `@table` for how to customize it.
+  """
+  id: UUID! @default(expr: "uuidV4()") @fdc_generated(from: "Instructor", purpose: IMPLICIT_KEY_FIELD)
+}
+extend type Organizer {
+  """
+  ✨ Implicit primary key field. It's a UUID column default to a generated new value. See `@table` for how to customize it.
+  """
+  id: UUID! @default(expr: "uuidV4()") @fdc_generated(from: "Organizer", purpose: IMPLICIT_KEY_FIELD)
+}
+extend type Participant {
+  """
+  ✨ Implicit primary key field. It's a UUID column default to a generated new value. See `@table` for how to customize it.
+  """
+  id: UUID! @default(expr: "uuidV4()") @fdc_generated(from: "Participant", purpose: IMPLICIT_KEY_FIELD)
+}
+extend type Registration {
+  """
+  ✨ Implicit primary key field. It's a UUID column default to a generated new value. See `@table` for how to customize it.
+  """
+  id: UUID! @default(expr: "uuidV4()") @fdc_generated(from: "Registration", purpose: IMPLICIT_KEY_FIELD)
+  """
+  ✨ Implicit foreign key field based on `Registration`.`participant`. It must match the value of `Participant`.`id`. See `@ref` for how to customize it.
+  """
+  participantId: UUID @fdc_generated(from: "Registration.participant", purpose: IMPLICIT_REF_FIELD)
+  """
+  ✨ Implicit foreign key field based on `Registration`.`session`. It must match the value of `Session`.`id`. See `@ref` for how to customize it.
+  """
+  sessionId: UUID @fdc_generated(from: "Registration.session", purpose: IMPLICIT_REF_FIELD)
+}
+extend type Session {
+  """
+  ✨ Implicit primary key field. It's a UUID column default to a generated new value. See `@table` for how to customize it.
+  """
+  id: UUID! @default(expr: "uuidV4()") @fdc_generated(from: "Session", purpose: IMPLICIT_KEY_FIELD)
+  """
+  ✨ Implicit foreign key field based on `Session`.`instructor`. It must match the value of `Instructor`.`id`. See `@ref` for how to customize it.
+  """
+  instructorId: UUID @fdc_generated(from: "Session.instructor", purpose: IMPLICIT_REF_FIELD)
+  """
+  ✨ Implicit foreign key field based on `Session`.`workshop`. It must match the value of `Workshop`.`id`. See `@ref` for how to customize it.
+  """
+  workshopId: UUID @fdc_generated(from: "Session.workshop", purpose: IMPLICIT_REF_FIELD)
+}
+extend type Workshop {
+  """
+  ✨ Implicit primary key field. It's a UUID column default to a generated new value. See `@table` for how to customize it.
+  """
+  id: UUID! @default(expr: "uuidV4()") @fdc_generated(from: "Workshop", purpose: IMPLICIT_KEY_FIELD)
+  """
+  ✨ Implicit foreign key field based on `Workshop`.`organizer`. It must match the value of `Organizer`.`id`. See `@ref` for how to customize it.
+  """
+  organizerId: UUID @fdc_generated(from: "Workshop.organizer", purpose: IMPLICIT_REF_FIELD)
+}

@@ -1,0 +1,26 @@
+mutation CreateWorkshop($organizerId: UUID!, $capacity: Int!, $description: String!, $title: String!) @auth(level: USER) {
+  workshop_insert(data: {organizerId: $organizerId, capacity: $capacity, description: $description, title: $title})
+}
+
+query ListWorkshops @auth(level: PUBLIC, insecureReason: "This operation is safe to expose to the public") {
+  workshops {
+    id
+    title
+    description
+  }
+}
+
+mutation UpdateSessionIsRegistrationOpen($id: UUID!, $isRegistrationOpen: Boolean!) @auth(level: USER) {
+  session_update(key: {id: $id}, data: {isRegistrationOpen: $isRegistrationOpen})
+}
+
+query GetSessionsByWorkshopId($workshopId: UUID!) @auth(level: USER) {
+  sessions(where: {workshopId: {eq: $workshopId}}) {
+    id
+    date
+    startTime
+    endTime
+    location
+    isRegistrationOpen
+  }
+}

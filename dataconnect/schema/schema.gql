@@ -1,0 +1,47 @@
+type Organizer @table {
+  displayName: String!
+  email: String!
+  contactPhone: String
+  organizationName: String
+}
+
+type Workshop @table {
+  title: String!
+  description: String!
+  capacity: Int!
+  prerequisites: String
+  targetAudience: String
+  organizer: Organizer
+}
+
+type Instructor @table {
+  displayName: String!
+  email: String!
+  bio: String
+  specialties: String
+}
+
+type Session @table {
+  startTime: String!
+  endTime: String!
+  date: Date!
+  location: String!
+  isRegistrationOpen: Boolean!
+  notes: String
+  workshop: Workshop
+  instructor: Instructor
+}
+
+type Participant @table {
+  displayName: String!
+  email: String!
+  contactPhone: String
+}
+
+type Registration @table {
+  registeredAt: Timestamp!
+  status: String!
+  paymentInfo: String
+  participant: Participant
+  session: Session
+}

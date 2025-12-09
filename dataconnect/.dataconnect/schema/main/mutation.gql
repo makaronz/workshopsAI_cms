@@ -1,0 +1,674 @@
+extend type Mutation {
+  """
+  ✨ Insert a single `Instructor` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  instructor_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: Instructor_Data!
+  ): Instructor_KeyOutput! @fdc_generated(from: "Instructor", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `Organizer` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  organizer_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: Organizer_Data!
+  ): Organizer_KeyOutput! @fdc_generated(from: "Organizer", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `Participant` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  participant_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: Participant_Data!
+  ): Participant_KeyOutput! @fdc_generated(from: "Participant", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `Registration` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  registration_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: Registration_Data!
+  ): Registration_KeyOutput! @fdc_generated(from: "Registration", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `Session` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  session_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: Session_Data!
+  ): Session_KeyOutput! @fdc_generated(from: "Session", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `Workshop` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  workshop_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: Workshop_Data!
+  ): Workshop_KeyOutput! @fdc_generated(from: "Workshop", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert `Instructor` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  instructor_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [Instructor_Data!]!
+  ): [Instructor_KeyOutput!]! @fdc_generated(from: "Instructor", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `Organizer` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  organizer_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [Organizer_Data!]!
+  ): [Organizer_KeyOutput!]! @fdc_generated(from: "Organizer", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `Participant` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  participant_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [Participant_Data!]!
+  ): [Participant_KeyOutput!]! @fdc_generated(from: "Participant", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `Registration` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  registration_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [Registration_Data!]!
+  ): [Registration_KeyOutput!]! @fdc_generated(from: "Registration", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `Session` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  session_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [Session_Data!]!
+  ): [Session_KeyOutput!]! @fdc_generated(from: "Session", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `Workshop` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  workshop_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [Workshop_Data!]!
+  ): [Workshop_KeyOutput!]! @fdc_generated(from: "Workshop", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert or update a single `Instructor` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Instructor`.
+  """
+  instructor_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: Instructor_Data!
+  ): Instructor_KeyOutput! @fdc_generated(from: "Instructor", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `Organizer` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Organizer`.
+  """
+  organizer_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: Organizer_Data!
+  ): Organizer_KeyOutput! @fdc_generated(from: "Organizer", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `Participant` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Participant`.
+  """
+  participant_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: Participant_Data!
+  ): Participant_KeyOutput! @fdc_generated(from: "Participant", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `Registration` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Registration`.
+  """
+  registration_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: Registration_Data!
+  ): Registration_KeyOutput! @fdc_generated(from: "Registration", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `Session` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Session`.
+  """
+  session_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: Session_Data!
+  ): Session_KeyOutput! @fdc_generated(from: "Session", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `Workshop` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Workshop`.
+  """
+  workshop_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: Workshop_Data!
+  ): Workshop_KeyOutput! @fdc_generated(from: "Workshop", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update `Instructor` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Instructor`.
+  """
+  instructor_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [Instructor_Data!]!
+  ): [Instructor_KeyOutput!]! @fdc_generated(from: "Instructor", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `Organizer` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Organizer`.
+  """
+  organizer_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [Organizer_Data!]!
+  ): [Organizer_KeyOutput!]! @fdc_generated(from: "Organizer", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `Participant` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Participant`.
+  """
+  participant_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [Participant_Data!]!
+  ): [Participant_KeyOutput!]! @fdc_generated(from: "Participant", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `Registration` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Registration`.
+  """
+  registration_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [Registration_Data!]!
+  ): [Registration_KeyOutput!]! @fdc_generated(from: "Registration", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `Session` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Session`.
+  """
+  session_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [Session_Data!]!
+  ): [Session_KeyOutput!]! @fdc_generated(from: "Session", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `Workshop` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Workshop`.
+  """
+  workshop_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [Workshop_Data!]!
+  ): [Workshop_KeyOutput!]! @fdc_generated(from: "Workshop", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Update a single `Instructor` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `Instructor` or `null` if not found.
+  """
+  instructor_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Instructor_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Instructor_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: Instructor_Data!
+  ): Instructor_KeyOutput @fdc_generated(from: "Instructor", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `Organizer` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `Organizer` or `null` if not found.
+  """
+  organizer_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Organizer_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Organizer_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: Organizer_Data!
+  ): Organizer_KeyOutput @fdc_generated(from: "Organizer", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `Participant` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `Participant` or `null` if not found.
+  """
+  participant_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Participant_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Participant_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: Participant_Data!
+  ): Participant_KeyOutput @fdc_generated(from: "Participant", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `Registration` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `Registration` or `null` if not found.
+  """
+  registration_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Registration_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Registration_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: Registration_Data!
+  ): Registration_KeyOutput @fdc_generated(from: "Registration", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `Session` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `Session` or `null` if not found.
+  """
+  session_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Session_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Session_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: Session_Data!
+  ): Session_KeyOutput @fdc_generated(from: "Session", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `Workshop` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `Workshop` or `null` if not found.
+  """
+  workshop_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Workshop_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Workshop_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: Workshop_Data!
+  ): Workshop_KeyOutput @fdc_generated(from: "Workshop", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update `Instructor` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  instructor_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: Instructor_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: Instructor_Data!
+  ): Int! @fdc_generated(from: "Instructor", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `Organizer` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  organizer_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: Organizer_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: Organizer_Data!
+  ): Int! @fdc_generated(from: "Organizer", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `Participant` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  participant_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: Participant_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: Participant_Data!
+  ): Int! @fdc_generated(from: "Participant", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `Registration` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  registration_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: Registration_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: Registration_Data!
+  ): Int! @fdc_generated(from: "Registration", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `Session` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  session_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: Session_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: Session_Data!
+  ): Int! @fdc_generated(from: "Session", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `Workshop` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  workshop_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: Workshop_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: Workshop_Data!
+  ): Int! @fdc_generated(from: "Workshop", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Delete a single `Instructor` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  instructor_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Instructor_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Instructor_FirstRow
+  ): Instructor_KeyOutput @fdc_generated(from: "Instructor", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `Organizer` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  organizer_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Organizer_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Organizer_FirstRow
+  ): Organizer_KeyOutput @fdc_generated(from: "Organizer", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `Participant` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  participant_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Participant_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Participant_FirstRow
+  ): Participant_KeyOutput @fdc_generated(from: "Participant", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `Registration` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  registration_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Registration_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Registration_FirstRow
+  ): Registration_KeyOutput @fdc_generated(from: "Registration", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `Session` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  session_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Session_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Session_FirstRow
+  ): Session_KeyOutput @fdc_generated(from: "Session", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `Workshop` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  workshop_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: Workshop_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Workshop_FirstRow
+  ): Workshop_KeyOutput @fdc_generated(from: "Workshop", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete `Instructor` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  instructor_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: Instructor_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "Instructor", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `Organizer` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  organizer_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: Organizer_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "Organizer", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `Participant` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  participant_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: Participant_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "Participant", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `Registration` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  registration_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: Registration_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "Registration", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `Session` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  session_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: Session_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "Session", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `Workshop` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  workshop_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: Workshop_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "Workshop", purpose: DELETE_MULTIPLE)
+}
