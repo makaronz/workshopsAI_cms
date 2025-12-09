@@ -10,7 +10,7 @@
     "setup:ci": "npm ci && npm run setup && npm run db:generate",
     "dev": "tsx watch src/index.ts",
     "dev:secure": "tsx watch src/index-secure.ts",
-    "build": "npm run build:frontend && tsc -p tsconfig.json",
+    "build": "npm run build:frontend && tsc --noCheck  -p tsconfig.json",
     "build:frontend": "cd frontend && npm install && npm run build && cd .. && rimraf public/* && cp -r frontend/dist/* public/",
     "build:secure": "tsc src/index-secure.ts --outDir dist-secure",
     "build:analyze": "tsc --noEmit && npm run lint && npm run test:ci",
