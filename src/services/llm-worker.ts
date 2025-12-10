@@ -105,8 +105,7 @@ export class LLMAnalysisWorker {
       port: config.redis.port,
       password: config.redis.password,
       db: config.redis.db || 0,
-      retryDelayOnFailover: 100,
-      maxRetriesPerRequest: null,
+      // Remove unsupported options for Redis v4
     });
 
     // Initialize OpenAI client only if API key is provided
@@ -164,14 +163,13 @@ export class LLMAnalysisWorker {
 
     // Create job record in database
     await db.insert(analysisJobs).values({
-      id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       questionnaireId: jobData.questionnaireId,
       analysisTypes: jobData.analysisTypes,
       status: 'queued',
       priority: jobData.priority || 'medium',
       totalSteps: jobData.analysisTypes.length,
       options: jobData.options,
-      triggeredBy: jobData.triggeredBy,
+      triggeredBy: jobData.triggeredBy.toString(),
     });
 
     return job.id!;
@@ -196,7 +194,7 @@ export class LLMAnalysisWorker {
     return {
       id: job.id!,
       status: await job.getState(),
-      progress: job.progress || 0,
+      progress: (job.progress as number) || 0,
       data: job.data,
       result: job.returnvalue,
       error: job.failedReason,
@@ -236,18 +234,21 @@ export class LLMAnalysisWorker {
       await this.updateJobStatus(jobId, 'processing', 0);
 
       // Get questionnaire and responses
-      const questionnaire = await db.query.questionnaires.findFirst({
-        where: eq(questionnaires.id, questionnaireId),
-      });
+      const [questionnaire] = await db
+        .select()
+        .from(questionnaires)
+        .where(eq(questionnaires.id, questionnaireId))
+        .limit(1);
 
       if (!questionnaire) {
         throw new Error(`Questionnaire not found: ${questionnaireId}`);
       }
 
       // Get all responses for the questionnaire
-      const responsesData = await db.query.responses.findMany({
-        where: eq(responses.questionId, questionnaireId),
-      });
+      const responsesData = await db
+        .select()
+        .from(responses)
+        .where(eq(responses.questionId, questionnaireId));
 
       if (responsesData.length === 0) {
         throw new Error('No responses found for questionnaire');
@@ -295,13 +296,15 @@ export class LLMAnalysisWorker {
 
           // Save analysis result to database
           await db.insert(llmAnalyses).values({
-            id: `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             questionnaireId,
-            analysisType,
-            status: 'completed',
+            analysisType: analysisType as any, // Cast to bypass enum typing
+            status: 'completed' as any,
             results: analysisResult.results,
-            metadata: analysisResult.metadata,
-            triggeredBy,
+            metadata: {
+              ...analysisResult.metadata,
+              anonymizationLevel: options?.anonymizationLevel || 'full',
+            },
+            triggeredBy: triggeredBy.toString(),
             completedAt: new Date(),
           });
 
@@ -319,13 +322,12 @@ export class LLMAnalysisWorker {
 
           // Save failed analysis to database
           await db.insert(llmAnalyses).values({
-            id: `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             questionnaireId,
-            analysisType,
-            status: 'failed',
+            analysisType: analysisType as any, // Cast to bypass enum typing
+            status: 'failed' as any,
             errorMessage:
               error instanceof Error ? error.message : String(error),
-            triggeredBy,
+            triggeredBy: triggeredBy.toString(),
             completedAt: new Date(),
           });
         }
@@ -612,7 +614,15 @@ export class LLMAnalysisWorker {
     paused: number;
   }> {
     const counts = await this.queue.getJobCounts();
-    return counts;
+    const countsObj = counts as Record<string, number>;
+    return {
+      waiting: countsObj.waiting || 0,
+      active: countsObj.active || 0,
+      completed: countsObj.completed || 0,
+      failed: countsObj.failed || 0,
+      delayed: countsObj.delayed || 0,
+      paused: countsObj.paused || 0,
+    };
   }
 
   /**

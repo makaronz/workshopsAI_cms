@@ -11,7 +11,6 @@ import {
   asc,
   inArray,
   isNull,
-  not,
   sql,
 } from '../config/database';
 import {
@@ -376,7 +375,7 @@ export class QuestionnaireService {
         titleI18n: title || template.title,
         instructionsI18n: template.instructions,
         settings: template.settings,
-        createdBy: creatorId,
+        createdBy: creatorId.toString(),
       },
       creatorId,
     );
@@ -392,8 +391,8 @@ export class QuestionnaireService {
         uiConfig: {
           collapsed: false,
           show_progress: true,
-          icon: '',
-          color: '',
+          icon: null,
+          color: null,
         },
       };
 
@@ -434,48 +433,19 @@ export class QuestionnaireService {
       where: eq(questionnaires.id, id),
       with: includeGroups
         ? {
-          creator: {
-            columns: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          questionGroups: {
-            orderBy: [asc(questionGroups.orderIndex)],
-            with: {
-              questions: {
-                orderBy: [asc(questions.orderIndex)],
-              },
-            },
-          },
-          workshop: {
-            columns: {
-              id: true,
-              title: true,
-              slug: true,
-            },
-          },
+          creator: true,
+          workshop: true,
         }
         : {
-          creator: {
-            columns: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          workshop: {
-            columns: {
-              id: true,
-              title: true,
-              slug: true,
-            },
-          },
+          creator: true,
+          workshop: true,
         },
     });
 
-    return questionnaire || null;
+    return questionnaire ? {
+      ...questionnaire,
+      deletedAt: null,
+    } : null;
   }
 
   /**
@@ -489,25 +459,20 @@ export class QuestionnaireService {
         isNull(questionnaires.deletedAt),
       ),
       with: {
-        questionGroups: {
-          orderBy: [asc(questionGroups.orderIndex)],
-          with: {
-            questions: {
-              orderBy: [asc(questions.orderIndex)],
-            },
-          },
-        },
         workshop: {
           columns: {
             id: true,
-            title: true,
+            titleI18n: true,
             slug: true,
           },
         },
       },
     });
 
-    return questionnaire || null;
+    return questionnaire ? {
+      ...questionnaire,
+      deletedAt: null,
+    } : null;
   }
 
   /**
@@ -541,14 +506,14 @@ export class QuestionnaireService {
     }
 
     if (createdBy) {
-      whereConditions.push(eq(questionnaires.createdBy, createdBy));
+      whereConditions.push(eq(questionnaires.createdBy, createdBy.toString()));
     }
 
     if (search) {
       whereConditions.push(
         sql`(
-          JSON_EXTRACT(${questionnaires.title}, '$.pl') LIKE ${`%${search}%`} OR
-          JSON_EXTRACT(${questionnaires.title}, '$.en') LIKE ${`%${search}%`}
+          JSON_EXTRACT(${questionnaires.titleI18n}, '$.pl') LIKE ${`%${search}%`} OR
+          JSON_EXTRACT(${questionnaires.titleI18n}, '$.en') LIKE ${`%${search}%`}
         )`,
       );
     }
@@ -569,23 +534,7 @@ export class QuestionnaireService {
               email: true,
             },
           },
-          workshop: {
-            columns: {
-              id: true,
-              title: true,
-              slug: true,
-            },
-          },
-          questionGroups: {
-            columns: {
-              id: true,
-            },
-          },
-          responses: {
-            columns: {
-              id: true,
-            },
-          },
+          workshop: true,
         },
         orderBy: [desc(questionnaires.createdAt)],
         limit,
@@ -626,7 +575,7 @@ export class QuestionnaireService {
 
     // Permission check would go here based on RBAC
     // For now, allow only creator to update
-    if (questionnaire.createdBy !== userId) {
+    if (questionnaire.createdBy !== userId.toString()) {
       throw new Error('Insufficient permissions');
     }
 
@@ -683,7 +632,7 @@ export class QuestionnaireService {
       throw new Error('Questionnaire not found');
     }
 
-    if (questionnaire.createdBy !== userId) {
+    if (questionnaire.createdBy !== userId.toString()) {
       throw new Error('Insufficient permissions');
     }
 
@@ -691,7 +640,7 @@ export class QuestionnaireService {
     await db
       .update(questionnaires)
       .set({
-        status: 'archived',
+        status: 'closed' as any, // Using closed for archived
         updatedAt: new Date(),
       })
       .where(eq(questionnaires.id, id));
@@ -782,24 +731,33 @@ export class QuestionnaireService {
         },
         instructionsI18n: original.instructionsI18n,
         status: 'draft', // Always start as draft
-        settings: original.settings,
+        createdBy: creatorId.toString(),
       },
-      creatorId,
+      creatorId
     );
 
-    // Copy all question groups and questions
-    for (const group of original.questionGroups || []) {
+    // Copy all question groups and questions from the original questionnaire
+    const originalGroups = await db.query.questionGroups.findMany({
+      where: eq(questionGroups.questionnaireId, original.id),
+      with: {
+        questions: {
+          orderBy: (questions, { asc }) => [asc(questions.orderIndex)],
+        },
+      },
+    });
+
+    for (const group of originalGroups || []) {
       const newGroup: InsertQuestionGroup = {
         id: uuidv4(),
         questionnaireId: newQuestionnaire.id,
-        titleI18n: group.title,
-        descriptionI18n: group.description,
-        orderIndex: group.orderIndex,
-        uiConfig: group.uiConfig || {
+        titleI18n: (group as any).titleI18n || group.title,
+      descriptionI18n: (group as any).descriptionI18n || group.description,
+      orderIndex: group.orderIndex.toString(),
+        uiConfig: {
           collapsed: false,
           show_progress: true,
-          icon: null,
-          color: null,
+          icon: "",
+          color: "",
         },
       };
 
@@ -817,8 +775,20 @@ export class QuestionnaireService {
           type: question.type,
           optionsI18n: question.options,
           validation: question.validation,
-          conditionalLogic: question.conditionalLogic,
-          orderIndex: question.orderIndex,
+          conditionalLogic: question.conditionalLogic ? {
+            show_if: (question.conditionalLogic as any).showIf ? {
+              question_id: (question.conditionalLogic as any).showIf.questionId,
+              operator: (question.conditionalLogic as any).showIf.operator,
+              value: (question.conditionalLogic as any).showIf.value,
+            } : (question.conditionalLogic as any).show_if
+          } : {
+            show_if: {
+              question_id: "",
+              operator: "equals",
+              value: null,
+            },
+          },
+          orderIndex: question.orderIndex ? question.orderIndex.toString() : '0',
           helpTextI18n: question.helpText,
         };
 

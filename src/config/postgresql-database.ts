@@ -1,4 +1,5 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
+import { eq, and, desc, asc, inArray, isNull } from 'drizzle-orm';
 import postgres from 'postgres';
 import * as schema from '../models/postgresql-schema';
 
@@ -41,8 +42,9 @@ export const db = drizzle(client, {
   logger: process.env.NODE_ENV === 'development',
 });
 
-// Export database connection
+// Export database connection and operators
 export { client };
+export { eq, and, desc, asc, inArray, isNull };
 
 // Row-Level Security helper functions
 export class RLSHelper {
@@ -94,6 +96,34 @@ export class RLSHelper {
       return result[0]?.has_privilege || false;
     } catch (error) {
       console.error('Permission check failed:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if user has access to workshop
+   */
+  static async checkWorkshopAccess(
+    workshopId: string,
+    userId: string,
+    userRole: string,
+  ): Promise<boolean> {
+    try {
+      // Simple implementation - check if user is owner or has appropriate role
+      const result = await client`
+        SELECT EXISTS (
+          SELECT 1 FROM workshops
+          WHERE id = ${workshopId}
+          AND (
+            created_by = ${userId}
+            OR ${userRole} = 'admin'
+            OR ${userRole} = 'sociologist-editor'
+          )
+        ) as has_access
+      `;
+      return result[0]?.has_access || false;
+    } catch (error) {
+      console.error('Workshop access check failed:', error);
       return false;
     }
   }

@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { templateManager } from '../services/templateManager';
 import { questionnaireService } from '../services/questionnaireService';
-import { authenticateToken, requireRole } from '../middleware/auth';
+import { authenticateJWT, requireRole } from '../middleware/auth';
 
 const router = Router();
 
@@ -84,7 +84,7 @@ router.get('/:templateId', async (req: Request, res: Response) => {
  */
 router.post(
   '/import/pdf',
-  authenticateToken,
+  authenticateJWT,
   requireRole(['sociologist-editor', 'admin']),
   upload.single('file'),
   async (req: Request, res: Response) => {
@@ -117,7 +117,7 @@ router.post(
           title: JSON.parse(title),
           category,
           language,
-          creatorId: req.user.id,
+          creatorId: parseInt(req.user.id || '0'),
         },
         {
           language: targetLanguage,
@@ -152,7 +152,7 @@ router.post(
  */
 router.post(
   '/import/json',
-  authenticateToken,
+  authenticateJWT,
   requireRole(['sociologist-editor', 'admin']),
   async (req: Request, res: Response) => {
     try {
@@ -167,7 +167,7 @@ router.post(
 
       const result = await templateManager.importTemplateFromJSON(
         jsonData,
-        req.user.id,
+        parseInt(req.user.id || '0'),
       );
 
       if (result.success) {
@@ -197,7 +197,7 @@ router.post(
  */
 router.post(
   '/:templateId/create-questionnaire',
-  authenticateToken,
+  authenticateJWT,
   requireRole(['sociologist-editor', 'admin']),
   async (req: Request, res: Response) => {
     try {
@@ -208,8 +208,8 @@ router.post(
         await templateManager.createQuestionnaireFromTemplate(
           templateId,
           workshopId || null,
-          title,
-          req.user.id,
+          req.user.id || '',
+          typeof title === 'string' ? { pl: title } : title,
         );
 
       res.json({
@@ -261,7 +261,7 @@ router.get('/:templateId/export', async (req: Request, res: Response) => {
  */
 router.post(
   '/:templateId/version',
-  authenticateToken,
+  authenticateJWT,
   requireRole(['sociologist-editor', 'admin']),
   async (req: Request, res: Response) => {
     try {
@@ -279,7 +279,7 @@ router.post(
         templateId,
         updatedTemplate,
         changes,
-        req.user.id,
+        parseInt(req.user.id || '0'),
       );
 
       res.json({
@@ -304,7 +304,7 @@ router.post(
  */
 router.post(
   '/:templateId/rollback/:version',
-  authenticateToken,
+  authenticateJWT,
   requireRole(['sociologist-editor', 'admin']),
   async (req: Request, res: Response) => {
     try {
@@ -313,7 +313,7 @@ router.post(
       const rolledBackTemplate = await templateManager.rollbackTemplate(
         templateId,
         version,
-        req.user.id,
+        parseInt(req.user.id || '0'),
       );
 
       res.json({
@@ -393,7 +393,7 @@ router.get('/:templateId/analytics', async (req: Request, res: Response) => {
  */
 router.delete(
   '/:templateId',
-  authenticateToken,
+  authenticateJWT,
   requireRole(['admin']),
   async (req: Request, res: Response) => {
     try {
@@ -466,7 +466,7 @@ router.get(
  */
 router.post(
   '/predefined/nasza-nieutopia/create',
-  authenticateToken,
+  authenticateJWT,
   requireRole(['sociologist-editor', 'admin']),
   async (req: Request, res: Response) => {
     try {
@@ -476,8 +476,8 @@ router.post(
         await templateManager.createQuestionnaireFromTemplate(
           'nasza_nieutopia_v1',
           workshopId || null,
-          title,
-          req.user.id,
+          req.user.id || '',
+          typeof title === 'string' ? { pl: title } : title,
         );
 
       res.json({

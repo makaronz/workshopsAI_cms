@@ -379,7 +379,7 @@ export class EnhancedCachingService extends EventEmitter {
 
     // L1: In-memory cache
     if (tier === 'L1' || tier === 'auto') {
-      const l1Result = this.L1Cache.get<T>(this.buildKey(key, options.prefix, 'L1'));
+      const l1Result = this.L1Cache.get(this.buildKey(key, options.prefix, 'L1'));
       if (l1Result !== null) {
         this.stats.L1.hitCount++;
         this.updateStats(Date.now() - startTime);
@@ -454,7 +454,7 @@ export class EnhancedCachingService extends EventEmitter {
    * Set value in cache across appropriate tiers with smart tier selection
    */
   async set<T>(key: string, value: T, options: CacheOptions = {}): Promise<void> {
-    const tier = this.tier || options.tier || 'auto';
+    const tier = options.tier || 'auto';
 
     try {
       // Determine optimal tier based on data characteristics

@@ -94,6 +94,7 @@ export interface PerformanceBottleneck {
   recommendation: string;
   timestamp: Date;
   metrics: Record<string, number>;
+  resolved: boolean;
 }
 
 export interface OptimizationRecommendation {
@@ -110,6 +111,7 @@ export interface OptimizationRecommendation {
   };
   relatedMetrics: string[];
   autoFixable: boolean;
+  timestamp: Date;
 }
 
 /**
@@ -361,7 +363,7 @@ export class EnhancedPerformanceMonitoringService extends EventEmitter {
       // Try to get from cache first
       const cached = await optimizedRedisService.get(cacheKey, { json: true });
       if (cached) {
-        return cached;
+        return cached as Array<{ timestamp: Date; value: number }>;
       }
 
       // For this implementation, we'll store recent metrics in Redis
@@ -658,6 +660,7 @@ export class EnhancedPerformanceMonitoringService extends EventEmitter {
           impact: `P95 response time is ${data.p95ResponseTime}ms`,
           recommendation: 'Optimize database queries, implement caching, or refactor endpoint logic',
           timestamp: new Date(),
+          resolved: false,
           metrics: {
             p95ResponseTime: data.p95ResponseTime,
             averageResponseTime: data.averageResponseTime,
@@ -681,6 +684,7 @@ export class EnhancedPerformanceMonitoringService extends EventEmitter {
         impact: `Memory usage is ${(memoryUsagePercent * 100).toFixed(1)}%`,
         recommendation: 'Implement memory optimization, check for memory leaks, or increase available memory',
         timestamp: new Date(),
+        resolved: false,
         metrics: {
           memoryUsagePercent: memoryUsagePercent * 100,
           heapUsed: metrics.heapUsed,
@@ -716,6 +720,7 @@ export class EnhancedPerformanceMonitoringService extends EventEmitter {
         },
         relatedMetrics: Object.keys(bottleneck.metrics),
         autoFixable: bottleneck.type === 'cache',
+        timestamp: new Date(),
       };
 
       this.emit('recommendation', recommendation);
@@ -742,6 +747,7 @@ export class EnhancedPerformanceMonitoringService extends EventEmitter {
         },
         relatedMetrics: ['requests_per_second', 'p95_response_time'],
         autoFixable: false,
+        timestamp: new Date(),
       };
 
       this.emit('recommendation', recommendation);

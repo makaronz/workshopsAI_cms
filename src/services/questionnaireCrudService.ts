@@ -157,7 +157,6 @@ export class QuestionnaireCrudService {
         creatorEmail: users.email,
 
         // Workshop info (optional)
-        workshopId: workshops.id as any, // Alias conflict workaround
         workshopSlug: workshops.slug,
         workshopTitleI18n: workshops.titleI18n,
         workshopStatus: workshops.status,
@@ -260,7 +259,7 @@ export class QuestionnaireCrudService {
       questionnaire.workshop = {
         id: questionnaireData.workshopId,
         slug: questionnaireData.workshopSlug || '',
-        titleI18n: questionnaireData.workshopTitleI18n || {},
+        titleI18n: questionnaireData.workshopTitleI18n as Record<string, string> || {},
         status: questionnaireData.workshopStatus || '',
       };
     }
@@ -362,7 +361,17 @@ export class QuestionnaireCrudService {
     if (data.instructionsI18n !== undefined)
       updateData.instructionsI18n = data.instructionsI18n;
     if (data.status !== undefined) updateData.status = data.status;
-    if (data.settings !== undefined) updateData.settings = data.settings;
+    if (data.settings !== undefined) {
+      updateData.settings = {
+        anonymous: data.settings.anonymous ?? questionnaire.settings?.anonymous ?? false,
+        require_consent: data.settings.require_consent ?? questionnaire.settings?.require_consent ?? true,
+        max_responses: data.settings.max_responses ?? questionnaire.settings?.max_responses ?? null,
+        close_after_workshop: data.settings.close_after_workshop ?? questionnaire.settings?.close_after_workshop ?? false,
+        show_all_questions: data.settings.show_all_questions ?? questionnaire.settings?.show_all_questions ?? true,
+        allow_edit: data.settings.allow_edit ?? questionnaire.settings?.allow_edit ?? true,
+        question_style: data.settings.question_style ?? questionnaire.settings?.question_style ?? 'third_person',
+      };
+    }
     if (data.publishedAt !== undefined)
       updateData.publishedAt = data.publishedAt;
     if (data.closedAt !== undefined) updateData.closedAt = data.closedAt;
@@ -593,7 +602,7 @@ export class QuestionnaireCrudService {
         ? {
             id: questionnaire.workshopId,
             slug: questionnaire.workshopSlug,
-            titleI18n: questionnaire.workshopTitleI18n,
+            titleI18n: questionnaire.workshopTitleI18n as Record<string, string>,
           }
         : undefined,
       questionGroupCount: Number(questionnaire.questionGroupCount),
@@ -816,7 +825,14 @@ export class QuestionnaireCrudService {
       updateData.descriptionI18n = data.descriptionI18n;
     if (data.orderIndex !== undefined)
       updateData.orderIndex = data.orderIndex as any;
-    if (data.uiConfig !== undefined) updateData.uiConfig = data.uiConfig;
+    if (data.uiConfig !== undefined) {
+      updateData.uiConfig = {
+        collapsed: data.uiConfig.collapsed ?? false,
+        show_progress: data.uiConfig.show_progress ?? true,
+        icon: data.uiConfig.icon ?? undefined,
+        color: data.uiConfig.color ?? '#000000',
+      };
+    }
 
     // Add updatedAt timestamp
     // Note: PostgreSQL schema doesn't have updatedAt for question_groups,

@@ -371,10 +371,13 @@ export const enrollmentFilterSchema = paginationSchema.extend({
     .enum(['pending', 'confirmed', 'waitlisted', 'cancelled', 'completed'])
     .optional(),
   workshopId: uuidSchema.optional(),
-  paymentStatus: z.enum(['pending', 'paid', 'refunded', 'waived']).optional(),
+  paymentStatus: z.enum(['pending', 'paid', 'failed', 'refunded', 'waived']).optional(),
   startDateFrom: dateTimeSchema.optional(),
   startDateTo: dateTimeSchema.optional(),
 });
+
+export type EnrollmentFilter = z.infer<typeof enrollmentFilterSchema>;
+export type PaginationInput = z.infer<typeof paginationSchema>;
 
 // Export all schemas
 export const validationSchemas = {
@@ -437,6 +440,7 @@ export type CreateSessionInput = z.infer<typeof createSessionSchema>;
 export type UpdateSessionInput = z.infer<typeof updateSessionSchema>;
 export type CreateModuleInput = z.infer<typeof createModuleSchema>;
 export type UpdateModuleInput = z.infer<typeof updateModuleSchema>;
+
 export type CreateEnrollmentInput = z.infer<typeof createEnrollmentSchema>;
 export type UpdateEnrollmentInput = z.infer<typeof updateEnrollmentSchema>;
 export type CreateTagInput = z.infer<typeof createTagSchema>;

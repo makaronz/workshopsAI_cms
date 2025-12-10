@@ -45,6 +45,7 @@ export const enrollmentStatusEnum = pgEnum('enrollmentStatus', [
 export const paymentStatusEnum = pgEnum('paymentStatus', [
   'pending',
   'paid',
+  'failed',
   'refunded',
   'waived',
 ]);
@@ -56,6 +57,7 @@ export const moduleTypeEnum = pgEnum('moduleType', [
   'discussion',
   'presentation',
   'file',
+  'questionnaire',
 ]);
 export const announcementTypeEnum = pgEnum('announcementType', [
   'info',
@@ -1270,6 +1272,10 @@ export const questionnairesRelations = relations(
     workshop: one(workshops, {
       fields: [questionnaires.workshopId],
       references: [workshops.id],
+    }),
+    creator: one(users, {
+      fields: [questionnaires.createdBy],
+      references: [users.id],
     }),
     questionGroups: many(questionGroups),
     llmAnalyses: many(llmAnalyses),

@@ -1,6 +1,6 @@
 import { db } from '../config/database';
-import { eq, and, desc } from 'drizzle-orm';
-import { llmAnalyses, analysisJobs, questionnaires } from '../models/llm-schema';
+import { eq, and, desc, inArray } from 'drizzle-orm';
+import { llmAnalyses, analysisJobs, questionnaires, analysisTypeEnum } from '../models/llm-schema';
 import { logger } from '../utils/logger';
 
 export interface ExportOptions {
@@ -11,9 +11,8 @@ export interface ExportOptions {
     start: Date;
     end: Date;
   };
-  analysisTypes?: string[];
+  analysisTypes?: ('thematic' | 'clusters' | 'contradictions' | 'insights' | 'recommendations' | 'sentiment')[];
   questionnaireIds?: string[];
-  language?: string;
 }
 
 export interface ExportResult {
@@ -82,42 +81,32 @@ export class ExportService {
 
     // Analysis type filter
     if (options.analysisTypes && options.analysisTypes.length > 0) {
-      whereConditions.push(eq(llmAnalyses.analysisType, options.analysisTypes[0])); // Simplified
+      whereConditions.push(inArray(llmAnalyses.analysisType, options.analysisTypes));
     }
 
     // Questionnaire filter
     if (options.questionnaireIds && options.questionnaireIds.length > 0) {
-      whereConditions.push(eq(llmAnalyses.questionnaireId, options.questionnaireIds[0])); // Simplified
+      whereConditions.push(inArray(llmAnalyses.questionnaireId, options.questionnaireIds));
     }
 
-    // Language filter
-    if (options.language) {
-      whereConditions.push(eq(llmAnalyses.language, options.language));
-    }
-
-    const analyses = await db.query.llmAnalyses.findMany({
-      where: whereConditions.length > 0 ? and(...whereConditions) : undefined,
-      orderBy: desc(llmAnalyses.createdAt),
-      with: {
-        questionnaire: {
-          columns: {
-            id: true,
-            title: true,
-            description: true,
-          },
-        },
-        job: {
-          columns: {
-            id: true,
-            status: true,
-            progress: true,
-            triggeredBy: true,
-            createdAt: true,
-            completedAt: true,
-          },
-        },
-      },
-    });
+    
+    const analyses = await db
+      .select({
+        // LLM Analysis fields
+        id: llmAnalyses.id,
+        questionnaireId: llmAnalyses.questionnaireId,
+        analysisType: llmAnalyses.analysisType,
+        status: llmAnalyses.status,
+        isVisibleToParticipants: llmAnalyses.isVisibleToParticipants,
+        results: llmAnalyses.results,
+        metadata: llmAnalyses.metadata,
+        createdAt: llmAnalyses.createdAt,
+        triggeredBy: llmAnalyses.triggeredBy,
+        completedAt: llmAnalyses.completedAt,
+      })
+      .from(llmAnalyses)
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+      .orderBy(desc(llmAnalyses.createdAt));
 
     return analyses;
   }
@@ -189,7 +178,6 @@ export class ExportService {
       // Include metadata
       if (options.includeMetadata) {
         processed.metadata = analysis.metadata;
-        processed.qualityMetrics = analysis.qualityMetrics;
       }
 
       return processed;

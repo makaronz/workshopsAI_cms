@@ -5,12 +5,13 @@
 
 import { OpenAI } from 'openai';
 import { db } from '../config/database';
-import { eq, and, inArray } from 'drizzle-orm';
+import { eq, and, inArray, desc } from 'drizzle-orm';
 import {
   responses,
   questions,
   questionGroups,
   questionnaires,
+  llmAnalyses,
 } from '../models/llm-schema';
 import { anonymizationService } from './anonymization';
 import { embeddingsService, SimilaritySearchResult } from './embeddings';
@@ -67,15 +68,16 @@ export abstract class BaseAnalysis {
     const startTime = Date.now();
 
     try {
-      const response = await this.openai.chat.completions.create({
-        model: this.model,
-        messages: [
+      const messages: any[] = [
           ...(systemPrompt ? [{ role: 'system', content: systemPrompt }] : []),
           { role: 'user', content: prompt },
-        ],
+        ];
+
+      const response = await this.openai.chat.completions.create({
+        model: this.model,
+        messages,
         max_tokens: 4000,
         temperature: 0.3,
-        response_format: { type: 'json_object' },
       });
 
       const processingTime = Date.now() - startTime;
@@ -197,15 +199,16 @@ export class ThematicAnalysis extends BaseAnalysis {
         group: {
           with: {
             questionnaire: {
-              columns: { title: true },
+              columns: { titleI18n: true },
             },
           },
         },
       },
     });
 
+    const textData = question?.text as { pl?: string; en?: string } | undefined;
     return (
-      question?.text?.pl || question?.text?.en || 'Pytanie kwestionariuszowe'
+      textData?.pl || textData?.en || 'Pytanie kwestionariuszowe'
     );
   }
 }
@@ -676,8 +679,8 @@ export class ContradictionsAnalysis extends BaseAnalysis {
           pairs.push({
             question1Id: q1.id,
             question2Id: q2.id,
-            question1Text: q1.text?.pl || q1.text?.en || '',
-            question2Text: q2.text?.pl || q2.text?.en || '',
+            question1Text: (q1.text as any)?.pl || (q1.text as any)?.en || '',
+            question2Text: (q2.text as any)?.pl || (q2.text as any)?.en || '',
           });
         }
       }
@@ -756,7 +759,8 @@ export class ContradictionsAnalysis extends BaseAnalysis {
       where: eq(questions.id, questionId),
     });
 
-    return question?.text?.pl || question?.text?.en || 'Pytanie';
+    const textData = question?.text as { pl?: string; en?: string } | undefined;
+    return textData?.pl || textData?.en || 'Pytanie';
   }
 
   private getMostCommonType(contradictions: any[]): string {
@@ -767,7 +771,7 @@ export class ContradictionsAnalysis extends BaseAnalysis {
       return acc;
     }, {});
 
-    return Object.entries(typeCounts).sort(([, a], [, b]) => b - a)[0][0];
+    return Object.entries(typeCounts).sort(([, a], [, b]) => Number(b) - Number(a))[0][0];
   }
 
   private getSeverityDistribution(

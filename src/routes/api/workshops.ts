@@ -5,6 +5,9 @@ import {
   WorkshopCrudService,
   WorkshopFilters,
 } from '../../services/workshopCrudService';
+import {
+  SessionModuleService,
+} from '../../services/sessionModuleService';
 
 const router = Router();
 
@@ -78,6 +81,56 @@ const workshopFiltersSchema = z.object({
   hasSessions: z.boolean().optional(),
   limit: z.number().int().min(1).max(100).optional(),
   offset: z.number().int().min(0).optional(),
+});
+
+// Session validation schemas
+const createSessionSchema = z.object({
+  titleI18n: z.record(z.string(), z.string().min(1)),
+  descriptionI18n: z.record(z.string(), z.string()).optional(),
+  startTime: z.coerce.date(),
+  endTime: z.coerce.date(),
+  duration: z.number().int().min(1).optional(),
+  locationId: z.string().uuid().optional(),
+  materials: z.array(z.object({
+    name: z.string().min(1),
+    url: z.string().url(),
+    type: z.string().min(1)
+  })).optional(),
+  isRequired: z.boolean().optional().default(true),
+  maxParticipants: z.number().int().min(1).optional()
+});
+
+const updateSessionSchema = createSessionSchema.partial();
+
+const reorderSessionsSchema = z.object({
+  sessionOrders: z.array(z.object({
+    id: z.string().uuid(),
+    order: z.number().int().min(0)
+  })).min(1)
+});
+
+// Module validation schemas
+const createModuleSchema = z.object({
+  titleI18n: z.record(z.string(), z.string()).optional(),
+  type: z.enum(['text', 'video', 'quiz', 'exercise', 'discussion', 'presentation', 'file', 'questionnaire']),
+  contentI18n: z.record(z.string(), z.any()),
+  duration: z.number().int().min(1).optional(),
+  isRequired: z.boolean().optional().default(true),
+  resources: z.array(z.object({
+    name: z.string().min(1),
+    url: z.string().url(),
+    type: z.string().min(1)
+  })).optional(),
+  settings: z.record(z.string(), z.any()).optional()
+});
+
+const updateModuleSchema = createModuleSchema.partial();
+
+const reorderModulesSchema = z.object({
+  moduleOrders: z.array(z.object({
+    id: z.string().uuid(),
+    order: z.number().int().min(0)
+  })).min(1)
 });
 
 // Middleware to validate request body
@@ -364,6 +417,454 @@ router.get(
           return res.status(404).json({
             success: false,
             error: 'Not Found',
+            message: error.message,
+          });
+        }
+      }
+
+      next(error);
+    }
+  },
+);
+
+// ==========================================
+// SESSION MANAGEMENT ENDPOINTS
+// ==========================================
+
+/**
+ * GET /api/v1/workshops/:workshopId/sessions
+ * Get all sessions for a workshop
+ */
+router.get(
+  '/:workshopId/sessions',
+  authenticateJWT,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { workshopId } = req.params;
+
+      const sessions = await SessionModuleService.getSessions(workshopId, req);
+
+      res.status(200).json({
+        success: true,
+        data: sessions,
+      });
+    } catch (error) {
+      console.error('Error getting sessions:', error);
+
+      if (error instanceof Error) {
+        if (error.message === 'Workshop not found') {
+          return res.status(404).json({
+            success: false,
+            error: 'Not Found',
+            message: error.message,
+          });
+        }
+        if (error.message === 'Access denied') {
+          return res.status(403).json({
+            success: false,
+            error: 'Forbidden',
+            message: error.message,
+          });
+        }
+      }
+
+      next(error);
+    }
+  },
+);
+
+/**
+ * POST /api/v1/workshops/:workshopId/sessions
+ * Create a new session
+ */
+router.post(
+  '/:workshopId/sessions',
+  authenticateJWT,
+  authorizeRoles(['sociologist-editor', 'admin']),
+  validateRequestBody(createSessionSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { workshopId } = req.params;
+
+      const session = await SessionModuleService.createSession(workshopId, req.body, req);
+
+      res.status(201).json({
+        success: true,
+        data: session,
+        message: 'Session created successfully',
+      });
+    } catch (error) {
+      console.error('Error creating session:', error);
+
+      if (error instanceof Error) {
+        if (error.message === 'Workshop not found') {
+          return res.status(404).json({
+            success: false,
+            error: 'Not Found',
+            message: error.message,
+          });
+        }
+        if (error.message === 'Insufficient permissions') {
+          return res.status(403).json({
+            success: false,
+            error: 'Forbidden',
+            message: error.message,
+          });
+        }
+      }
+
+      next(error);
+    }
+  },
+);
+
+/**
+ * PATCH /api/v1/workshops/:workshopId/sessions/:sessionId
+ * Update a session
+ */
+router.patch(
+  '/:workshopId/sessions/:sessionId',
+  authenticateJWT,
+  authorizeRoles(['sociologist-editor', 'admin']),
+  validateRequestBody(updateSessionSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { workshopId, sessionId } = req.params;
+
+      const session = await SessionModuleService.updateSession(sessionId, req.body, req, workshopId);
+
+      res.status(200).json({
+        success: true,
+        data: session,
+        message: 'Session updated successfully',
+      });
+    } catch (error) {
+      console.error('Error updating session:', error);
+
+      if (error instanceof Error) {
+        if (error.message === 'Session not found') {
+          return res.status(404).json({
+            success: false,
+            error: 'Not Found',
+            message: error.message,
+          });
+        }
+        if (error.message === 'Insufficient permissions') {
+          return res.status(403).json({
+            success: false,
+            error: 'Forbidden',
+            message: error.message,
+          });
+        }
+      }
+
+      next(error);
+    }
+  },
+);
+
+/**
+ * DELETE /api/v1/workshops/:workshopId/sessions/:sessionId
+ * Delete a session
+ */
+router.delete(
+  '/:workshopId/sessions/:sessionId',
+  authenticateJWT,
+  authorizeRoles(['sociologist-editor', 'admin']),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { workshopId, sessionId } = req.params;
+
+      await SessionModuleService.deleteSession(sessionId, req, workshopId);
+
+      res.status(200).json({
+        success: true,
+        message: 'Session deleted successfully',
+      });
+    } catch (error) {
+      console.error('Error deleting session:', error);
+
+      if (error instanceof Error) {
+        if (error.message === 'Session not found') {
+          return res.status(404).json({
+            success: false,
+            error: 'Not Found',
+            message: error.message,
+          });
+        }
+        if (error.message === 'Insufficient permissions') {
+          return res.status(403).json({
+            success: false,
+            error: 'Forbidden',
+            message: error.message,
+          });
+        }
+      }
+
+      next(error);
+    }
+  },
+);
+
+/**
+ * PATCH /api/v1/workshops/:workshopId/sessions/reorder
+ * Reorder sessions
+ */
+router.patch(
+  '/:workshopId/sessions/reorder',
+  authenticateJWT,
+  authorizeRoles(['sociologist-editor', 'admin']),
+  validateRequestBody(reorderSessionsSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { workshopId } = req.params;
+
+      const sessions = await SessionModuleService.reorderSessions(workshopId, req.body, req);
+
+      res.status(200).json({
+        success: true,
+        data: sessions,
+        message: 'Sessions reordered successfully',
+      });
+    } catch (error) {
+      console.error('Error reordering sessions:', error);
+
+      if (error instanceof Error) {
+        if (error.message === 'Workshop not found' || error.message === 'Some sessions do not belong to this workshop') {
+          return res.status(404).json({
+            success: false,
+            error: 'Not Found',
+            message: error.message,
+          });
+        }
+        if (error.message === 'Insufficient permissions') {
+          return res.status(403).json({
+            success: false,
+            error: 'Forbidden',
+            message: error.message,
+          });
+        }
+      }
+
+      next(error);
+    }
+  },
+);
+
+// ==========================================
+// MODULE MANAGEMENT ENDPOINTS
+// ==========================================
+
+/**
+ * GET /api/v1/workshops/:workshopId/sessions/:sessionId/modules
+ * Get all modules for a session
+ */
+router.get(
+  '/:workshopId/sessions/:sessionId/modules',
+  authenticateJWT,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { sessionId } = req.params;
+
+      const modules = await SessionModuleService.getModules(sessionId, req);
+
+      res.status(200).json({
+        success: true,
+        data: modules,
+      });
+    } catch (error) {
+      console.error('Error getting modules:', error);
+
+      if (error instanceof Error) {
+        if (error.message === 'Session not found') {
+          return res.status(404).json({
+            success: false,
+            error: 'Not Found',
+            message: error.message,
+          });
+        }
+        if (error.message === 'Access denied') {
+          return res.status(403).json({
+            success: false,
+            error: 'Forbidden',
+            message: error.message,
+          });
+        }
+      }
+
+      next(error);
+    }
+  },
+);
+
+/**
+ * POST /api/v1/workshops/:workshopId/sessions/:sessionId/modules
+ * Create a new module
+ */
+router.post(
+  '/:workshopId/sessions/:sessionId/modules',
+  authenticateJWT,
+  authorizeRoles(['sociologist-editor', 'admin']),
+  validateRequestBody(createModuleSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { sessionId } = req.params;
+
+      const module = await SessionModuleService.createModule(sessionId, req.body, req);
+
+      res.status(201).json({
+        success: true,
+        data: module,
+        message: 'Module created successfully',
+      });
+    } catch (error) {
+      console.error('Error creating module:', error);
+
+      if (error instanceof Error) {
+        if (error.message === 'Session not found') {
+          return res.status(404).json({
+            success: false,
+            error: 'Not Found',
+            message: error.message,
+          });
+        }
+        if (error.message === 'Insufficient permissions') {
+          return res.status(403).json({
+            success: false,
+            error: 'Forbidden',
+            message: error.message,
+          });
+        }
+      }
+
+      next(error);
+    }
+  },
+);
+
+/**
+ * PATCH /api/v1/workshops/:workshopId/sessions/:sessionId/modules/:moduleId
+ * Update a module
+ */
+router.patch(
+  '/:workshopId/sessions/:sessionId/modules/:moduleId',
+  authenticateJWT,
+  authorizeRoles(['sociologist-editor', 'admin']),
+  validateRequestBody(updateModuleSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { sessionId, moduleId } = req.params;
+
+      const module = await SessionModuleService.updateModule(moduleId, req.body, req, sessionId);
+
+      res.status(200).json({
+        success: true,
+        data: module,
+        message: 'Module updated successfully',
+      });
+    } catch (error) {
+      console.error('Error updating module:', error);
+
+      if (error instanceof Error) {
+        if (error.message === 'Module not found') {
+          return res.status(404).json({
+            success: false,
+            error: 'Not Found',
+            message: error.message,
+          });
+        }
+        if (error.message === 'Insufficient permissions') {
+          return res.status(403).json({
+            success: false,
+            error: 'Forbidden',
+            message: error.message,
+          });
+        }
+      }
+
+      next(error);
+    }
+  },
+);
+
+/**
+ * DELETE /api/v1/workshops/:workshopId/sessions/:sessionId/modules/:moduleId
+ * Delete a module
+ */
+router.delete(
+  '/:workshopId/sessions/:sessionId/modules/:moduleId',
+  authenticateJWT,
+  authorizeRoles(['sociologist-editor', 'admin']),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { sessionId, moduleId } = req.params;
+
+      await SessionModuleService.deleteModule(moduleId, req, sessionId);
+
+      res.status(200).json({
+        success: true,
+        message: 'Module deleted successfully',
+      });
+    } catch (error) {
+      console.error('Error deleting module:', error);
+
+      if (error instanceof Error) {
+        if (error.message === 'Module not found') {
+          return res.status(404).json({
+            success: false,
+            error: 'Not Found',
+            message: error.message,
+          });
+        }
+        if (error.message === 'Insufficient permissions') {
+          return res.status(403).json({
+            success: false,
+            error: 'Forbidden',
+            message: error.message,
+          });
+        }
+      }
+
+      next(error);
+    }
+  },
+);
+
+/**
+ * PATCH /api/v1/workshops/:workshopId/sessions/:sessionId/modules/reorder
+ * Reorder modules
+ */
+router.patch(
+  '/:workshopId/sessions/:sessionId/modules/reorder',
+  authenticateJWT,
+  authorizeRoles(['sociologist-editor', 'admin']),
+  validateRequestBody(reorderModulesSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { sessionId } = req.params;
+
+      const modules = await SessionModuleService.reorderModules(sessionId, req.body, req);
+
+      res.status(200).json({
+        success: true,
+        data: modules,
+        message: 'Modules reordered successfully',
+      });
+    } catch (error) {
+      console.error('Error reordering modules:', error);
+
+      if (error instanceof Error) {
+        if (error.message === 'Session not found' || error.message === 'Some modules do not belong to this session') {
+          return res.status(404).json({
+            success: false,
+            error: 'Not Found',
+            message: error.message,
+          });
+        }
+        if (error.message === 'Insufficient permissions') {
+          return res.status(403).json({
+            success: false,
+            error: 'Forbidden',
             message: error.message,
           });
         }

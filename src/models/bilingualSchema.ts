@@ -20,6 +20,34 @@ export type BilingualText = {
   en: string;
 };
 
+export type BilingualContent = {
+  pl: string;
+  en: string;
+};
+
+/**
+ * Validate bilingual text object
+ */
+export function validateBilingualText(bilingual: any): bilingual is BilingualText {
+  return (
+    typeof bilingual === 'object' &&
+    bilingual !== null &&
+    typeof bilingual.pl === 'string' &&
+    typeof bilingual.en === 'string'
+  );
+}
+
+/**
+ * Get text for specific language with fallback
+ */
+export function getBilingualText(
+  bilingual: BilingualText,
+  language: 'pl' | 'en',
+  fallbackLanguage: 'pl' | 'en' = 'en'
+): string {
+  return bilingual[language] || bilingual[fallbackLanguage] || '';
+}
+
 /**
  * Questionnaires table - multilingual feedback collection
  */

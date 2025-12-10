@@ -1,4 +1,5 @@
-import { db, emailLogs } from '../models/postgresql-schema';
+import { db } from '../config/postgresql-database';
+import { emailLogs } from '../models/postgresql-schema';
 import { eq, and, gte, lte, desc, sql, count, sum } from 'drizzle-orm';
 
 export interface EmailStats {
@@ -93,7 +94,7 @@ class EmailAnalyticsService {
   async getStatsByType(
     startDate?: Date,
     endDate?: Date,
-  ): Promise<Record<string, { stats: EmailStats; metrics: EmailMetrics }>> {
+  ): Promise<Record<string, { stats: any; metrics: EmailMetrics }>> {
     const whereConditions = this.buildDateConditions(startDate, endDate);
     const whereClause =
       whereConditions.length > 0
@@ -207,12 +208,12 @@ class EmailAnalyticsService {
     const metrics = results[0];
 
     return {
-      totalOpens: metrics.totalOpens || 0,
-      uniqueOpens: metrics.uniqueOpens || 0,
-      totalClicks: metrics.totalClicks || 0,
-      uniqueClicks: metrics.uniqueClicks || 0,
-      avgTimeToOpen: metrics.avgTimeToOpen || 0,
-      avgTimeToClick: metrics.avgTimeToClick || 0,
+      totalOpens: Number(metrics.totalOpens) || 0,
+      uniqueOpens: Number(metrics.uniqueOpens) || 0,
+      totalClicks: Number(metrics.totalClicks) || 0,
+      uniqueClicks: Number(metrics.uniqueClicks) || 0,
+      avgTimeToOpen: Number(metrics.avgTimeToOpen) || 0,
+      avgTimeToClick: Number(metrics.avgTimeToClick) || 0,
     };
   }
 
@@ -354,7 +355,7 @@ class EmailAnalyticsService {
         {} as Record<string, number>,
       ),
       topBouncingDomains: domainResults.map(item => ({
-        domain: item.domain,
+        domain: String(item.domain),
         count: item.count,
         percentage: total.bounced > 0 ? (item.count / total.bounced) * 100 : 0,
       })),
@@ -364,7 +365,7 @@ class EmailAnalyticsService {
   async getProviderComparison(
     startDate?: Date,
     endDate?: Date,
-  ): Promise<Record<string, EmailStats & EmailMetrics>> {
+  ): Promise<Record<string, { stats: any; metrics: EmailMetrics }>> {
     const whereConditions = this.buildDateConditions(startDate, endDate);
     const whereClause =
       whereConditions.length > 0
@@ -396,19 +397,19 @@ class EmailAnalyticsService {
     return results.reduce(
       (acc, result) => {
         acc[result.provider] = {
-          ...result,
-          ...this.calculateMetrics(result),
+          stats: result,
+          metrics: this.calculateMetrics(result),
         };
         return acc;
       },
-      {} as Record<string, EmailStats & EmailMetrics>,
+      {} as Record<string, { stats: EmailStats; metrics: EmailMetrics }>,
     );
   }
 
   async getLanguagePerformance(
     startDate?: Date,
     endDate?: Date,
-  ): Promise<Record<string, EmailStats & EmailMetrics>> {
+  ): Promise<Record<string, { stats: any; metrics: EmailMetrics }>> {
     const whereConditions = this.buildDateConditions(startDate, endDate);
     const whereClause =
       whereConditions.length > 0
@@ -440,12 +441,12 @@ class EmailAnalyticsService {
     return results.reduce(
       (acc, result) => {
         acc[result.language] = {
-          ...result,
-          ...this.calculateMetrics(result),
+          stats: result,
+          metrics: this.calculateMetrics(result),
         };
         return acc;
       },
-      {} as Record<string, EmailStats & EmailMetrics>,
+      {} as Record<string, { stats: EmailStats; metrics: EmailMetrics }>,
     );
   }
 
@@ -453,14 +454,14 @@ class EmailAnalyticsService {
     startDate: Date,
     endDate: Date,
   ): Promise<{
-    summary: EmailStats & EmailMetrics;
-    byType: Record<string, EmailStats & EmailMetrics>;
+    summary: any;
+    byType: Record<string, any>;
     timeSeries: TimeSeriesData[];
     engagement: EngagementMetrics;
     bounceAnalysis: any;
     topTemplates: TopPerformingTemplate[];
-    providerComparison: Record<string, EmailStats & EmailMetrics>;
-    languagePerformance: Record<string, EmailStats & EmailMetrics>;
+    providerComparison: Record<string, any>;
+    languagePerformance: Record<string, any>;
   }> {
     const [
       summary,
@@ -484,13 +485,28 @@ class EmailAnalyticsService {
 
     return {
       summary: { ...summary.stats, ...summary.metrics },
-      byType,
+      byType: Object.fromEntries(
+        Object.entries(byType).map(([key, value]) => [
+          key,
+          { ...value.stats, ...value.metrics }
+        ])
+      ),
       timeSeries,
       engagement,
       bounceAnalysis,
       topTemplates,
-      providerComparison,
-      languagePerformance,
+      providerComparison: Object.fromEntries(
+        Object.entries(providerComparison).map(([key, value]) => [
+          key,
+          { ...value.stats, ...value.metrics }
+        ])
+      ),
+      languagePerformance: Object.fromEntries(
+        Object.entries(languagePerformance).map(([key, value]) => [
+          key,
+          { ...value.stats, ...value.metrics }
+        ])
+      ),
     };
   }
 

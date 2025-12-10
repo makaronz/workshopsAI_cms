@@ -4,6 +4,7 @@ import { Question } from '../models/postgresql-schema';
 // Base response validation schema
 const baseResponseSchema = z.object({
   questionId: z.string().uuid('Invalid question ID format'),
+  questionnaireId: z.string().uuid('Invalid questionnaire ID format'),
   enrollmentId: z.string().uuid('Invalid enrollment ID format').optional(),
   timeSpentMs: z.number().int().min(0).optional(),
   isAutosave: z.boolean().default(false),
@@ -55,10 +56,6 @@ const consentSchema = z.object({
   aiProcessing: z.boolean(),
   dataProcessing: z.boolean(),
   anonymousSharing: z.boolean(),
-  consentText: z.object({
-    pl: z.string().min(1, 'Polish consent text required'),
-    en: z.string().min(1, 'English consent text required'),
-  }),
   ipAddress: z.string().optional(),
   userAgent: z.string().optional(),
 });
