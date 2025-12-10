@@ -13,7 +13,11 @@ import {
 } from '../config/database';
 import { eq, and, desc, asc, inArray, sql, isNull, count } from 'drizzle-orm';
 import { responseService } from '../services/responseService';
-import { authService } from '../services/authService';
+import {
+  authenticateJWT,
+  authorizeRoles,
+  optionalAuth,
+} from '../middleware/auth';
 import {
   createResponseValidator,
   validateGDPRCompliance,
@@ -37,11 +41,7 @@ import {
   ResponseDuplicateTracker,
   AdaptiveRateLimit,
 } from '../middleware/responseRateLimit';
-import {
-  authenticateJWT,
-  authorizeRoles,
-  optionalAuth,
-} from '../middleware/auth';
+import { AuthService } from '../services/authService';
 
 const router = Router();
 const duplicateTracker = ResponseDuplicateTracker.getInstance();
@@ -86,7 +86,7 @@ router.post(
         .from(responses)
         .where(
           and(
-            eq(responses.userId, parseInt(userId)),
+            eq(responses.userId, userId),
             sql`createdAt > DATE_SUB(NOW(), INTERVAL 15 MINUTE)`,
           ),
         );
@@ -165,7 +165,7 @@ router.post(
       // GDPR compliance check
       const gdprValidation = validateGDPRCompliance(
         data.answer,
-        question.group.questionnaire.settings?.requireConsent ?? false,
+        question.group.questionnaire.settings?.require_consent ?? false,
         question.group.questionnaire.settings?.anonymous ? 'full' : 'partial',
       );
 
@@ -179,7 +179,7 @@ router.post(
       }
 
       // Check consent if required
-      if (question.group.questionnaire.settings?.requireConsent) {
+      if (question.group.questionnaire.settings?.require_consent) {
         const hasConsent = await responseService.hasUserConsent(
           question.group.questionnaire.id,
           userId,
@@ -198,7 +198,8 @@ router.post(
       const response = await responseService.saveResponse(
         {
           questionId: data.questionId,
-          userId: parseInt(userId),
+          questionnaireId: data.questionnaireId,
+          userId,
           enrollmentId: data.enrollmentId,
           answer: gdprValidation.sanitizedAnswer,
           status: data.isAutosave ? 'draft' : 'submitted',
@@ -226,7 +227,7 @@ router.post(
       }
 
       // Create audit log
-      await authService.createAuditLog(
+      await AuthService.createAuditLog(
         userId,
         data.isAutosave ? 'RESPONSE_AUTOSAVE' : 'RESPONSE_CREATE',
         'responses',
@@ -327,7 +328,7 @@ router.patch(
 
       // Check user permissions (can only update own responses or admins can update any)
       if (
-        existingResponse.userId !== parseInt(userId) &&
+        existingResponse.userId !== userId &&
         req.user?.role !== 'admin'
       ) {
         return res.status(403).json({
@@ -354,7 +355,7 @@ router.patch(
         const gdprValidation = validateGDPRCompliance(
           updateData.answer,
           existingResponse.question.group.questionnaire.settings
-            ?.requireConsent ?? false,
+            ?.require_consent ?? false,
           existingResponse.question.group.questionnaire.settings?.anonymous
             ? 'full'
             : 'partial',
@@ -392,7 +393,7 @@ router.patch(
         .returning();
 
       // Create audit log
-      await authService.createAuditLog(
+      await AuthService.createAuditLog(
         userId,
         'RESPONSE_UPDATE',
         'responses',
@@ -446,8 +447,8 @@ router.get(
         consentFilter = 'consenting_only',
       } = req.query;
 
-      const pageNum = parseInt(page);
-      const limitNum = parseInt(limit);
+      const pageNum = parseInt(page as string);
+      const limitNum = parseInt(limit as string);
       const offset = (pageNum - 1) * limitNum;
 
       // Check if questionnaire exists and user has permission
@@ -472,7 +473,7 @@ router.get(
       const canAccess =
         req.user?.role === 'admin' ||
         req.user?.role === 'sociologist-editor' ||
-        questionnaire.createdBy === parseInt(req.user?.id || '0');
+        questionnaire.createdBy === req.user?.id;
 
       if (!canAccess) {
         return res.status(403).json({
@@ -480,6 +481,21 @@ router.get(
           error: 'Insufficient permissions to access this questionnaire',
           code: 'INSUFFICIENT_PERMISSIONS',
         });
+      }
+
+      // Build query conditions
+      const queryConditions = [eq(questionGroups.questionnaireId, id)];
+
+      // Apply consent filter if not admin
+      if (consentFilter === 'consenting_only' && req.user?.role !== 'admin') {
+        queryConditions.push(
+          sql`EXISTS (
+            SELECT 1 FROM consents c
+            WHERE c.questionnaireId = ${id}
+            AND c.userId = ${responses.userId}
+            AND c.granted = true
+          )`,
+        );
       }
 
       // Get responses with question details
@@ -507,20 +523,7 @@ router.get(
         .innerJoin(questions, eq(responses.questionId, questions.id))
         .innerJoin(questionGroups, eq(questions.groupId, questionGroups.id))
         .leftJoin(users, eq(responses.userId, users.id))
-        .where(eq(questionGroups.questionnaireId, id));
-
-      // Apply consent filter if not admin
-      if (consentFilter === 'consenting_only' && req.user?.role !== 'admin') {
-        responsesQuery.where(
-          sql`EXISTS (
-            SELECT 1 FROM consents c
-            WHERE c.questionnaireId = ${id}
-            AND c.userId = ${responses.userId}
-            AND c.granted = true
-            AND c.revokedAt IS NULL
-          )`,
-        );
-      }
+        .where(and(...queryConditions));
 
       const responsesData = await responsesQuery
         .orderBy(desc(responses.submittedAt))
@@ -550,7 +553,7 @@ router.get(
           })),
           questionnaire: {
             id: questionnaire.id,
-            title: questionnaire.title,
+            titleI18n: questionnaire.titleI18n,
             status: questionnaire.status,
             settings: questionnaire.settings,
           },
@@ -605,14 +608,14 @@ router.get(
 
       // Get user's responses with question details
       const userResponses = await db.query.responses.findMany({
-        where: eq(responses.userId, parseInt(id)),
+        where: eq(responses.userId, id),
         with: {
           question: {
             with: {
               group: {
                 with: {
                   questionnaire: {
-                    columns: { id: true, title: true, status: true },
+                    columns: { id: true, titleI18n: true, status: true },
                   },
                 },
               },
@@ -772,7 +775,7 @@ router.get(
       }
 
       // Create audit log
-      await authService.createAuditLog(
+      await AuthService.createAuditLog(
         req.user?.id,
         'RESPONSES_EXPORT',
         'questionnaires',
@@ -867,7 +870,7 @@ router.post(
         await responseService.createConsent(
           {
             questionnaireId,
-            userId: parseInt(userId),
+            userId,
             aiProcessing: consent.aiProcessing,
             dataProcessing: consent.dataProcessing,
             anonymousSharing: consent.anonymousSharing,
@@ -878,7 +881,7 @@ router.post(
             userAgent: req.get('User-Agent'),
           },
         );
-      } else if (questionnaire.settings?.requireConsent) {
+      } else if (questionnaire.settings?.require_consent) {
         // Check if consent exists
         const hasConsent = await responseService.hasUserConsent(
           questionnaireId,
@@ -924,7 +927,7 @@ router.post(
           // GDPR compliance check
           const gdprValidation = validateGDPRCompliance(
             responseItem.answer,
-            questionnaire.settings?.requireConsent ?? false,
+            questionnaire.settings?.require_consent ?? false,
             questionnaire.settings?.anonymous ? 'full' : 'partial',
           );
 
@@ -941,7 +944,8 @@ router.post(
           const response = await responseService.saveResponse(
             {
               questionId: responseItem.questionId,
-              userId: parseInt(userId),
+              questionnaireId,
+              userId,
               answer: gdprValidation.sanitizedAnswer,
               status,
             },
@@ -975,7 +979,7 @@ router.post(
       }
 
       // Create audit log
-      await authService.createAuditLog(
+      await AuthService.createAuditLog(
         userId,
         'BULK_RESPONSE_SUBMIT',
         'responses',
@@ -1054,7 +1058,7 @@ router.post(
       const consent = await responseService.createConsent(
         {
           questionnaireId: consentData.questionnaireId,
-          userId: parseInt(userId),
+          userId,
           aiProcessing: consentData.aiProcessing,
           dataProcessing: consentData.dataProcessing,
           anonymousSharing: consentData.anonymousSharing,
@@ -1067,7 +1071,7 @@ router.post(
       );
 
       // Create audit log
-      await authService.createAuditLog(
+      await AuthService.createAuditLog(
         userId,
         'CONSENT_GIVEN',
         'consents',
@@ -1124,7 +1128,7 @@ router.get(
               group: {
                 with: {
                   questionnaire: {
-                    columns: { id: true, title: true, settings: true },
+                    columns: { id: true, titleI18n: true, settings: true },
                   },
                 },
               },

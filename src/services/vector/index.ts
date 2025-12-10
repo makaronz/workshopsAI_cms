@@ -8,6 +8,8 @@ export { vectorDatabaseManager } from './vectorDatabaseManager';
 
 export { EmbeddingService } from './embeddingService';
 export { embeddingService } from './embeddingService';
+export { VectorIndexManager } from './vectorIndexManager';
+export { vectorIndexManager } from './vectorIndexManager';
 export type {
   EmbeddingModel,
   EmbeddingResult,
@@ -26,8 +28,6 @@ export type {
   RAGContextWindowConfig,
 } from './ragQueryEngine';
 
-export { VectorIndexManager } from './vectorIndexManager';
-export { vectorIndexManager } from './vectorIndexManager';
 export type {
   IndexPerformanceMetrics,
   IndexOptimizationRecommendation,
@@ -60,6 +60,11 @@ export type {
   RAGContextWindow,
   InsertRAGContextWindow,
 } from '../../models/vector-schema';
+
+// Import the services for initialization
+import { vectorDatabaseManager } from './vectorDatabaseManager';
+import { vectorIndexManager } from './vectorIndexManager';
+import { embeddingService } from './embeddingService';
 
 /**
  * Initialize all vector services

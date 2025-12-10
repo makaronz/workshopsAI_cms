@@ -5,6 +5,7 @@ import {
   timestamp,
   varchar,
   json,
+  jsonb,
   boolean,
   decimal,
   index,
@@ -13,8 +14,8 @@ import {
   integer,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-import { users, workshops } from './postgresql-schema';
-export { users, workshops };
+import { users, workshops, consents } from './postgresql-schema';
+export { users, workshops, consents };
 
 // Enum definitions
 export const questionnaireStatusEnum = pgEnum('questionnaireStatus', [
@@ -40,6 +41,7 @@ export const analysisTypeEnum = pgEnum('analysisType', [
   'contradictions',
   'insights',
   'recommendations',
+  'sentiment',
 ]);
 
 export const analysisStatusEnum = pgEnum('analysisStatus', [
@@ -71,37 +73,46 @@ export const consentTypeEnum = pgEnum('consentType', [
   'anonymous_presentation',
 ]);
 
+export const responseStatusEnum = pgEnum('responseStatus', [
+  'draft',
+  'submitted',
+]);
+
 /**
  * Questionnaires table - core questionnaire structure
  */
 export const questionnaires = pgTable(
   'questionnaires',
   {
-    id: varchar('id', { length: 36 }).primaryKey().default('uuid()'),
-    workshopId: varchar('workshopId', { length: 36 }).references(
-      () => workshops.id,
-      { onDelete: 'cascade' },
-    ),
-    title: json('title').notNull(), // {"pl": "Tytuł", "en": "Title"}
-    description: json('description'),
-    instructions: json('instructions'),
-    status: questionnaireStatusEnum('status')
-      .default('draft')
-      .notNull(),
-    settings: json('settings').$type<{
-      anonymous: boolean;
-      requireConsent: boolean;
-      maxResponses: number | null;
-      closeAfterWorkshop: boolean;
-      showAllQuestions: boolean;
-      allowEdit: boolean;
-      questionStyle: 'first_person_plural' | 'third_person';
-    }>(),
+    id: uuid('id').primaryKey().defaultRandom(),
+    workshopId: uuid('workshopId'), // nullable for standalone questionnaires
+    titleI18n: jsonb('titleI18n').notNull(), // {"pl": "Tytuł", "en": "Title"}
+    instructionsI18n: jsonb('instructionsI18n'), // {"pl": "Instrukcje", "en": "Instructions"}
+    status: questionnaireStatusEnum('status').default('draft').notNull(),
+    settings: jsonb('settings')
+      .$type<{
+        anonymous: boolean;
+        require_consent: boolean;
+        max_responses: number | null;
+        close_after_workshop: boolean;
+        show_all_questions: boolean;
+        allow_edit: boolean;
+        question_style: 'first_person_plural' | 'third_person';
+      }>()
+      .default({
+        anonymous: false,
+        require_consent: true,
+        max_responses: null,
+        close_after_workshop: false,
+        show_all_questions: true,
+        allow_edit: true,
+        question_style: 'third_person',
+      }),
     publishedAt: timestamp('publishedAt'),
     closedAt: timestamp('closedAt'),
     createdBy: uuid('createdBy')
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: 'cascade' }),
     createdAt: timestamp('createdAt').defaultNow().notNull(),
     updatedAt: timestamp('updatedAt').defaultNow().notNull(),
   },
@@ -209,6 +220,7 @@ export const responses = pgTable(
       .notNull()
       .references(() => questionnaires.id, { onDelete: 'cascade' }),
     answer: json('answer').notNull(), // Format varies by question type
+    status: responseStatusEnum('status').default('draft').notNull(), // 'draft' | 'submitted'
     metadata: json('metadata').$type<{
       ipHash: string;
       userAgentHash: string;
@@ -279,6 +291,19 @@ export const llmAnalyses = pgTable(
         rationale: string;
         category: string;
       }>;
+      sentiment?: {
+        overall: number; // -1 to 1
+        distribution: {
+          positive: number;
+          negative: number;
+          neutral: number;
+        };
+        byTheme?: Array<{
+          theme: string;
+          sentiment: number;
+          examples: string[];
+        }>;
+      };
     }>(),
     metadata: json('metadata').$type<{
       model: string; // "gpt-4", "claude-3-opus", etc.
@@ -305,40 +330,7 @@ export const llmAnalyses = pgTable(
 export type LLMAnalysis = typeof llmAnalyses.$inferSelect;
 export type InsertLLMAnalysis = typeof llmAnalyses.$inferInsert;
 
-/**
- * Consents table - GDPR consent management
- */
-export const consents = pgTable(
-  'consents',
-  {
-    id: varchar('id', { length: 36 }).primaryKey().default('uuid()'),
-    userId: uuid('userId')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    questionnaireId: varchar('questionnaireId', { length: 36 }).references(
-      () => questionnaires.id,
-      { onDelete: 'cascade' },
-    ),
-    consentType: consentTypeEnum('consentType').notNull(),
-    granted: boolean('granted').notNull(),
-    ipAddress: varchar('ipAddress', { length: 45 }), // IPv6 compatible
-    userAgent: text('userAgent'),
-    consentText: json('consentText'), // The actual consent text shown to user
-    givenAt: timestamp('givenAt').defaultNow().notNull(),
-    revokedAt: timestamp('revokedAt'),
-    version: varchar('version', { length: 20 }).default('1.0'),
-  },
-  table => ({
-    userIdIdx: index('idx_user_id').on(table.userId),
-    questionnaireIdIdx: index('idx_questionnaire_id').on(table.questionnaireId),
-    consentTypeIdx: index('idx_consent_type').on(table.consentType),
-    grantedIdx: index('idx_granted').on(table.granted),
-    givenAtIdx: index('idx_given_at').on(table.givenAt),
-  }),
-);
-
-export type Consent = typeof consents.$inferSelect;
-export type InsertConsent = typeof consents.$inferInsert;
+// Consents table is defined in postgresql-schema.ts to avoid conflicts
 
 /**
  * Embeddings table - vector embeddings for semantic search
@@ -444,7 +436,6 @@ export const questionnairesRelations = relations(
     groups: many(questionGroups),
     responses: many(responses),
     analyses: many(llmAnalyses),
-    consents: many(consents),
     jobs: many(analysisJobs),
   }),
 );
@@ -489,13 +480,6 @@ export const llmAnalysesRelations = relations(llmAnalyses, ({ one }) => ({
   }),
 }));
 
-export const consentsRelations = relations(consents, ({ one }) => ({
-  user: one(users, { fields: [consents.userId], references: [users.id] }),
-  questionnaire: one(questionnaires, {
-    fields: [consents.questionnaireId],
-    references: [questionnaires.id],
-  }),
-}));
 
 export const embeddingsRelations = relations(embeddings, ({ one }) => ({
   response: one(responses, {

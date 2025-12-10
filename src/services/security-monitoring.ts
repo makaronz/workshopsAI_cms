@@ -485,7 +485,7 @@ export class SecurityMonitoringService {
   /**
    * Implement IP blocking
    */
-  private implementBlockingResponse(ip: string): void {
+  public implementBlockingResponse(ip: string): void {
     // This would integrate with your firewall or load balancer
     console.warn(`CRITICAL: Blocking IP ${ip} due to security threat`);
 
@@ -719,7 +719,5 @@ export const isIPBlocked = (ip: string): boolean => {
 };
 
 export {
-  SecurityEventType,
-  SecuritySeverity,
   securityMonitor as default,
 };

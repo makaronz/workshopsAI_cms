@@ -1250,6 +1250,72 @@ export class EnhancedLLMAnalysisWorker {
   };
 
   /**
+   * Get job status by ID
+   */
+  async getJobStatus(jobId: string): Promise<{
+    id: string;
+    name: string;
+    data: EnhancedLLMAnalysisJobData;
+    opts: any;
+    progress: number;
+    processedOn: number;
+    finishedOn: number;
+    failedReason: string | null;
+    returnvalue: any;
+    state: string;
+  } | null> {
+    try {
+      const job = await this.queue.getJob(jobId);
+      if (!job) {
+        return null;
+      }
+
+      const state = await job.getState();
+      const data = await job.data;
+      const opts = job.opts;
+      const progress = job.progress;
+      const processedOn = job.processedOn;
+      const finishedOn = job.finishedOn;
+      const failedReason = job.failedReason;
+      const returnvalue = job.returnvalue;
+
+      return {
+        id: job.id,
+        name: job.name,
+        data,
+        opts,
+        progress,
+        processedOn,
+        finishedOn,
+        failedReason,
+        returnvalue,
+        state,
+      };
+    } catch (error) {
+      console.error(`Failed to get job status for ${jobId}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Cancel a job by ID
+   */
+  async cancelJob(jobId: string): Promise<boolean> {
+    try {
+      const job = await this.queue.getJob(jobId);
+      if (!job) {
+        return false;
+      }
+
+      await job.remove();
+      return true;
+    } catch (error) {
+      console.error(`Failed to cancel job ${jobId}:`, error);
+      return false;
+    }
+  }
+
+  /**
    * Get queue statistics
    */
   async getQueueStats(): Promise<{

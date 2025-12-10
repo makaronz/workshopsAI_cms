@@ -76,7 +76,7 @@ const defaultUploadConfig: FileUploadConfig = {
   generatePreviews: storageConfig.security.generatePreviews,
   generateThumbnails: true,
   compress: storageConfig.performance.compressionEnabled,
-  scanForVયુસes: storageConfig.security.scanForViruses,
+  scanForViruses: storageConfig.security.scanForViruses,
   validateChecksum: true,
 };
 
@@ -86,7 +86,7 @@ const defaultUploadConfig: FileUploadConfig = {
 function createFileFilter(config: FileUploadConfig) {
   return (
     req: Request,
-    file: Express.Multer.File,
+    file: any,
     callback: FileFilterCallback,
   ) => {
     // Check file extension
@@ -174,7 +174,7 @@ async function scanForViruses(
 function createProgressTracker(uploadId: string): UploadProgressCallback {
   return async progress => {
     try {
-      await redisService.client.setex(
+      await redisService.getClient().setex(
         `upload:progress:${uploadId}`,
         300, // 5 minutes TTL
         JSON.stringify(progress),
@@ -254,7 +254,7 @@ export function createFileUploadMiddleware(
         }
 
         try {
-          const files = (req.files as Express.Multer.File[]) || [];
+          const files = (req.files as any[]) || [];
           const uploadedFiles = [];
 
           req.uploadProgress = {
@@ -397,7 +397,7 @@ export function createFileUploadMiddleware(
           // Clear progress after a delay
           setTimeout(async () => {
             try {
-              await redisService.client.del(`upload:progress:${uploadId}`);
+              await redisService.getClient().del(`upload:progress:${uploadId}`);
             } catch (error) {
               // Ignore cleanup errors
             }
@@ -512,7 +512,7 @@ export async function getUploadProgress(req: Request, res: Response) {
       });
     }
 
-    const progressData = await redisService.client.get(
+    const progressData = await redisService.getClient().get(
       `upload:progress:${uploadId}`,
     );
 
@@ -554,7 +554,7 @@ export async function cancelUpload(req: Request, res: Response) {
     }
 
     // Remove progress data
-    await redisService.client.del(`upload:progress:${uploadId}`);
+    await redisService.getClient().del(`upload:progress:${uploadId}`);
 
     // TODO: Implement actual upload cancellation
     // This would require integration with the storage provider's multipart upload cancellation

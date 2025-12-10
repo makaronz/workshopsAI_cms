@@ -22,7 +22,7 @@ router.get('/:token', async (req: Request, res: Response) => {
     }
 
     // Get file path from Redis
-    const filePath = await redisService.client.get(`file:${token}`);
+    const filePath = await redisService.getClient().get(`file:${token}`);
     if (!filePath) {
       return res.status(404).json({
         error: 'Invalid or expired token',

@@ -11,8 +11,8 @@ import {
   datetime,
   index,
 } from 'drizzle-orm/mysql-core';
-import { relations, one, many } from 'drizzle-orm';
-import { users } from './schema';
+import { relations, One, Many } from 'drizzle-orm';
+import { users } from './postgresql-schema';
 
 // Bilingual text type definition
 export type BilingualText = {

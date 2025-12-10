@@ -612,10 +612,10 @@ export class EmbeddingService {
 
     const processingTime = Date.now() - startTime;
 
-    const totalTokens = response.usage?.total_tokens || 0;
+    const totalTokens = (response as any).usage?.total_tokens || 0;
     const tokensPerItem = texts.length > 0 ? Math.floor(totalTokens / texts.length) : 0;
     
-    return response.data.map((embedding, index) => ({
+    return ((response as any)?.data || []).map((embedding, index) => ({
       vector: embedding.embedding,
       model: modelConfig.name,
       dimensions: modelConfig.dimensions,

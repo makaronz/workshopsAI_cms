@@ -98,7 +98,7 @@ router.get('/metrics', (req: Request, res: Response) => {
         l1: {
           hitRate: (cacheStats.L1.hitRate * 100).toFixed(2) + '%',
           size: cacheStats.L1.size,
-          totalSize: (cacheStats.L1.totalSize / 1024 / 1024).toFixed(2) + ' MB',
+          totalSize: (cacheStats.L1.size / 1024 / 1024).toFixed(2) + ' MB',
         },
         l2: {
           hitRate: (cacheStats.L2.hitRate * 100).toFixed(2) + '%',

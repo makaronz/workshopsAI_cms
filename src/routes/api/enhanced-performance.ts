@@ -95,7 +95,7 @@ router.get('/metrics', (req: Request, res: Response) => {
           system: metrics.cpuUsage.system,
         },
         load: metrics.systemLoad,
-        uptime: metrics.uptime,
+        uptime: metrics.systemLoad?.uptime || 0,
       },
       performance: {
         requestCount: metrics.requestCount,
@@ -112,7 +112,7 @@ router.get('/metrics', (req: Request, res: Response) => {
         l1: {
           hitRate: (cacheStats.L1.hitRate * 100).toFixed(2) + '%',
           size: cacheStats.L1.size,
-          totalSize: (cacheStats.L1.totalSize / 1024 / 1024).toFixed(2) + ' MB',
+          totalSize: (cacheStats.L1.size / 1024 / 1024).toFixed(2) + ' MB',
           hotKeys: cacheStats.L1.hotKeys,
         },
         l2: {
@@ -340,7 +340,7 @@ router.get('/dashboard', async (req: Request, res: Response) => {
         accessPatterns: cacheAnalytics.accessPatterns.slice(0, 5),
       },
       system: {
-        uptime: currentMetrics.uptime,
+        uptime: currentMetrics.systemLoad?.uptime || 0,
         loadAvg: currentMetrics.systemLoad.loadAvg,
         memory: {
           used: (currentMetrics.heapUsed / 1024 / 1024).toFixed(2),

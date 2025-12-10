@@ -6,12 +6,12 @@
 import { Queue, Worker, Job } from 'bullmq';
 import { Redis } from 'ioredis';
 import { llmAnalysisService, type LLMModel } from '../services/llmAnalysisService';
-import { anonymizationService } from '../services/anonymizationService';
-import { workshopIntelligenceService } from '../services/workshopIntelligenceService';
+import { AnonymizationService } from '../services/anonymizationService';
+import { WorkshopIntelligenceService } from '../services/workshopIntelligenceService';
 import { db } from '../config/postgresql-database';
 import {
-  workshopLlmAnalyses,
-  analysisResults,
+  llmAnalyses,
+  workshopAnalysisResults,
   workshops,
   promptTemplates,
 } from '../models/postgresql-schema';
@@ -66,12 +66,11 @@ export const workshopAnalysisWorker = new Worker<AnalysisJobData>(
     try {
       // Update status to processing
       await db
-        .update(workshopLlmAnalyses)
+        .update(llmAnalyses)
         .set({
           status: 'processing',
-          startedAt: new Date(),
         })
-        .where(eq(workshopLlmAnalyses.id, analysisId));
+        .where(eq(llmAnalyses.id, analysisId));
 
       // Get workshop details
       const [workshop] = await db
@@ -84,8 +83,11 @@ export const workshopAnalysisWorker = new Worker<AnalysisJobData>(
         throw new Error(`Workshop ${workshopId} not found`);
       }
 
+      // Create service instances
+      const workshopService = new WorkshopIntelligenceService();
+
       // Get all contributions with answers
-      const contributions = await workshopIntelligenceService.getWorkshopContributions(
+      const contributions = await workshopService.getAllContributions(
         workshopId,
       );
 
@@ -94,7 +96,7 @@ export const workshopAnalysisWorker = new Worker<AnalysisJobData>(
       }
 
       // Get form with questions
-      const form = await workshopIntelligenceService.getFormWithQuestions(workshopId);
+      const form = await workshopService.getFormByWorkshopId(workshopId);
 
       if (!form) {
         throw new Error('Workshop form not found');
@@ -105,19 +107,24 @@ export const workshopAnalysisWorker = new Worker<AnalysisJobData>(
         form.questions.map((q) => [q.id, q.questionText]),
       );
 
+      // Create anonymization service instance
+      const anonymizationService = new AnonymizationService();
+
       // Prepare data for anonymization
       const dataForAnonymization = contributions.map((contrib) => ({
         userId: contrib.userId,
-        answers: contrib.answers.map((ans) => ({
-          questionId: ans.questionId,
-          questionText: questionMap.get(ans.questionId) || 'Unknown question',
-          answerData: ans.answerData,
-        })),
+        answers: contrib.answers,
+      }));
+
+      const questions = Array.from(questionMap.entries()).map(([id, text]) => ({
+        id,
+        questionText: text,
       }));
 
       // Anonymize data
-      const anonymizedData = anonymizationService.anonymizeContributions(
+      const anonymizedData = anonymizationService.anonymize(
         dataForAnonymization,
+        questions,
       );
 
       // Get prompt template
@@ -149,7 +156,7 @@ export const workshopAnalysisWorker = new Worker<AnalysisJobData>(
       // Save results to database
       await Promise.all([
         // Save summary
-        db.insert(analysisResults).values({
+        db.insert(workshopAnalysisResults).values({
           analysisId,
           resultType: 'summary',
           content: { text: result.summary },
@@ -157,21 +164,21 @@ export const workshopAnalysisWorker = new Worker<AnalysisJobData>(
         }),
 
         // Save insights
-        db.insert(analysisResults).values({
+        db.insert(workshopAnalysisResults).values({
           analysisId,
           resultType: 'insights',
           content: { insights: result.insights },
         }),
 
         // Save themes
-        db.insert(analysisResults).values({
+        db.insert(workshopAnalysisResults).values({
           analysisId,
           resultType: 'themes',
           content: { themes: result.themes },
         }),
 
         // Save recommendations
-        db.insert(analysisResults).values({
+        db.insert(workshopAnalysisResults).values({
           analysisId,
           resultType: 'recommendations',
           content: { recommendations: result.recommendations },
@@ -179,7 +186,7 @@ export const workshopAnalysisWorker = new Worker<AnalysisJobData>(
 
         // Save suggested plan if available
         result.suggestedPlan
-          ? db.insert(analysisResults).values({
+          ? db.insert(workshopAnalysisResults).values({
               analysisId,
               resultType: 'plan',
               content: { plan: result.suggestedPlan },
@@ -189,12 +196,12 @@ export const workshopAnalysisWorker = new Worker<AnalysisJobData>(
 
       // Update analysis status to completed
       await db
-        .update(workshopLlmAnalyses)
+        .update(llmAnalyses)
         .set({
           status: 'completed',
           completedAt: new Date(),
         })
-        .where(eq(workshopLlmAnalyses.id, analysisId));
+        .where(eq(llmAnalyses.id, analysisId));
 
       console.log(`[Worker] Analysis ${analysisId} completed successfully`);
 
@@ -208,13 +215,13 @@ export const workshopAnalysisWorker = new Worker<AnalysisJobData>(
 
       // Update analysis status to failed
       await db
-        .update(workshopLlmAnalyses)
+        .update(llmAnalyses)
         .set({
           status: 'failed',
           errorMessage: error.message,
           completedAt: new Date(),
         })
-        .where(eq(workshopLlmAnalyses.id, analysisId));
+        .where(eq(llmAnalyses.id, analysisId));
 
       throw error;
     }

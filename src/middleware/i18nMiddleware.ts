@@ -4,7 +4,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import i18n from '../i18n';
+import { i18n } from '../i18n';
 
 export interface I18nRequest extends Request {
   language: 'pl' | 'en';

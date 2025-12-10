@@ -342,7 +342,7 @@ export class QuestionnaireService {
     const questionnaireData: InsertQuestionnaire = {
       id: uuidv4(),
       ...data,
-      createdBy: creatorId,
+      createdBy: creatorId.toString(),
     };
 
     const [questionnaire] = await db
@@ -359,8 +359,8 @@ export class QuestionnaireService {
   async createFromTemplate(
     templateId: string,
     workshopId: string | null,
-    title?: { pl: string; en: string },
     creatorId: number,
+    title?: { pl: string; en: string },
   ): Promise<Questionnaire> {
     const template =
       templateId === 'nasza_nieutopia_v1' ? NASZA_NIEUTOPIA_TEMPLATE : null;
@@ -373,9 +373,10 @@ export class QuestionnaireService {
     const questionnaire = await this.createQuestionnaire(
       {
         workshopId: workshopId || undefined,
-        title: title || template.title,
-        instructions: template.instructions,
+        titleI18n: title || template.title,
+        instructionsI18n: template.instructions,
         settings: template.settings,
+        createdBy: creatorId,
       },
       creatorId,
     );
@@ -385,13 +386,14 @@ export class QuestionnaireService {
       const group: InsertQuestionGroup = {
         id: uuidv4(),
         questionnaireId: questionnaire.id,
-        title: groupData.title,
-        description: groupData.description,
-        orderIndex: groupData.order,
+        titleI18n: groupData.title,
+        descriptionI18n: groupData.description,
+        orderIndex: groupData.order.toString(),
         uiConfig: {
           collapsed: false,
           show_progress: true,
-          icon: null,
+          icon: '',
+          color: '',
         },
       };
 
@@ -405,13 +407,13 @@ export class QuestionnaireService {
         const question: InsertQuestion = {
           id: uuidv4(),
           groupId: createdGroup.id,
-          text: questionData.text,
+          textI18n: questionData.text,
           type: questionData.type as any,
           validation: {
             required: questionData.required || false,
             ...questionData.validation,
           },
-          orderIndex: questionData.order,
+          orderIndex: questionData.order.toString(),
         };
 
         await db.insert(questions).values(question);
@@ -484,6 +486,7 @@ export class QuestionnaireService {
       where: and(
         eq(questionnaires.id, id),
         eq(questionnaires.status, 'published'),
+        isNull(questionnaires.deletedAt),
       ),
       with: {
         questionGroups: {
@@ -760,8 +763,8 @@ export class QuestionnaireService {
    */
   async duplicateQuestionnaire(
     id: string,
-    newTitle?: { pl: string; en: string },
     creatorId: number,
+    newTitle?: { pl: string; en: string },
   ): Promise<Questionnaire | null> {
     const original = await this.getQuestionnaireById(id, true);
 
@@ -773,11 +776,11 @@ export class QuestionnaireService {
     const newQuestionnaire = await this.createQuestionnaire(
       {
         workshopId: original.workshopId,
-        title: newTitle || {
-          pl: `${original.title.pl} (kopia)`,
-          en: `${original.title.en} (copy)`,
+        titleI18n: newTitle || {
+          pl: `${(original.titleI18n as any)?.pl || ''} (kopia)`,
+          en: `${(original.titleI18n as any)?.en || ''} (copy)`,
         },
-        instructions: original.instructions,
+        instructionsI18n: original.instructionsI18n,
         status: 'draft', // Always start as draft
         settings: original.settings,
       },
@@ -789,13 +792,14 @@ export class QuestionnaireService {
       const newGroup: InsertQuestionGroup = {
         id: uuidv4(),
         questionnaireId: newQuestionnaire.id,
-        title: group.title,
-        description: group.description,
+        titleI18n: group.title,
+        descriptionI18n: group.description,
         orderIndex: group.orderIndex,
         uiConfig: group.uiConfig || {
           collapsed: false,
           show_progress: true,
           icon: null,
+          color: null,
         },
       };
 
@@ -809,13 +813,13 @@ export class QuestionnaireService {
         const newQuestion: InsertQuestion = {
           id: uuidv4(),
           groupId: createdGroup.id,
-          text: question.text,
+          textI18n: question.text,
           type: question.type,
-          options: question.options,
+          optionsI18n: question.options,
           validation: question.validation,
           conditionalLogic: question.conditionalLogic,
           orderIndex: question.orderIndex,
-          helpText: question.helpText,
+          helpTextI18n: question.helpText,
         };
 
         await db.insert(questions).values(newQuestion);

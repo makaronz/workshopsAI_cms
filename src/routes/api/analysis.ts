@@ -105,7 +105,10 @@ router.post('/jobs', authenticateJWT, analysisRateLimit, async (req, res) => {
 
     // Create the analysis job
     const jobId = await enhancedLLMAnalysisWorker.addJob({
-      ...validatedData,
+      questionnaireId: validatedData.questionnaireId,
+      analysisTypes: validatedData.analysisTypes,
+      options: validatedData.options,
+      priority: validatedData.priority,
       scheduledAt: validatedData.scheduledAt ? new Date(validatedData.scheduledAt) : undefined,
       triggeredBy: userId,
     });
@@ -331,8 +334,7 @@ router.get('/results/:analysisId', authenticateJWT, async (req, res) => {
               columns: {
                 id: true,
                 email: true,
-                firstName: true,
-                lastName: true,
+                name: true,
               },
             },
           },
@@ -349,14 +351,18 @@ router.get('/results/:analysisId', authenticateJWT, async (req, res) => {
     // Verify user has access (either owner or has consent)
     if (analysis.questionnaire?.createdBy !== userId) {
       // Check if user has consent to view this analysis
-      const hasConsent = await db.query.consents.findFirst({
-        where: and(
-          eq(consents.questionnaireId, analysis.questionnaireId),
-          eq(consents.userId, userId),
-          eq(consents.consentType, 'research_analysis'),
-          eq(consents.granted, true),
-        ),
-      });
+      const hasConsent = await db
+        .select()
+        .from(consents)
+        .where(
+          and(
+            eq(consents.questionnaireId, analysis.questionnaireId),
+            eq(consents.userId, userId),
+            eq(consents.consentType, 'research_analysis'),
+            eq(consents.granted, true),
+          ),
+        )
+        .limit(1);
 
       if (!hasConsent) {
         return res.status(403).json({
@@ -462,14 +468,18 @@ router.post('/results/:analysisId/export', authenticateJWT, async (req, res) => 
 
     // Verify user has access
     if (analysis.questionnaire.createdBy !== userId) {
-      const hasConsent = await db.query.consents.findFirst({
-        where: and(
-          eq(consents.questionnaireId, analysis.questionnaireId),
-          eq(consents.userId, userId),
-          eq(consents.consentType, 'research_analysis'),
-          eq(consents.granted, true),
-        ),
-      });
+      const hasConsent = await db
+        .select()
+        .from(consents)
+        .where(
+          and(
+            eq(consents.questionnaireId, analysis.questionnaireId),
+            eq(consents.userId, userId),
+            eq(consents.consentType, 'research_analysis'),
+            eq(consents.granted, true),
+          ),
+        )
+        .limit(1);
 
       if (!hasConsent) {
         return res.status(403).json({
@@ -486,9 +496,12 @@ router.post('/results/:analysisId/export', authenticateJWT, async (req, res) => 
       });
 
       // Anonymize responses for export
-      responseData = responseData.map(r => ({
-        ...r,
-        answer: anonymizationService.anonymizeResponse(r, 'full').answer,
+      const anonymizedResponses = await Promise.all(
+        responseData.map(r => anonymizationService.anonymizeResponse(r, 'full'))
+      );
+      responseData = anonymizedResponses.map(ar => ({
+        ...ar.anonymizationResult,
+        answer: ar.answer,
       }));
     }
 
@@ -599,9 +612,10 @@ router.get('/stats', authenticateJWT, async (req, res) => {
     }
 
     // Get analysis statistics
-    const allAnalyses = await db.query.llmAnalyses.findMany(
-      conditions.length > 0 ? { where: conditions[0] } : {},
+    const query = db.query.llmAnalyses.findMany(
+      conditions.length > 0 ? { where: conditions[0] } : undefined
     );
+    const allAnalyses = await query;
 
     const stats = {
       total: allAnalyses.length,
@@ -676,9 +690,12 @@ router.get('/gdpr-report', authenticateJWT, async (req, res) => {
     });
 
     // Generate anonymization report
+    const anonymizedResponses = await Promise.all(
+      allResponses.map(async r => ({ ...r, answer: (await anonymizationService.anonymizeResponse(r, 'full')).answer }))
+    );
     const anonymizationReport = anonymizationService.generateAnonymizationReport(
       allResponses,
-      allResponses.map(r => ({ ...r, answer: anonymizationService.anonymizeResponse(r, 'full').answer })),
+      anonymizedResponses,
     );
 
     // Check consent status
@@ -773,15 +790,17 @@ router.get('/export/:questionnaireId', authenticateJWT, async (req, res) => {
       });
 
       // Anonymize responses
-      responseData = responseData.map(r => ({
-        ...r,
-        answer: anonymizationService.anonymizeResponse(r, 'full').answer,
-        metadata: {
-          ...(r.metadata as any),
-          ipHash: '[HASHED]',
-          userAgentHash: '[HASHED]',
-        },
-      }));
+      responseData = await Promise.all(
+        responseData.map(async (r) => ({
+          ...r,
+          answer: (await anonymizationService.anonymizeResponse(r, 'full')).answer,
+          metadata: {
+            ...(r.metadata as any),
+            ipHash: '[HASHED]',
+            userAgentHash: '[HASHED]',
+          },
+        }))
+      );
     }
 
     // Get consent information

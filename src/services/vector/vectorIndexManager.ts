@@ -523,7 +523,7 @@ export class VectorIndexManager {
         await db
           .update(vector_index_configs)
           .set({
-            sizeEstimate: Math.round(index.size_bytes / (1024 * 1024)),
+            sizeEstimate: Math.round(index.size_bytes / (1024 * 1024)).toString(),
           })
           .where(eq(vector_index_configs.indexName, index.indexname));
       }

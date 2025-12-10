@@ -1,8 +1,8 @@
-import { Server as SocketIOServer } from 'socket.io';
+import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import jwt from 'jsonwebtoken';
 import { db } from '../config/database';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc, inArray } from 'drizzle-orm';
 import { enhancedLLMAnalysisWorker } from './enhanced-llm-worker';
 import {
   analysisJobs,
@@ -86,7 +86,7 @@ export class AnalysisWebSocketService {
       });
 
       // Handle job unsubscription
-      socket.on('unsubscribe-job', (data: { jobId: string }) => {
+      socket.on('unsubscribe-job', async (data: { jobId: string }) => {
         await this.handleJobUnsubscription(socket, data);
       });
 
@@ -96,7 +96,7 @@ export class AnalysisWebSocketService {
       });
 
       // Handle questionnaire unsubscription
-      socket.on('unsubscribe-questionnaire', (data: { questionnaireId: string }) => {
+      socket.on('unsubscribe-questionnaire', async (data: { questionnaireId: string }) => {
         await this.handleQuestionnaireUnsubscription(socket, data);
       });
 
@@ -405,7 +405,7 @@ export class AnalysisWebSocketService {
           jobId,
           progress: job.progress,
           status: job.status,
-          queueStatus: status.status,
+          queueStatus: status.state,
           timestamp: new Date().toISOString(),
         });
 

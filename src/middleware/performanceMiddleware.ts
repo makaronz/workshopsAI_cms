@@ -33,15 +33,16 @@ class PerformanceMiddleware {
 
       // Override res.end to measure response time
       const originalEnd = res.end;
+      const self = this;
       res.end = function(this: Response, ...args: any[]) {
         const responseTime = Date.now() - startTime;
 
         // Add performance headers
         res.setHeader('X-Response-Time', responseTime + 'ms');
-        res.setHeader('X-Request-ID', req.headers['x-request-id'] || this.generateRequestId());
+        res.setHeader('X-Request-ID', req.headers['x-request-id'] || self.generateRequestId());
 
         // Update metrics
-        this.updateMetrics(responseTime, res.statusCode);
+        self.updateMetrics(responseTime, res.statusCode);
 
         // Log slow requests
         if (responseTime > 1000) {
@@ -55,7 +56,7 @@ class PerformanceMiddleware {
         }
 
         return originalEnd.apply(this, args);
-      }.bind(this);
+      };
 
       next();
     };

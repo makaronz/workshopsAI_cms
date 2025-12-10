@@ -11,6 +11,7 @@ import {
   responses,
   questions,
   questionnaires,
+  questionGroups,
   users,
   consents,
   LLMAnalysis,
@@ -85,12 +86,11 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
     this.connection = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
-      password: process.env.REDIS_PASSWORD,
+      password: process.env.REDIS_PASSWORD || undefined,
       db: parseInt(process.env.REDIS_DB || '0'),
       maxRetriesPerRequest: null,
       lazyConnect: true,
       enableOfflineQueue: false,
-      maxMemoryPolicy: 'allkeys-lru',
     });
 
     // Initialize OpenAI client only if API key is provided
@@ -100,7 +100,7 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
           apiKey: openaiApiKey,
           baseURL: config?.openai?.baseURL,
           timeout: config?.openai?.timeout || 30000, // Reduced timeout
-          organizationId: config?.openai?.organizationId,
+          organization: config?.openai?.organizationId,
           maxRetries: 2,
         })
       : null;
@@ -155,7 +155,9 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
 
     this.worker = new Worker(
       'streaming-llm-analysis',
-      this.processJob.bind(this),
+      async (job: Job<StreamingLLMAnalysisJobData>) => {
+        return this.processJob(job);
+      },
       {
         connection: this.connection,
         concurrency: 3, // Increased concurrency
@@ -253,6 +255,7 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
             qData,
             jobId,
             progress,
+            questionnaireId,
           );
           await this.updateJobStatus(jobId, 'processing', progress);
         } catch (error) {
@@ -291,6 +294,7 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
     questionnaire: any,
     jobId: string,
     initialProgress: number,
+    questionnaireId: string,
   ): Promise<void> {
     const startTime = Date.now();
     const abortController = this.activeStreams.get(jobId);
@@ -482,30 +486,19 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
       return cached.data;
     }
 
-    const questionnaire = await db.query.questionnaires.findFirst({
-      where: eq(questionnaires.id, questionnaireId),
-      with: {
-        questionGroups: {
-          with: {
-            questions: {
-              with: {
-                responses: {
-                  limit: 100, // Limit initial batch
-                },
-              },
-            },
-          },
-        },
-      },
-    });
+    const questionnaire = await db.select().from(questionnaires)
+      .where(eq(questionnaires.id, questionnaireId))
+      .leftJoin(questionGroups, eq(questionnaires.id, questionGroups.questionnaireId))
+      .leftJoin(questions, eq(questionGroups.id, questions.groupId))
+      .execute();
 
-    if (!questionnaire) return null;
+    if (!questionnaire || questionnaire.length === 0) return null;
+
+    const questionnaireRow = questionnaire[0];
 
     const result = {
-      questionnaire,
-      responses: questionnaire.questionGroups.flatMap((qg: any) => 
-        qg.questions.flatMap((q: any) => q.responses || [])
-      ),
+      questionnaire: questionnaireRow,
+      responses: [], // We'll need to fetch responses separately
     };
 
     // Cache questionnaire metadata
@@ -903,8 +896,8 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
       console.error('Streaming worker error:', error);
     });
 
-    this.queueEvents.on('stalled', (job: { id?: string }) => {
-      console.warn(`Streaming job ${job.id || 'unknown'} stalled`);
+    this.queueEvents.on('stalled', (args: { jobId: string }) => {
+      console.warn(`Streaming job ${args.jobId} stalled`);
     });
   }
 

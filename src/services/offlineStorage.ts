@@ -428,7 +428,7 @@ export class OfflineStorage {
           pendingSyncItems: 0,
         });
       }
-    }).then(async stats => {
+    }).then(async (stats: { used: number; available: number; questionnaireCount: number; pendingSyncItems: number }) => {
       // Get actual counts
       const [questionnaireCount, pendingSyncItems] = await Promise.all([
         this.getQuestionnaireCount(),

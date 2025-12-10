@@ -10,7 +10,7 @@ import type {
 
 export class EnrollmentService {
   // Create enrollment
-  static async createEnrollment(userId: number, data: CreateEnrollmentInput) {
+  static async createEnrollment(userId: string, data: CreateEnrollmentInput) {
     // Check if workshop exists and is published
     const workshop = await db.query.workshops.findFirst({
       where: eq(workshops.id, data.workshopId),
@@ -91,7 +91,7 @@ export class EnrollmentService {
   // Update enrollment
   static async updateEnrollment(
     id: string,
-    userId: number,
+    userId: string,
     data: UpdateEnrollmentInput,
   ) {
     const enrollment = await this.getEnrollmentById(id);
@@ -165,7 +165,7 @@ export class EnrollmentService {
   // List enrollments with filtering and pagination
   static async listEnrollments(
     filter: EnrollmentFilter,
-    requestingUserId?: number,
+    requestingUserId?: string,
     userRole?: string,
   ) {
     const {
@@ -265,7 +265,7 @@ export class EnrollmentService {
   }
 
   // Confirm enrollment
-  static async confirmEnrollment(id: string, userId: number) {
+  static async confirmEnrollment(id: string, userId: string) {
     const enrollment = await this.getEnrollmentById(id);
 
     if (!enrollment) {
@@ -299,7 +299,7 @@ export class EnrollmentService {
   }
 
   // Cancel enrollment
-  static async cancelEnrollment(id: string, userId: number, reason?: string) {
+  static async cancelEnrollment(id: string, userId: string, reason?: string) {
     const enrollment = await this.getEnrollmentById(id);
 
     if (!enrollment) {
@@ -347,7 +347,7 @@ export class EnrollmentService {
   static async markAttendance(
     id: string,
     sessionId: string,
-    userId: number,
+    userId: string,
     attended: boolean,
     notes?: string,
   ) {
@@ -435,7 +435,7 @@ export class EnrollmentService {
   }
 
   // Get participant enrollment history
-  static async getParticipantEnrollmentHistory(userId: number, limit = 20) {
+  static async getParticipantEnrollmentHistory(userId: string, limit = 20) {
     const enrollments = await db.query.enrollments.findMany({
       where: eq(enrollments.participantId, userId),
       orderBy: [desc(enrollments.enrollmentDate)],
@@ -461,7 +461,7 @@ export class EnrollmentService {
   // Helper method to check if user is facilitator of a workshop
   private static async checkIfUserIsFacilitator(
     workshopId: string,
-    userId: number,
+    userId: string,
   ): Promise<boolean> {
     // This would need to be implemented based on your facilitator relationship
     // For now, returning false (would be implemented when we have facilitator-workshop relations)

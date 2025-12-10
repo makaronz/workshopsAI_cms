@@ -4,10 +4,10 @@ import {
   timestamp,
   uuid,
   pgEnum,
-  vector,
+  decimal,
   jsonb,
   index,
-  sql,
+  boolean,
 } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
@@ -65,25 +65,27 @@ export const document_embeddings = pgTable(
     documentType: documentTypeEnum('documentType').notNull(),
     documentId: uuid('documentId').notNull(),
     content: text('content').notNull(),
-    embedding: vector('embedding', { dimensions: 1536 }).notNull(),
+    vectorIndex: decimal('vectorIndex', { precision: 10, scale: 0 }).notNull().default('0'), // Index in external vector DB
     language: languageEnum('language').notNull().default('en'),
     embeddingModel: embeddingModelEnum('embeddingModel')
       .notNull()
       .default('text-embedding-3-small'),
+    dimensions: decimal('dimensions', { precision: 10, scale: 0 }).notNull().default('1536'), // 1536, 384, etc.
     metadata: jsonb('metadata'),
-    confidenceScore: sql<number>('confidenceScore').default(0.8),
+    provider: text('provider').notNull().default('openai'), // openai, anthropic, local
+    confidenceScore: decimal('confidenceScore', { precision: 3, scale: 2 }).default('0.80').notNull(),
+    checksum: text('checksum'), // For content integrity verification
     createdAt: timestamp('createdAt').defaultNow().notNull(),
     updatedAt: timestamp('updatedAt').defaultNow().notNull(),
   },
-  table => ({
+  (table) => ({
     // Unique constraint on document type and ID
     documentTypeIdx: index('idx_document_embeddings_type').on(
       table.documentType,
     ),
     documentIdIdx: index('idx_document_embeddings_id').on(table.documentId),
     documentUniqueIdx: index('idx_document_embeddings_unique')
-      .on(table.documentType, table.documentId)
-      .unique(),
+      .on(table.documentType, table.documentId),
 
     // Language and model indexes for filtering
     languageIdx: index('idx_document_embeddings_language').on(table.language),
@@ -99,9 +101,9 @@ export const document_embeddings = pgTable(
       table.updatedAt,
     ),
 
-    // Vector similarity indexes (created dynamically based on data size)
-    // IVFFlat index for large datasets (> 1000 embeddings)
-    // HNSW index for high-performance similarity search
+    // Additional indexes for optimization
+    providerIdx: index('idx_document_embeddings_provider').on(table.provider),
+    checksumIdx: index('idx_document_embeddings_checksum').on(table.checksum),
   }),
 );
 
@@ -116,20 +118,21 @@ export const vector_search_queries = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     queryText: text('queryText').notNull(),
-    queryEmbedding: vector('queryEmbedding', { dimensions: 1536 }).notNull(),
-    resultsFound: sql<number>('resultsFound').default(0),
-    avgSimilarity: sql<number>('avgSimilarity'),
-    searchTime: sql<number>('searchTime'), // in milliseconds
+    queryVectorIndex: decimal('queryVectorIndex', { precision: 10, scale: 0 }).notNull(), // Index in external vector DB
+    resultsFound: decimal('resultsFound', { precision: 10, scale: 0 }).notNull().default('0'),
+    avgSimilarity: decimal('avgSimilarity', { precision: 3, scale: 3 }).default('0.000'), // 0.000 to 1.000
+    searchTime: decimal('searchTime', { precision: 10, scale: 3 }).default('0.000'), // in milliseconds
     filters: jsonb('filters'),
-    metricUsed: text('metricUsed').default('cosine'),
-    threshold: sql<number>('threshold').default(0.7),
+    metricUsed: text('metricUsed').notNull().default('cosine'),
+    threshold: decimal('threshold', { precision: 3, scale: 2 }).notNull().default('0.70'),
+    embeddingModel: embeddingModelEnum('embeddingModel').notNull(),
     userId: uuid('userId'),
     sessionId: text('sessionId'),
     userAgent: text('userAgent'),
     ipAddress: text('ipAddress'),
     createdAt: timestamp('createdAt').defaultNow().notNull(),
   },
-  table => ({
+  (table) => ({
     userIdIdx: index('idx_vector_search_queries_user_id').on(table.userId),
     sessionIdIdx: index('idx_vector_search_queries_session_id').on(
       table.sessionId,
@@ -139,6 +142,9 @@ export const vector_search_queries = pgTable(
     ),
     searchTimeIdx: index('idx_vector_search_queries_search_time').on(
       table.searchTime,
+    ),
+    embeddingModelIdx: index('idx_vector_search_queries_model').on(
+      table.embeddingModel,
     ),
   }),
 );
@@ -155,17 +161,18 @@ export const embedding_cache = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     contentHash: text('contentHash').notNull().unique(),
     content: text('content').notNull(),
-    embedding: vector('embedding', { dimensions: 1536 }).notNull(),
+    vectorIndex: decimal('vectorIndex', { precision: 10, scale: 0 }).notNull().default('0'), // Index in external vector DB
     model: embeddingModelEnum('model').notNull(),
     language: languageEnum('language').notNull(),
-    tokens: sql<number>('tokens').default(0),
-    cost: sql<number>('cost').default(0),
-    hitCount: sql<number>('hitCount').default(0),
+    dimensions: decimal('dimensions', { precision: 10, scale: 0 }).notNull().default('1536'),
+    tokens: decimal('tokens', { precision: 10, scale: 0 }).notNull().default('0'),
+    cost: decimal('cost', { precision: 5, scale: 4 }).notNull().default('0.0000'),
+    hitCount: decimal('hitCount', { precision: 10, scale: 0 }).notNull().default('0'),
     lastAccessedAt: timestamp('lastAccessedAt').defaultNow().notNull(),
     createdAt: timestamp('createdAt').defaultNow().notNull(),
     expiresAt: timestamp('expiresAt'), // TTL for cache entries
   },
-  table => ({
+  (table) => ({
     contentHashIdx: index('idx_embedding_cache_content_hash').on(
       table.contentHash,
     ),
@@ -176,6 +183,10 @@ export const embedding_cache = pgTable(
       table.lastAccessedAt,
     ),
     expiresAtIdx: index('idx_embedding_cache_expires_at').on(table.expiresAt),
+    modelLanguageIdx: index('idx_embedding_cache_model_language').on(
+      table.model,
+      table.language,
+    ),
   }),
 );
 
@@ -194,18 +205,21 @@ export const vector_index_configs = pgTable(
     tableName: text('tableName').notNull(),
     columnName: text('columnName').notNull(),
     metric: text('metric').notNull(), // 'cosine', 'l2', 'inner_product'
-    dimensions: sql<number>('dimensions').notNull(),
-    isActive: sql<boolean>('isActive').default(true),
+    dimensions: decimal('dimensions', { precision: 10, scale: 0 }).notNull().default('1536'),
+    isActive: boolean('isActive').notNull().default(true),
     configuration: jsonb('configuration'), // Index-specific parameters
-    sizeEstimate: sql<number>('sizeEstimate'), // in MB
+    sizeEstimate: decimal('sizeEstimate', { precision: 10, scale: 2 }).notNull().default('0.00'), // in MB
     performance: jsonb('performance'), // Performance metrics
+    lastOptimizedAt: timestamp('lastOptimizedAt'),
     createdAt: timestamp('createdAt').defaultNow().notNull(),
     updatedAt: timestamp('updatedAt').defaultNow().notNull(),
   },
-  table => ({
+  (table) => ({
     indexNameIdx: index('idx_vector_index_configs_name').on(table.indexName),
     tableNameIdx: index('idx_vector_index_configs_table').on(table.tableName),
     isActiveIdx: index('idx_vector_index_configs_active').on(table.isActive),
+    indexTypeIdx: index('idx_vector_index_configs_type').on(table.indexType),
+    lastOptimizedAtIdx: index('idx_vector_index_configs_last_optimized').on(table.lastOptimizedAt),
   }),
 );
 
@@ -224,22 +238,30 @@ export const rag_context_windows = pgTable(
     conversationType: text('conversationType').notNull(), // 'analysis', 'search', 'chat'
     contextDocuments: jsonb('contextDocuments').notNull(), // Array of document references
     queryText: text('queryText').notNull(),
-    contextLength: sql<number>('contextLength').notNull(), // in tokens
+    contextLength: decimal('contextLength', { precision: 10, scale: 0 }).notNull().default('0'), // in tokens
     relevanceScores: jsonb('relevanceScores'),
-    responseGenerated: sql<boolean>('responseGenerated').default(false),
-    responseTime: sql<number>('responseTime'), // in milliseconds
-    feedbackScore: sql<number>('feedbackScore'), // User feedback on context quality
+    responseGenerated: boolean('responseGenerated').notNull().default(false),
+    responseTime: decimal('responseTime', { precision: 10, scale: 3 }).notNull().default('0.000'), // in milliseconds
+    feedbackScore: decimal('feedbackScore', { precision: 3, scale: 2 }).default('0.00'), // User feedback on context quality
+    embeddingModel: embeddingModelEnum('embeddingModel').notNull(),
     createdAt: timestamp('createdAt').defaultNow().notNull(),
     updatedAt: timestamp('updatedAt').defaultNow().notNull(),
   },
-  table => ({
+  (table) => ({
     sessionIdIdx: index('idx_rag_context_windows_session').on(table.sessionId),
     userIdIdx: index('idx_rag_context_windows_user_id').on(table.userId),
     conversationTypeIdx: index('idx_rag_context_windows_type').on(
       table.conversationType,
     ),
+    embeddingModelIdx: index('idx_rag_context_windows_model').on(
+      table.embeddingModel,
+    ),
     createdAtIdx: index('idx_rag_context_windows_created_at').on(
       table.createdAt,
+    ),
+    sessionTypeIdx: index('idx_rag_context_windows_session_type').on(
+      table.sessionId,
+      table.conversationType,
     ),
   }),
 );
@@ -285,5 +307,4 @@ export const ragContextWindowsRelations = relations(
   }),
 );
 
-// SQL for import (when we need to use raw SQL)
-export { sql } from 'drizzle-orm';
+// SQL export is handled above

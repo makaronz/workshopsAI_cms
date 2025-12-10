@@ -10,7 +10,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { compress } from 'compression';
+import compression from 'compression';
 import { ZodSchema } from 'zod';
 import { enhancedCachingService } from '../services/enhanced-caching-service';
 import { logger } from '../utils/logger';
@@ -149,7 +149,7 @@ class ApiOptimizationMiddleware {
    * Smart response compression
    */
   smartCompression() {
-    return compress({
+    return compression({
       threshold: this.config.compressionThreshold,
       filter: (req, res) => {
         // Skip compression for already compressed content

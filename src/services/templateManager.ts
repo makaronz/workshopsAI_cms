@@ -153,12 +153,18 @@ export class TemplateManager {
           groupId: createdGroup.id,
           textI18n: questionData.text,
           type: questionData.type,
-          optionsI18n: questionData.options,
+          optionsI18n: questionData.options.map((opt: any) => ({
+            ...opt,
+            label: {
+              pl: opt.label.pl,
+              en: opt.label.en || opt.label.pl,
+            },
+          })),
           validation: {
             required: questionData.required,
             ...questionData.validation,
           },
-          conditionalLogic: questionData.conditionalLogic || undefined,
+          // conditionalLogic: questionData.conditionalLogic || undefined,
           orderIndex: questionData.order.toString(),
           helpTextI18n: questionData.help_text,
         };

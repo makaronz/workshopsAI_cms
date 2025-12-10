@@ -522,11 +522,11 @@ export class LLMAnalysisWorker {
     });
 
     this.queueEvents.on('stalled', job => {
-      console.warn(`Job ${job.id} stalled`);
+      console.warn(`Job ${job.jobId} stalled`);
     });
 
     this.queueEvents.on('progress', (job, progress) => {
-      console.log(`Job ${job.id} progress: ${progress}%`);
+      console.log(`Job ${job.jobId} progress: ${progress}%`);
     });
   }
 

@@ -579,10 +579,10 @@ export class VectorPerformanceMonitor {
       .limit(10);
 
     return recent.map(item => ({
-      query: item.query,
-      timestamp: item.timestamp,
-      duration: item.duration || 0,
-      results: item.results || 0,
+      query: item.query as string,
+      timestamp: item.timestamp as Date,
+      duration: (item.duration || 0) as number,
+      results: (item.results || 0) as number,
     }));
   }
 
@@ -605,9 +605,9 @@ export class VectorPerformanceMonitor {
       .limit(5);
 
     return topQueries.map(item => ({
-      query: item.query,
-      count: item.count,
-      avgTime: item.avgTime || 0,
+      query: item.query as string,
+      count: item.count as number,
+      avgTime: (item.avgTime || 0) as number,
     }));
   }
 

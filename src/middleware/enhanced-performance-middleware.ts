@@ -58,12 +58,13 @@ class EnhancedPerformanceMiddleware {
 
       // Override res.end to measure response time
       const originalEnd = res.end;
+      const self = this;
       res.end = function(this: Response, ...args: any[]) {
         const responseTime = Date.now() - startTime;
 
         // Add performance headers
         res.setHeader('X-Response-Time', responseTime + 'ms');
-        res.setHeader('X-Request-ID', req.headers['x-request-id'] || this.generateRequestId());
+        res.setHeader('X-Request-ID', req.headers['x-request-id'] || self.generateRequestId());
         res.setHeader('X-Endpoint-Metrics', JSON.stringify({
           responseTime,
           endpoint,
@@ -71,7 +72,7 @@ class EnhancedPerformanceMiddleware {
         }));
 
         // Update enhanced metrics
-        this.updateEnhancedMetrics(responseTime, res.statusCode, endpoint);
+        self.updateEnhancedMetrics(responseTime, res.statusCode, endpoint);
 
         // Track endpoint performance in monitoring service
         enhancedPerformanceMonitoringService.trackEndpoint(endpoint, responseTime, res.statusCode);
@@ -91,7 +92,7 @@ class EnhancedPerformanceMiddleware {
         }
 
         return originalEnd.apply(this, args);
-      }.bind(this);
+      };
 
       next();
     };
@@ -415,7 +416,8 @@ class EnhancedPerformanceMiddleware {
       if (cached) {
         res.setHeader('X-Cache-Hit', 'true');
         res.setHeader('X-Cache-Tier', 'L1');
-        return res.json(cached);
+        res.json(cached);
+        return;
       }
     } catch (error) {
       // Don't let cache errors block the request

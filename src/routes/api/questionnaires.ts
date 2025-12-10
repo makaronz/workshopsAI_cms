@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { db } from '../../config/database';
-import { eq, and, desc, asc } from 'drizzle-orm';
+import { eq, and, desc, asc, count, sql } from 'drizzle-orm';
 import {
   questionnaires,
   questionGroups,
@@ -176,47 +176,59 @@ router.get('/', async (req, res) => {
       sortOrder = 'desc',
     } = req.query;
 
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
+    // Type-safe parameter parsing
+    const pageStr = Array.isArray(page) ? page[0] : page;
+    const limitStr = Array.isArray(limit) ? limit[0] : limit;
+    const statusStr = Array.isArray(status) ? status[0] : status;
+    const workshopIdStr = Array.isArray(workshopId) ? workshopId[0] : workshopId;
+
+    const pageNum = parseInt((pageStr || '1').toString(), 10);
+    const limitNum = parseInt((limitStr || '10').toString(), 10);
     const offset = (pageNum - 1) * limitNum;
 
     // Build query conditions
-    const conditions = [];
-    if (status) {
-      conditions.push(eq(questionnaires.status, status as string));
+    const conditions: Array<any> = [];
+    if (statusStr && typeof statusStr === 'string') {
+      // Validate status string against enum values
+      const validStatuses = ['draft', 'review', 'published', 'closed', 'analyzed'];
+      if (validStatuses.includes(statusStr)) {
+        conditions.push(eq(questionnaires.status, statusStr as any));
+      }
     }
-    if (workshopId) {
-      conditions.push(eq(questionnaires.workshopId, workshopId as string));
+    if (workshopIdStr && typeof workshopIdStr === 'string') {
+      if (workshopIdStr !== '') {
+        conditions.push(eq(questionnaires.workshopId, workshopIdStr));
+      }
     }
 
     // Execute query
-    const [questionnairesData, totalCount] = await Promise.all([
+    const [questionnairesData, totalResult] = await Promise.all([
       db.query.questionnaires.findMany({
         where: conditions.length > 0 ? and(...conditions) : undefined,
         with: {
-          creator: {
-            columns: { id: true, name: true, email: true },
-          },
-          groups: {
-            with: {
-              questions: {
-                columns: { id: true },
-              },
+        creator: {
+          columns: { id: true, name: true, email: true },
+        },
+        groups: {
+          with: {
+            questions: {
+              columns: { id: true },
             },
           },
-          _count: {
-            responses: true,
-          },
         },
-        orderBy:
-          sortOrder === 'desc'
-            ? desc(questionnaires[sortBy as keyof typeof questionnaires])
-            : asc(questionnaires[sortBy as keyof typeof questionnaires]),
+      },
+      orderBy: [
+        sortOrder === 'desc'
+          ? desc(questionnaires.createdAt)
+          : asc(questionnaires.createdAt),
+      ],
         limit: limitNum,
         offset,
       }),
-      db.query.questionnaires.count(),
+      db.select({ count: sql<number>`COUNT(*)` }).from(questionnaires),
     ]);
+
+    const totalCount = totalResult[0]?.count || 0;
 
     res.json({
       data: questionnairesData,
@@ -256,10 +268,6 @@ router.get('/:id', async (req, res) => {
             },
           },
           orderBy: asc(questionGroups.orderIndex),
-        },
-        _count: {
-          responses: true,
-          analyses: true,
         },
       },
     });
@@ -302,14 +310,20 @@ router.post('/', async (req, res) => {
     const [questionnaire] = await db
       .insert(questionnaires)
       .values({
-        id: `q_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         workshopId: validatedData.workshopId,
-        title: validatedData.title,
-        description: validatedData.description,
-        instructions: validatedData.instructions,
-        settings: validatedData.settings,
-        createdBy: userId,
+        titleI18n: validatedData.title,
+        instructionsI18n: validatedData.instructions,
         status: 'draft',
+        settings: {
+          anonymous: validatedData.settings?.anonymous ?? false,
+          require_consent: validatedData.settings?.requireConsent ?? true,
+          max_responses: validatedData.settings?.maxResponses ?? null,
+          close_after_workshop: validatedData.settings?.closeAfterWorkshop ?? false,
+          show_all_questions: validatedData.settings?.showAllQuestions ?? true,
+          allow_edit: validatedData.settings?.allowEdit ?? true,
+          question_style: validatedData.settings?.questionStyle ?? 'third_person',
+        },
+        createdBy: userId,
       })
       .returning();
 
@@ -398,7 +412,7 @@ router.post('/:id/analysis', async (req, res) => {
     }
 
     // Queue analysis job
-    const jobId = await llmAnalysisWorker.addJob({
+    const jobId = await llmAnalysisWorker.instance.addJob({
       questionnaireId: validatedData.questionnaireId || id,
       analysisTypes: validatedData.analysisTypes,
       options: validatedData.options,
@@ -563,6 +577,7 @@ router.post('/responses', async (req, res) => {
       .values({
         id: `resp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         questionId: validatedData.questionId,
+        questionnaireId: question.group.questionnaire.id, // Get from question query
         userId,
         enrollmentId: validatedData.enrollmentId,
         answer: validatedData.answer,
@@ -609,15 +624,12 @@ router.post('/responses/consent', async (req, res) => {
     const [consent] = await db
       .insert(consents)
       .values({
-        id: `consent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         userId,
         questionnaireId,
         consentType,
         granted,
         ipAddress: req.ip,
         userAgent: req.get('User-Agent'),
-        consentText: consentText || {},
-        givenAt: new Date(),
       })
       .returning();
 
