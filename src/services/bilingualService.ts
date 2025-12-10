@@ -9,7 +9,7 @@ import {
   validateBilingualText,
   getBilingualText,
 } from '../models/bilingualSchema';
-import i18n from '../i18n';
+import { i18n } from '../i18n';
 
 export class BilingualService {
   /**
@@ -77,7 +77,7 @@ export class BilingualService {
     const errors: string[] = [];
 
     if (required && !this.hasContent(bilingual)) {
-      errors.push(i18n.t('validation.required'));
+      errors.push(i18n.translate('validation.required'));
     }
 
     if (bilingual.pl && bilingual.pl.length > 1000) {

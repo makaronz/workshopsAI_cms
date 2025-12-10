@@ -5,7 +5,7 @@
  */
 
 import OpenAI from 'openai';
-import { AnonymizedContribution, anonymizationService } from './anonymizationService';
+import { AnonymizedContribution, AnonymizationService } from './anonymizationService';
 
 export type LLMProvider = 'openai' | 'anthropic' | 'google';
 export type LLMModel =
@@ -66,6 +66,7 @@ export interface LLMAnalysisMetadata {
 
 export class LLMAnalysisService {
   private openaiClient: OpenAI | null = null;
+  private anonymizationService: AnonymizationService;
 
   constructor() {
     // Initialize OpenAI client if API key is available
@@ -74,6 +75,7 @@ export class LLMAnalysisService {
         apiKey: process.env.OPENAI_API_KEY,
       });
     }
+    this.anonymizationService = new AnonymizationService();
   }
 
   /**
@@ -132,7 +134,7 @@ export class LLMAnalysisService {
     }
 
     // Format anonymized data
-    const formattedData = anonymizationService.formatForLLM(
+    const formattedData = this.anonymizationService.formatForLLM(
       request.anonymizedData,
     );
 

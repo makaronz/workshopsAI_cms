@@ -185,7 +185,7 @@ export class PerformanceMonitoringService extends EventEmitter {
       // Try to get from cache first
       const cached = await optimizedRedisService.get(cacheKey, { json: true });
       if (cached) {
-        return cached;
+        return cached as Array<{ timestamp: Date; value: number }>;
       }
 
       // For this implementation, we'll store recent metrics in Redis

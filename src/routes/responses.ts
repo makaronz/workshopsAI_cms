@@ -732,7 +732,7 @@ router.get(
       // Get responses based on export options
       const exportedData = await responseService.getUserResponses(
         questionnaireId,
-        exportOptions.includePersonalData ? undefined : 0, // Use 0 to anonymize
+        exportOptions.includePersonalData ? req.user?.id : undefined,
       );
 
       let exportData: string;
@@ -871,10 +871,8 @@ router.post(
           {
             questionnaireId,
             userId,
-            aiProcessing: consent.aiProcessing,
-            dataProcessing: consent.dataProcessing,
-            anonymousSharing: consent.anonymousSharing,
-            consentText: consent.consentText,
+            consentType: 'research_analysis',
+            granted: consent.aiProcessing,
           },
           {
             ipAddress: req.ip,
@@ -973,9 +971,9 @@ router.post(
       let submissionResult = { submitted: 0, total: 0 };
       if (status === 'submitted') {
         submissionResult = await responseService.submitQuestionnaireResponses(
-          questionnaireId,
-          parseInt(userId),
-        );
+        questionnaireId,
+        userId,
+      );
       }
 
       // Create audit log
@@ -1059,10 +1057,8 @@ router.post(
         {
           questionnaireId: consentData.questionnaireId,
           userId,
-          aiProcessing: consentData.aiProcessing,
-          dataProcessing: consentData.dataProcessing,
-          anonymousSharing: consentData.anonymousSharing,
-          consentText: consentData.consentText,
+          consentType: 'research_analysis',
+          granted: consentData.aiProcessing,
         },
         {
           ipAddress: req.ip,
@@ -1092,7 +1088,7 @@ router.post(
         data: {
           id: consent.id,
           questionnaireId: consent.questionnaireId,
-          givenAt: consent.givenAt,
+          createdAt: consent.createdAt,
         },
         message: 'Consent recorded successfully',
       });
@@ -1147,7 +1143,7 @@ router.get(
 
       // Check permissions (user can access own responses, admins/moderators can access all)
       const canAccess =
-        response.userId === parseInt(userId || '0') ||
+        response.userId === (userId || '') ||
         req.user?.role === 'admin' ||
         req.user?.role === 'moderator' ||
         req.user?.role === 'sociologist-editor';

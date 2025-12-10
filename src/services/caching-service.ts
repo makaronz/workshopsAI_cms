@@ -45,6 +45,7 @@ export interface CacheStats {
     size: number;
     maxSize: number;
     evictions: number;
+    totalSize: number;
   };
   L2: {
     hitCount: number;
@@ -232,7 +233,7 @@ class LRUCache<T = any> {
 export class CachingService extends EventEmitter {
   private L1Cache: LRUCache;
   private stats: CacheStats = {
-    L1: { hitCount: 0, missCount: 0, hitRate: 0, size: 0, maxSize: 1000, evictions: 0 },
+    L1: { hitCount: 0, missCount: 0, hitRate: 0, size: 0, maxSize: 1000, evictions: 0, totalSize: 0 },
     L2: { hitCount: 0, missCount: 0, hitRate: 0, totalKeys: 0, memoryUsage: 0 },
     L3: { hitCount: 0, missCount: 0, hitRate: 0, queryCount: 0 },
     overall: { totalHits: 0, totalMisses: 0, overallHitRate: 0, totalSize: 0 },
@@ -279,7 +280,7 @@ export class CachingService extends EventEmitter {
 
     // L1: In-memory cache
     if (tier === 'L1' || tier === 'auto') {
-      const l1Result = this.L1Cache.get<T>(this.buildKey(key, options.prefix, 'L1'));
+      const l1Result = this.L1Cache.get(this.buildKey(key, options.prefix, 'L1'));
       if (l1Result !== null) {
         this.stats.L1.hitCount++;
         this.updateStats();

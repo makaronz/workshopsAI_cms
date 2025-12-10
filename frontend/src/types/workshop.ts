@@ -43,7 +43,7 @@ export interface WorkshopSession {
   endTime: string;
   duration?: number; // in minutes
   order: number;
-  location?: string;
+  location?: string | null;
   materials?: WorkshopMaterial[];
   isRequired?: boolean;
   maxParticipants?: number;

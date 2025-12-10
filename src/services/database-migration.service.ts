@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from '../models/postgresql-schema';
-import { RLSHelper } from './postgresql-database';
+import { RLSHelper } from '../config/postgresql-database';
 
 /**
  * Migration Service for MySQL to PostgreSQL with RLS

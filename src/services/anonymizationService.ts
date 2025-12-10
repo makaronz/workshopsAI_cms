@@ -67,7 +67,7 @@ export class AnonymizationService {
         const questionText = question?.questionText || 'Unknown Question';
 
         // Anonymize the answer data
-        const anonymizedAnswerData = this.removePI(answer.answerData);
+        const anonymizedAnswerData = this.removePII(answer.answerData);
 
         return {
           questionId: answer.questionId,

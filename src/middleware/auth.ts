@@ -121,6 +121,32 @@ export const authenticateJWT = async (
 /**
  * Role-based Authorization Middleware
  */
+export const requireRole = (roles: string | string[]) => {
+  const allowedRoles = Array.isArray(roles) ? roles : [roles];
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized',
+        message: 'Authentication required',
+      });
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Forbidden',
+        message: 'Insufficient permissions',
+      });
+    }
+
+    return next();
+  };
+};
+
+/**
+ * Role-based Authorization Middleware
+ */
 export const authorizeRoles = (allowedRoles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {

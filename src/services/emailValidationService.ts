@@ -1,4 +1,5 @@
-import { db, emailLogs, emailBlacklist } from '../models/postgresql-schema';
+import { db } from '../config/postgresql-database';
+import { emailLogs, emailBlacklist } from '../models/postgresql-schema';
 import { eq, sql } from 'drizzle-orm';
 import { emailConfig } from '../config/email';
 
@@ -207,7 +208,7 @@ class EmailValidationService {
           providerReason,
           isActive: true,
           unblockedAt: null,
-          blockedBy,
+          blockedBy: blockedBy?.toString(),
           updatedAt: new Date(),
         })
         .where(eq(emailBlacklist.email, email));
@@ -220,7 +221,7 @@ class EmailValidationService {
         providerReason,
         isActive: true,
         blockedAt: new Date(),
-        blockedBy,
+        blockedBy: blockedBy?.toString(),
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -371,12 +372,12 @@ class EmailValidationService {
       const existingClick = linkClicks.find((click: any) => click.url === url);
 
       if (existingClick) {
-        existingClick.clickedAt = timestamp;
+        existingClick.clickedAt = timestamp.toISOString();
         existingClick.count++;
       } else {
         linkClicks.push({
           url,
-          clickedAt: timestamp,
+          clickedAt: timestamp.toISOString(),
           count: 1,
         });
       }
@@ -387,14 +388,14 @@ class EmailValidationService {
         ipAddress,
         linkClicks,
         clickCount: (metadata.clickCount || 0) + 1,
-        lastClickedAt: timestamp,
+        lastClickedAt: timestamp instanceof Date ? timestamp : new Date(timestamp),
       };
 
       await db
         .update(emailLogs)
         .set({
           status: 'clicked',
-          lastClickedAt: timestamp,
+          lastClickedAt: timestamp instanceof Date ? timestamp : new Date(timestamp),
           metadata: updatedMetadata,
           updatedAt: new Date(),
         })

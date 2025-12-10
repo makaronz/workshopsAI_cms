@@ -1273,7 +1273,7 @@ export class EnhancedLLMAnalysisWorker {
       const state = await job.getState();
       const data = await job.data;
       const opts = job.opts;
-      const progress = job.progress;
+      const progress = typeof job.progress === 'number' ? job.progress : 0;
       const processedOn = job.processedOn;
       const finishedOn = job.finishedOn;
       const failedReason = job.failedReason;

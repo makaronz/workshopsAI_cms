@@ -1,4 +1,4 @@
-import * as pdfParse from 'pdf-parse';
+import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 import { fileTypeFromBuffer } from 'file-type';
 import DOMPurify from 'isomorphic-dompurify';
 import crypto from 'crypto';
@@ -81,7 +81,7 @@ export interface ParsedTemplate {
   };
   sections: ParsedSection[];
   metadata: {
-    total_questions: number;
+    totalQuestions: number;
     total_sections: number;
     created_by: string;
     created_at: string;
@@ -234,7 +234,7 @@ export class PDFTemplateParser {
       },
       sections: sectionsWithQuestions,
       metadata: {
-        total_questions,
+        totalQuestions,
         total_sections: sectionsWithQuestions.length,
         created_by: 'pdf_import',
         created_at: new Date().toISOString(),

@@ -165,27 +165,27 @@ export class ResponseService {
       completionPercentage: number;
     };
   }> {
-    // Get questionnaire with questions
+    // Get questionnaire
     const questionnaire = await db.query.questionnaires.findFirst({
-      where: eq(questionnaires.id, questionnaireId),
-      with: {
-        groups: {
-          with: {
-            questions: {
-              orderBy: (questions, { asc }) => [asc(questions.orderIndex)],
-            },
-          },
-        },
-      },
+      where: and(
+        eq(questionnaires.id, questionnaireId),
+        isNull(questionnaires.deletedAt)
+      ),
     });
 
     if (!questionnaire) {
       throw new Error('Questionnaire not found');
     }
 
-    // Get all questions for response mapping
-    const allQuestions =
-      questionnaire.groups?.flatMap(g => g.questions || []) || [];
+    // Get all questions for response mapping by joining through question groups
+    const allQuestions = await db.query.questions.findMany({
+      where: sql`${questions.groupId} IN (
+        SELECT ${questionGroups.id}
+        FROM ${questionGroups}
+        WHERE ${questionGroups.questionnaireId} = ${questionnaireId}
+      )`,
+      orderBy: (questions, { asc }) => [asc(questions.orderIndex)],
+    });
 
     // Get user responses
     const userResponses = await db.query.responses.findMany({
@@ -198,7 +198,7 @@ export class ResponseService {
         enrollmentId
           ? eq(responses.enrollmentId, enrollmentId)
           : isNull(responses.enrollmentId),
-      ),
+    ),
     });
 
     // Calculate completion status
@@ -213,8 +213,8 @@ export class ResponseService {
         : 0;
 
     return {
-      responses: userResponses,
-      questionnaire,
+      responses: userResponses as unknown as Response[],
+      questionnaire: questionnaire as any,
       completionStatus: {
         totalQuestions,
         answeredQuestions,
@@ -233,7 +233,6 @@ export class ResponseService {
       userId?: string;
       consentType: 'research_analysis' | 'marketing_emails' | 'data_sharing' | 'anonymous_presentation';
       granted: boolean;
-      consentText: { pl: string; en: string };
     },
     metadata?: {
       ipAddress?: string;
@@ -241,15 +240,12 @@ export class ResponseService {
     },
   ): Promise<Consent> {
     const consentData: InsertConsent = {
-      id: uuidv4(),
       questionnaireId: data.questionnaireId,
       userId: data.userId,
       consentType: data.consentType,
       granted: data.granted,
-      consentText: data.consentText,
       ipAddress: metadata?.ipAddress,
       userAgent: metadata?.userAgent,
-      givenAt: new Date(),
     };
 
     const [consent] = await db.insert(consents).values(consentData).returning();
@@ -357,9 +353,6 @@ export class ResponseService {
   /**
    * Get response statistics for questionnaire
    */
-  /**
-   * Get response statistics for questionnaire
-   */
   async getResponseStatistics(questionnaireId: string): Promise<{
     totalResponses: number;
     submittedResponses: number;
@@ -375,19 +368,34 @@ export class ResponseService {
       skipRate: number;
     }>;
   }> {
-    // Get basic statistics
-    const [basicStats] = await db
-      .select({
-        totalResponses: sql<number>`COUNT(r.id)`,
-        submittedResponses: sql<number>`COUNT(CASE WHEN r.status = 'submitted' THEN 1 END)`,
-        draftResponses: sql<number>`COUNT(CASE WHEN r.status = 'draft' THEN 1 END)`,
-        uniqueParticipants: sql<number>`COUNT(DISTINCT r.userId)`,
-        averageCompletionTime: sql<number>`AVG(CAST(r.metadata->>'time_spent_ms' AS INTEGER))`,
-      })
-      .from(sql`responses r`)
-      .innerJoin(sql`questions q`, sql`r.questionId = q.id`)
-      .innerJoin(sql`questionGroups qg`, sql`q.groupId = qg.id`)
-      .where(eq(sql`qg.questionnaireId`, questionnaireId));
+    // Get all questions for the questionnaire first
+    const questionnaireQuestions = await db.query.questions.findMany({
+      where: sql`${questions.groupId} IN (
+        SELECT ${questionGroups.id}
+        FROM ${questionGroups}
+        WHERE ${questionGroups.questionnaireId} = ${questionnaireId}
+      )`,
+      orderBy: (questions, { asc }) => [asc(questions.orderIndex)],
+    });
+
+    // Get basic statistics using simpler aggregation
+    const allResponses = await db.query.responses.findMany({
+      where: and(
+        inArray(
+          responses.questionId,
+          questionnaireQuestions.map(q => q.id),
+        ),
+        eq(responses.status, 'submitted'),
+      ),
+    });
+
+    const totalResponses = allResponses.length;
+    const submittedResponses = allResponses.filter(r => r.status === 'submitted').length;
+    const draftResponses = totalResponses - submittedResponses;
+    const uniqueParticipants = new Set(allResponses.map(r => r.userId)).size;
+    const averageCompletionTime = allResponses.length > 0
+      ? allResponses.reduce((sum, r) => sum + (r.metadata as any)?.time_spent_ms || 0, 0) / allResponses.length
+      : 0;
 
     // Get question-level statistics
     const questionStats = await db
@@ -454,9 +462,14 @@ export class ResponseService {
     );
 
     return {
-      ...basicStats,
+      totalResponses,
+      submittedResponses,
+      draftResponses,
+      uniqueParticipants,
+      averageCompletionTime,
       questionStats: questionStatsWithSkipRates.map(stat => ({
         ...stat,
+        questionText: stat.questionText as { pl: string; en: string },
         averageResponseTime: typeof stat.averageResponseTime === 'number' ? stat.averageResponseTime : 0,
       })),
     };
@@ -471,6 +484,16 @@ export class ResponseService {
   ): Promise<string> {
     const questionnaireResponses = await this.getUserResponses(questionnaireId);
 
+    // Get all questions for the questionnaire
+    const allQuestions = await db.query.questions.findMany({
+      where: sql`${questions.groupId} IN (
+        SELECT ${questionGroups.id}
+        FROM ${questionGroups}
+        WHERE ${questionGroups.questionnaireId} = ${questionnaireId}
+      )`,
+      orderBy: (questions, { asc }) => [asc(questions.orderIndex)],
+    });
+
     // Build CSV header
     let csv =
       'Question ID,Question Text (PL),Question Text (EN),Response Type,Answer';
@@ -483,10 +506,8 @@ export class ResponseService {
 
     // Create question lookup map
     const questionMap = new Map();
-    questionnaireResponses.questionnaire.questionGroups?.forEach(group => {
-      group.questions?.forEach(question => {
-        questionMap.set(question.id, question);
-      });
+    allQuestions.forEach(question => {
+      questionMap.set(question.id, question);
     });
 
     // Add response rows

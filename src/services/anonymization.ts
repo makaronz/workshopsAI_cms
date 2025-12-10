@@ -254,19 +254,20 @@ export class AnonymizationService {
   /**
    * Recursively anonymize objects
    */
-  private anonymizeObject(obj: any, level: AnonymizationLevel): any {
+  private async anonymizeObject(obj: any, level: AnonymizationLevel): Promise<any> {
     if (Array.isArray(obj)) {
-      return obj.map(item => this.anonymizeObject(item, level));
+      const promises = obj.map(item => this.anonymizeObject(item, level));
+      return Promise.all(promises);
     }
 
     if (typeof obj === 'object' && obj !== null) {
       const anonymized: any = {};
       for (const [key, value] of Object.entries(obj)) {
         if (typeof value === 'string') {
-          const result = this.anonymizeText(value, level);
+          const result = await this.anonymizeText(value, level);
           anonymized[key] = result.anonymizedText;
         } else if (typeof value === 'object') {
-          anonymized[key] = this.anonymizeObject(value, level);
+          anonymized[key] = await this.anonymizeObject(value, level);
         } else {
           anonymized[key] = value;
         }
@@ -554,26 +555,28 @@ export class AnonymizationService {
   /**
    * Advanced k-anonymity with semantic analysis
    */
-  public advancedKAnonymity(
+  public async advancedKAnonymity(
     responses: string[],
     k: number = 5,
     semanticThreshold: number = 0.8,
-  ): {
+  ): Promise<{
     compliant: boolean;
     anonymizedResponses: string[];
     groups: Array<{ responses: string[]; count: number; semanticSimilarity: number }>;
     issues: string[];
-  } {
+  }> {
     // First apply standard anonymization
-    let anonymizedResponses = responses.map(r => this.anonymizeText(r));
+    const anonymizationPromises = responses.map(r => this.anonymizeText(r));
+    let anonymizationResults = await Promise.all(anonymizationPromises);
+    let anonymizedResponses = anonymizationResults.map(r => r.anonymizedText);
 
     // Group responses by exact match
     const exactGroups = new Map<string, string[]>();
-    for (const response of anonymizedResponses) {
-      if (!exactGroups.has(response)) {
-        exactGroups.set(response, []);
+    for (const result of anonymizationResults) {
+      if (!exactGroups.has(result.anonymizedText)) {
+        exactGroups.set(result.anonymizedText, []);
       }
-      exactGroups.get(response)!.push(response);
+      exactGroups.get(result.anonymizedText)!.push(result.originalText);
     }
 
     const groups: Array<{ responses: string[]; count: number; semanticSimilarity: number }> = [];

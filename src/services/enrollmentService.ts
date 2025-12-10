@@ -1,5 +1,6 @@
 import { db } from '../config/database';
 import { enrollments, workshops, users } from '../models/postgresql-schema';
+import { pgTable } from 'drizzle-orm/pg-core';
 import { eq, and, desc, asc, gte, lte, inArray } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
 import type {
@@ -12,9 +13,11 @@ export class EnrollmentService {
   // Create enrollment
   static async createEnrollment(userId: string, data: CreateEnrollmentInput) {
     // Check if workshop exists and is published
-    const workshop = await db.query.workshops.findFirst({
-      where: eq(workshops.id, data.workshopId),
-    });
+    const [workshop] = await db
+      .select()
+      .from(workshops)
+      .where(eq(workshops.id, data.workshopId))
+      .limit(1);
 
     if (!workshop) {
       throw new Error('Workshop not found');
@@ -25,12 +28,14 @@ export class EnrollmentService {
     }
 
     // Check if user is already enrolled
-    const existingEnrollment = await db.query.enrollments.findFirst({
-      where: and(
+    const [existingEnrollment] = await db
+      .select()
+      .from(enrollments)
+      .where(and(
         eq(enrollments.workshopId, data.workshopId),
         eq(enrollments.participantId, userId),
-      ),
-    });
+      ))
+      .limit(1);
 
     if (existingEnrollment) {
       throw new Error('User is already enrolled in this workshop');
@@ -113,9 +118,20 @@ export class EnrollmentService {
     }
 
     // Update attendance tracking - only facilitators or admins can update attendance
-    const updateData = { ...data };
-    if (data.attendance && !isFacilitator && !isAdmin) {
-      delete updateData.attendance;
+    const updateData: any = { ...data };
+    if (data.attendance && (isFacilitator || isAdmin)) {
+      // Filter out attendance records without sessionId and ensure proper type
+      const validAttendance = data.attendance
+        .filter((att): att is typeof att & { sessionId: string } => !!att.sessionId) // Type guard
+        .map(att => ({
+          sessionId: att.sessionId,
+          attended: att.attended ?? false,
+          notes: att.notes,
+        }));
+
+      if (validAttendance.length > 0) {
+        updateData.attendance = validAttendance;
+      }
     }
 
     const [updatedEnrollment] = await db
@@ -136,28 +152,11 @@ export class EnrollmentService {
 
   // Get enrollment by ID
   static async getEnrollmentById(id: string) {
-    const enrollment = await db.query.enrollments.findFirst({
-      where: eq(enrollments.id, id),
-      with: {
-        workshop: {
-          with: {
-            creator: {
-              columns: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-        participant: {
-          columns: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
-    });
+    const [enrollment] = await db
+      .select()
+      .from(enrollments)
+      .where(eq(enrollments.id, id))
+      .limit(1);
 
     return enrollment;
   }
@@ -224,7 +223,7 @@ export class EnrollmentService {
       .from(enrollments)
       .where(whereClause);
 
-    const total = totalCountResult.count.count;
+    const total = Number(totalCountResult.count.count);
 
     // Get enrollments
     const enrollmentList = await db.query.enrollments.findMany({
@@ -236,7 +235,7 @@ export class EnrollmentService {
         workshop: {
           columns: {
             id: true,
-            title: true,
+            titleI18n: true,
             slug: true,
             startDate: true,
             endDate: true,
@@ -417,7 +416,7 @@ export class EnrollmentService {
       .where(eq(enrollments.workshopId, workshopId))
       .groupBy(enrollments.status);
 
-    const result = {
+    const result: Record<string, number> = {
       total: 0,
       pending: 0,
       confirmed: 0,
@@ -427,8 +426,9 @@ export class EnrollmentService {
     };
 
     stats.forEach(stat => {
-      result.total += stat.count.count;
-      result[stat.status] = stat.count.count;
+      const count = Number(stat.count.count);
+      result.total += count;
+      result[stat.status] = count;
     });
 
     return result;
@@ -436,7 +436,7 @@ export class EnrollmentService {
 
   // Get participant enrollment history
   static async getParticipantEnrollmentHistory(userId: string, limit = 20) {
-    const enrollments = await db.query.enrollments.findMany({
+    const enrollmentHistory = await db.query.enrollments.findMany({
       where: eq(enrollments.participantId, userId),
       orderBy: [desc(enrollments.enrollmentDate)],
       limit,
@@ -444,7 +444,7 @@ export class EnrollmentService {
         workshop: {
           columns: {
             id: true,
-            title: true,
+            titleI18n: true,
             slug: true,
             startDate: true,
             endDate: true,
@@ -455,7 +455,7 @@ export class EnrollmentService {
       },
     });
 
-    return enrollments;
+    return enrollmentHistory;
   }
 
   // Helper method to check if user is facilitator of a workshop
