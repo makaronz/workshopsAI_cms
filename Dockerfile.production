@@ -12,6 +12,10 @@ RUN npm run build
 # Stage 2: Build backend
 FROM node:20-alpine AS backend-builder
 WORKDIR /app
+
+# Install build dependencies for native modules
+RUN apk add --no-cache python3 make g++
+
 COPY package*.json ./
 RUN npm ci --omit=dev || npm install
 COPY tsconfig.json ./
@@ -21,6 +25,9 @@ RUN npx tsc
 # Stage 3: Production image
 FROM node:20-alpine
 WORKDIR /app
+
+# Install Python and build dependencies for native modules in production
+RUN apk add --no-cache python3 make g++
 
 # Install production dependencies only
 COPY package*.json ./
@@ -41,6 +48,9 @@ COPY --from=frontend-builder /app/frontend/dist ./public
 # Copy migrations and config
 COPY migrations/ ./migrations/
 COPY drizzle.config.ts ./
+
+# Remove build dependencies after npm install to reduce image size
+RUN apk del python3 make g++
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
