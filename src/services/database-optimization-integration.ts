@@ -155,27 +155,44 @@ export class DatabaseOptimizationIntegration extends EventEmitter {
     }
 
     try {
-      // Initialize indexes
-      await enhancedDatabaseIndexes.createAllIndexes();
+      // Initialize indexes (with graceful error handling)
+      try {
+        await enhancedDatabaseIndexes.createAllIndexes();
+      } catch (error) {
+        console.warn('⚠️  Failed to create database indexes (continuing without optimization):', error.message);
+        // Continue without indexes - app should still work
+      }
 
       // Start monitoring
       if (this.config.monitoring.enabled) {
-        databasePerformanceMonitor.startMonitoring();
+        try {
+          databasePerformanceMonitor.startMonitoring();
+        } catch (error) {
+          console.warn('⚠️  Failed to start database monitoring:', error.message);
+        }
       }
 
       // Start auto-optimization
       if (this.config.autoOptimization.enabled) {
-        this.startAutoOptimization();
+        try {
+          this.startAutoOptimization();
+        } catch (error) {
+          console.warn('⚠️  Failed to start auto-optimization:', error.message);
+        }
       }
 
       // Set up event listeners
-      this.setupEventListeners();
+      try {
+        this.setupEventListeners();
+      } catch (error) {
+        console.warn('⚠️  Failed to setup event listeners:', error.message);
+      }
 
       this.isInitialized = true;
-      console.log('Database Optimization Integration initialized successfully');
+      console.log('✅ Database Optimization Integration initialized (with graceful degradation)');
 
     } catch (error) {
-      console.error('Failed to initialize Database Optimization Integration:', error);
+      console.error('❌ Failed to initialize Database Optimization Integration:', error);
       throw error;
     }
   }

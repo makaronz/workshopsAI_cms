@@ -286,22 +286,23 @@ app.use(
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully');
   server.close(async () => {
-    console.log('🔄 Shutting down optimization services...');
+    console.log('🔄 Shutting down services...');
 
-    // Shutdown performance optimization services
-    // Performance system shutdown is handled by setupGracefulShutdown() in performance-integration.ts
+    try {
+      if (dbOptimization) {
+        await dbOptimization.shutdown();
+      }
+      if (streamingWorker) {
+        await streamingWorker.shutdown();
+      }
 
-    if (dbOptimization) {
-      await dbOptimization.shutdown();
+      await llmAnalysisWorker.shutdown();
+      await redisService.disconnect();
+      await closeDatabaseConnection();
+      console.log('✅ All services terminated gracefully');
+    } catch (error) {
+      console.error('❌ Error during shutdown:', error.message);
     }
-    if (streamingWorker) {
-      await streamingWorker.shutdown();
-    }
-
-    await llmAnalysisWorker.shutdown();
-    await redisService.disconnect();
-    await closeDatabaseConnection();
-    console.log('✅ All services terminated gracefully');
     process.exit(0);
   });
 });
@@ -309,22 +310,23 @@ process.on('SIGTERM', async () => {
 process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down gracefully');
   server.close(async () => {
-    console.log('🔄 Shutting down optimization services...');
+    console.log('🔄 Shutting down services...');
 
-    // Shutdown performance optimization services  
-    // Performance system shutdown is handled by setupGracefulShutdown() in performance-integration.ts
+    try {
+      if (dbOptimization) {
+        await dbOptimization.shutdown();
+      }
+      if (streamingWorker) {
+        await streamingWorker.shutdown();
+      }
 
-    if (dbOptimization) {
-      await dbOptimization.shutdown();
+      await llmAnalysisWorker.shutdown();
+      await redisService.disconnect();
+      await closeDatabaseConnection();
+      console.log('✅ All services terminated gracefully');
+    } catch (error) {
+      console.error('❌ Error during shutdown:', error.message);
     }
-    if (streamingWorker) {
-      await streamingWorker.shutdown();
-    }
-
-    await llmAnalysisWorker.shutdown();
-    await redisService.disconnect();
-    await closeDatabaseConnection();
-    console.log('✅ All services terminated gracefully');
     process.exit(0);
   });
 });
@@ -335,36 +337,72 @@ const startServer = async () => {
     // Initialize Performance Optimization Services
     console.log('⚡ Initializing Performance Optimization System...');
     performanceSystem = await initializePerformanceSystem(app, server);
+    console.log('✅ Performance Optimization System initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize Performance System:', error.message);
+    performanceSystem = null;
+  }
 
+  try {
     console.log('🗄️ Initializing Database Optimization System...');
     dbOptimization = new DatabaseOptimizationIntegration();
     await dbOptimization.initialize();
+    console.log('✅ Database Optimization System initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize Database Optimization:', error.message);
+    dbOptimization = null;
+  }
 
+  try {
     console.log('🚀 Initializing Streaming LLM Worker...');
     streamingWorker = new StreamingLLMAnalysisWorker();
     await streamingWorker.initialize();
+    console.log('✅ Streaming LLM Worker initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize Streaming LLM Worker:', error.message);
+    streamingWorker = null;
+  }
 
+  try {
     // Initialize WebSocket service
     console.log('🔌 Initializing WebSocket service...');
     webSocketService = new WebSocketService(server);
+    console.log('✅ WebSocket service initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize WebSocket service:', error.message);
+    webSocketService = null;
+  }
 
+  try {
     // Initialize Preview service
     console.log('👁️ Initializing Preview service...');
-    previewService = new PreviewService(webSocketService);
-
-    // Initialize preview routes
-    console.log('🛣️ Initializing Preview routes...');
-    const previewRouter = initializePreviewRoutes(previewService);
-    app.use('/api/v1/preview', previewRouter);
-
-    // Performance monitoring routes are already initialized in initializePerformanceSystem()
-    console.log('📊 Performance monitoring routes initialized');
-
-    // Only listen if not running in a function/imported context (optional logic check)
-    // But for simplicity, we just check if main
+    if (webSocketService) {
+      previewService = new PreviewService(webSocketService);
+      console.log('✅ Preview service initialized');
+    } else {
+      console.log('⚠️  Preview service skipped (WebSocket not available)');
+      previewService = null;
+    }
   } catch (error) {
-    console.error('Failed to initialize services:', error);
+    console.error('❌ Failed to initialize Preview service:', error.message);
+    previewService = null;
   }
+
+  try {
+    // Initialize preview routes
+    if (previewService) {
+      console.log('🛣️ Initializing Preview routes...');
+      const previewRouter = initializePreviewRoutes(previewService);
+      app.use('/api/v1/preview', previewRouter);
+      console.log('✅ Preview routes initialized');
+    } else {
+      console.log('⚠️  Preview routes skipped (Preview service not available)');
+    }
+  } catch (error) {
+    console.error('❌ Failed to initialize Preview routes:', error.message);
+  }
+
+  console.log('📊 Performance monitoring routes initialized');
 };
 
 if (require.main === module) {
