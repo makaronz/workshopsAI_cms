@@ -105,6 +105,7 @@ export class LLMAnalysisWorker {
       port: config.redis.port,
       password: config.redis.password,
       db: config.redis.db || 0,
+      maxRetriesPerRequest: null,
       // Remove unsupported options for Redis v4
     });
 
