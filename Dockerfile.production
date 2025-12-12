@@ -24,7 +24,15 @@ WORKDIR /app
 
 # Install production dependencies only
 COPY package*.json ./
-RUN npm ci --omit=dev --silent || npm install --omit=dev --silent && npm cache clean --force
+
+# Poprawiona komenda instalacji z lepszym error handling i flagami
+RUN npm ci --omit=dev --silent --legacy-peer-deps || \
+    (echo "npm ci failed, trying npm install..." && \
+     npm install --omit=dev --silent --legacy-peer-deps && \
+     npm cache clean --force) || \
+    (echo "npm install failed, trying with --force..." && \
+     npm install --omit=dev --silent --legacy-peer-deps --force && \
+     npm cache clean --force)
 
 # Copy built files from builders
 COPY --from=backend-builder /app/dist ./dist
