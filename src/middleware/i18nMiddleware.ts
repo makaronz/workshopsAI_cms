@@ -16,23 +16,24 @@ export interface I18nRequest extends Request {
  * Language detection and setting middleware
  */
 export const i18nMiddleware = (
-  req: I18nRequest,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
+  const i18nReq = req as I18nRequest;
   // Detect language from various sources (in order of priority):
 
   // 1. URL parameter (/api/v1/workshops?lang=en)
-  const urlLang = req.query.lang as string;
+  const urlLang = i18nReq.query.lang as string;
 
   // 2. Accept-Language header
-  const acceptLanguage = req.headers['accept-language'];
+  const acceptLanguage = i18nReq.headers['accept-language'];
   const headerLang = acceptLanguage
     ? acceptLanguage.split(',')[0].split('-')[0]
     : null;
 
   // 3. Cookie
-  const cookieLang = req.cookies?.['workshopsai-language'];
+  const cookieLang = (i18nReq as any).cookies?.['workshopsai-language'];
 
   // 4. Default to Polish for Polish market
   const detectedLanguage = urlLang || cookieLang || headerLang || 'pl';
@@ -43,11 +44,11 @@ export const i18nMiddleware = (
     : 'pl';
 
   // Set request language
-  req.language = language;
-  req.locale = language === 'pl' ? 'pl-PL' : 'en-US';
+  i18nReq.language = language;
+  i18nReq.locale = language === 'pl' ? 'pl-PL' : 'en-US';
 
   // Attach translation function to request
-  req.t = (key: string, params?: Record<string, any>) => {
+  i18nReq.t = (key: string, params?: Record<string, any>) => {
     return i18n.translate(key as any, params);
   };
 
@@ -55,7 +56,7 @@ export const i18nMiddleware = (
   i18n.setLanguage(language);
 
   // Set language cookie for future requests
-  if (req.cookies?.['workshopsai-language'] !== language) {
+  if ((i18nReq as any).cookies?.['workshopsai-language'] !== language) {
     res.cookie('workshopsai-language', language, {
       maxAge: 365 * 24 * 60 * 60 * 1000, // 1 year
       httpOnly: false,
@@ -74,16 +75,17 @@ export const i18nMiddleware = (
  * Middleware for API responses with bilingual content
  */
 export const bilingualResponseMiddleware = (
-  req: I18nRequest,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
+  const i18nReq = req as I18nRequest;
   const originalJson = res.json;
 
   res.json = function (data: any) {
     // If response contains bilingual content, localize it for current language
     if (data && typeof data === 'object') {
-      const localizedData = localizeObject(data, req.language);
+      const localizedData = localizeObject(data, i18nReq.language);
       return originalJson.call(this, localizedData);
     }
 
@@ -136,12 +138,13 @@ function localizeObject(obj: any, language: 'pl' | 'en'): any {
  * Middleware for handling bilingual form submissions
  */
 export const bilingualFormMiddleware = (
-  req: I18nRequest,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  if (req.body && typeof req.body === 'object') {
-    req.body = processBilingualFormData(req.body, req.language);
+  const i18nReq = req as I18nRequest;
+  if (i18nReq.body && typeof i18nReq.body === 'object') {
+    i18nReq.body = processBilingualFormData(i18nReq.body, i18nReq.language);
   }
 
   next();
@@ -180,11 +183,12 @@ function processBilingualFormData(
  * Language validation middleware for API endpoints
  */
 export const languageValidationMiddleware = (
-  req: I18nRequest,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  const language = req.query.lang as string;
+  const i18nReq = req as I18nRequest;
+  const language = i18nReq.query.lang as string;
 
   if (language && !['pl', 'en'].includes(language)) {
     return res.status(400).json({
@@ -201,11 +205,12 @@ export const languageValidationMiddleware = (
  * Content negotiation middleware for API responses
  */
 export const contentNegotiationMiddleware = (
-  req: I18nRequest,
+  req: Request,
   res: Response,
   next: NextFunction,
 ) => {
-  const acceptLanguage = req.headers['accept-language'];
+  const i18nReq = req as I18nRequest;
+  const acceptLanguage = i18nReq.headers['accept-language'];
 
   if (acceptLanguage) {
     // Parse Accept-Language header
@@ -227,8 +232,8 @@ export const contentNegotiationMiddleware = (
     );
 
     if (bestLanguage) {
-      req.language = bestLanguage.code as 'pl' | 'en';
-      req.locale = bestLanguage.code === 'pl' ? 'pl-PL' : 'en-US';
+      i18nReq.language = bestLanguage.code as 'pl' | 'en';
+      i18nReq.locale = bestLanguage.code === 'pl' ? 'pl-PL' : 'en-US';
     }
   }
 
@@ -241,8 +246,9 @@ export const contentNegotiationMiddleware = (
 export const bilingualCacheMiddleware = (ttl: number = 300) => {
   const cache = new Map();
 
-  return (req: I18nRequest, res: Response, next: NextFunction) => {
-    const cacheKey = `${req.path}:${req.language}:${JSON.stringify(req.query)}`;
+  return (req: Request, res: Response, next: NextFunction) => {
+    const i18nReq = req as I18nRequest;
+    const cacheKey = `${i18nReq.path}:${i18nReq.language}:${JSON.stringify(i18nReq.query)}`;
     const cached = cache.get(cacheKey);
 
     if (cached && Date.now() - cached.timestamp < ttl * 1000) {

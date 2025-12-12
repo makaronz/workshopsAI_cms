@@ -1,4 +1,4 @@
-import pdfParse from 'pdf-parse/lib/pdf-parse.js';
+import pdfParse from 'pdf-parse';
 import { fileTypeFromBuffer } from 'file-type';
 import DOMPurify from 'isomorphic-dompurify';
 import crypto from 'crypto';
@@ -151,6 +151,7 @@ export class PDFTemplateParser {
     }
 
     // Parse PDF content
+    // @ts-ignore - pdfParse ma problemy z typami
     const pdfData = await pdfParse(pdfBuffer);
     const text = DOMPurify.sanitize(pdfData.text);
 
