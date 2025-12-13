@@ -11,14 +11,40 @@ if (isProduction && !REDIS_URL) {
   console.warn('⚠️  REDIS_URL not set in production. Redis features will be disabled.');
 }
 
+// Helper function to validate and parse REDIS_URL
+// Returns config object for ioredis or null if Redis should not be used
+function parseRedisConfig(redisUrl: string | undefined): { url?: string; path?: string; config?: any } | null {
+  if (!redisUrl) {
+    return null;
+  }
+
+  // Check if it's a Unix socket path (starts with /)
+  if (redisUrl.startsWith('/')) {
+    // Unix socket path - use path option
+    return { path: redisUrl };
+  }
+
+  // Check if it's a valid Redis URL (starts with redis:// or rediss://)
+  if (redisUrl.startsWith('redis://') || redisUrl.startsWith('rediss://')) {
+    // Valid TCP URL - use directly
+    return { url: redisUrl };
+  }
+
+  // Invalid format - log warning and return null
+  console.warn(`⚠️  Invalid REDIS_URL format: ${redisUrl}. Expected redis:// URL or Unix socket path.`);
+  return null;
+}
+
 // Redis client singleton
 class RedisClient {
   private static instance: Redis;
 
   static getInstance(): Redis {
     if (!RedisClient.instance) {
-      // If REDIS_URL is not set in production, create a dummy client that won't connect
-      if (!REDIS_URL) {
+      const redisConfig = parseRedisConfig(REDIS_URL);
+
+      // If REDIS_URL is not set or invalid, create a dummy client that won't connect
+      if (!redisConfig) {
         // Return a disconnected client that won't try to connect
         RedisClient.instance = new Redis({
           host: 'localhost',
@@ -33,7 +59,8 @@ class RedisClient {
         return RedisClient.instance;
       }
 
-      RedisClient.instance = new Redis(REDIS_URL, {
+      // Build ioredis config based on parsed REDIS_URL
+      const ioredisConfig: any = {
         enableReadyCheck: false,
         maxRetriesPerRequest: null,
         lazyConnect: true,
@@ -52,7 +79,22 @@ class RedisClient {
           }
           return false;
         },
-      });
+      };
+
+      // Use URL or path based on parsed config
+      if (redisConfig.url) {
+        // TCP connection via URL
+        RedisClient.instance = new Redis(redisConfig.url, ioredisConfig);
+      } else if (redisConfig.path) {
+        // Unix socket connection
+        RedisClient.instance = new Redis({
+          ...ioredisConfig,
+          path: redisConfig.path,
+        });
+      } else {
+        // Fallback (should not happen, but just in case)
+        RedisClient.instance = new Redis(ioredisConfig);
+      }
 
       // Prevent unhandled error events from crashing the app
       let lastErrorLogTime = 0;

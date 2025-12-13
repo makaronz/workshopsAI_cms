@@ -646,16 +646,37 @@ export function getLLMAnalysisWorker(): LLMAnalysisWorker {
     const isProduction = process.env.NODE_ENV === 'production';
     const redisUrl = process.env.REDIS_URL;
 
+    // Helper to parse Redis config
+    const parseRedisConfig = (url: string | undefined): { host: string; port: number; password?: string; db?: number } | null => {
+      if (!url) return null;
+      if (url.startsWith('/')) {
+        // Unix socket path - not supported in this worker (needs path instead of host/port)
+        console.warn('⚠️  Unix socket Redis paths not supported in LLM worker. Use TCP URL format.');
+        return null;
+      }
+      if (url.startsWith('redis://') || url.startsWith('rediss://')) {
+        // Parse TCP URL (format: redis://[:password@]host[:port][/db])
+        try {
+          const parsedUrl = new URL(url);
+          return {
+            host: parsedUrl.hostname,
+            port: parseInt(parsedUrl.port || '6379'),
+            password: parsedUrl.password || undefined,
+            db: parsedUrl.pathname ? parseInt(parsedUrl.pathname.slice(1)) : 0,
+          };
+        } catch (error) {
+          console.warn(`⚠️  Invalid REDIS_URL format: ${url}`);
+          return null;
+        }
+      }
+      return null;
+    };
+
+    const parsedConfig = parseRedisConfig(redisUrl);
     let redisConfig: { host: string; port: number; password?: string; db?: number };
-    if (redisUrl) {
-      // Parse REDIS_URL (format: redis://[:password@]host[:port][/db])
-      const url = new URL(redisUrl);
-      redisConfig = {
-        host: url.hostname,
-        port: parseInt(url.port || '6379'),
-        password: url.password || undefined,
-        db: url.pathname ? parseInt(url.pathname.slice(1)) : 0,
-      };
+    
+    if (parsedConfig) {
+      redisConfig = parsedConfig;
     } else if (process.env.REDIS_HOST || !isProduction) {
       // Fallback to individual variables (development only)
       redisConfig = {

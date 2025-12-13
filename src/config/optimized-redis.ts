@@ -53,24 +53,49 @@ export class OptimizedRedisService {
     const isProduction = process.env.NODE_ENV === 'production';
     const redisUrl = process.env.REDIS_URL;
 
-    if (redisUrl) {
-      // Use REDIS_URL if available (Railway standard)
-      this.client = new Redis(redisUrl, {
-        maxRetriesPerRequest: 3,
-        enableOfflineQueue: false, // Disable for better performance
-        connectTimeout: 10000,
-        commandTimeout: 5000,
-        lazyConnect: true,
-        keepAlive: 30000,
-        // Enable clustering for better performance if multiple Redis instances
-        enableReadyCheck: true,
-        // Connection pool optimization
-        connectionName: 'workshopsai-cms',
-        keyPrefix: 'workshopsai:',
-        // Pipeline optimization
-        enableAutoPipelining: true,
-        autoPipeliningIgnoredCommands: ['subscribe', 'unsubscribe', 'psubscribe', 'punsubscribe'],
-      });
+    // Helper to parse Redis config
+    const parseRedisConfig = (url: string | undefined): string | { path: string } | null => {
+      if (!url) return null;
+      if (url.startsWith('/')) {
+        // Unix socket path
+        return { path: url };
+      }
+      if (url.startsWith('redis://') || url.startsWith('rediss://')) {
+        // TCP URL
+        return url;
+      }
+      return null;
+    };
+
+    const parsedConfig = parseRedisConfig(redisUrl);
+    const baseConfig = {
+      maxRetriesPerRequest: 3,
+      enableOfflineQueue: false, // Disable for better performance
+      connectTimeout: 10000,
+      commandTimeout: 5000,
+      lazyConnect: true,
+      keepAlive: 30000,
+      // Enable clustering for better performance if multiple Redis instances
+      enableReadyCheck: true,
+      // Connection pool optimization
+      connectionName: 'workshopsai-cms',
+      keyPrefix: 'workshopsai:',
+      // Pipeline optimization
+      enableAutoPipelining: true,
+      autoPipeliningIgnoredCommands: ['subscribe', 'unsubscribe', 'psubscribe', 'punsubscribe'],
+    };
+
+    if (parsedConfig) {
+      if (typeof parsedConfig === 'string') {
+        // TCP URL
+        this.client = new Redis(parsedConfig, baseConfig);
+      } else {
+        // Unix socket path
+        this.client = new Redis({
+          ...baseConfig,
+          path: parsedConfig.path,
+        });
+      }
     } else if (process.env.REDIS_HOST || !isProduction) {
       // Fallback to individual variables (development only)
       this.config = {

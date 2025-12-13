@@ -87,34 +87,29 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
     const isProduction = process.env.NODE_ENV === 'production';
     const redisUrl = process.env.REDIS_URL;
     
-    let redisConfig: any;
-    if (redisUrl) {
-      // Use REDIS_URL if available (Railway standard)
-      redisConfig = redisUrl;
-    } else if (process.env.REDIS_HOST || !isProduction) {
-      // Fallback to individual variables (development only)
-      redisConfig = {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD || undefined,
-        db: parseInt(process.env.REDIS_DB || '0'),
-      };
-    } else {
-      // Production without Redis - create dummy client
-      redisConfig = {
-        host: 'localhost',
-        port: 6379,
-        maxRetriesPerRequest: 0,
-        retryStrategy: () => null, // Don't retry
-      };
-    }
+    // Helper to parse Redis config
+    const parseRedisConfig = (url: string | undefined): any => {
+      if (!url) return null;
+      if (url.startsWith('/')) {
+        // Unix socket path
+        return { path: url };
+      }
+      if (url.startsWith('redis://') || url.startsWith('rediss://')) {
+        // TCP URL
+        return url;
+      }
+      return null;
+    };
 
-    this.connection = new Redis(redisConfig, {
-      maxRetriesPerRequest: redisUrl ? null : 0, // Don't retry if not configured
+    const parsedConfig = parseRedisConfig(redisUrl);
+    
+    // Build base config options
+    const baseConfig: any = {
+      maxRetriesPerRequest: parsedConfig ? null : 0, // Don't retry if not configured
       lazyConnect: true,
       enableOfflineQueue: false,
       retryStrategy(times) {
-        if (!redisUrl && isProduction) return null; // Don't retry if not configured
+        if (!parsedConfig && isProduction) return null; // Don't retry if not configured
         const delay = Math.min(times * 1000, 10000); // Max 10s delay
         return delay;
       },
@@ -125,7 +120,40 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
         }
         return false;
       },
-    });
+    };
+
+    // Create Redis connection based on parsed config
+    if (parsedConfig) {
+      if (typeof parsedConfig === 'string') {
+        // TCP URL - pass URL as first arg, config as second
+        this.connection = new Redis(parsedConfig, baseConfig);
+      } else {
+        // Unix socket path - merge path into config
+        this.connection = new Redis({
+          ...baseConfig,
+          path: parsedConfig.path,
+        });
+      }
+    } else if (process.env.REDIS_HOST || !isProduction) {
+      // Fallback to individual variables (development only)
+      this.connection = new Redis({
+        ...baseConfig,
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD || undefined,
+        db: parseInt(process.env.REDIS_DB || '0'),
+      });
+    } else {
+      // Production without Redis - create dummy client
+      this.connection = new Redis({
+        ...baseConfig,
+        host: 'localhost',
+        port: 6379,
+        maxRetriesPerRequest: 0,
+        retryStrategy: () => null, // Don't retry
+      });
+      this.connection.on('error', () => {}); // Suppress errors
+    }
 
     // Handle Redis connection errors gracefully
     this.connection.on('error', (error) => {

@@ -31,18 +31,43 @@ export interface AnalysisJobData {
 const isProduction = process.env.NODE_ENV === 'production';
 const redisUrl = process.env.REDIS_URL;
 
+// Helper to parse Redis config
+const parseRedisConfig = (url: string | undefined): string | { path: string } | null => {
+  if (!url) return null;
+  if (url.startsWith('/')) {
+    // Unix socket path
+    return { path: url };
+  }
+  if (url.startsWith('redis://') || url.startsWith('rediss://')) {
+    // TCP URL
+    return url;
+  }
+  return null;
+};
+
+const parsedConfig = parseRedisConfig(redisUrl);
+const baseConfig = {
+  maxRetriesPerRequest: null as number | null, // Required for BullMQ
+};
+
 let redisConnection: Redis;
-if (redisUrl) {
-  // Use REDIS_URL if available (Railway standard)
-  redisConnection = new Redis(redisUrl, {
-    maxRetriesPerRequest: null, // Required for BullMQ
-  });
+if (parsedConfig) {
+  if (typeof parsedConfig === 'string') {
+    // TCP URL
+    redisConnection = new Redis(parsedConfig, baseConfig);
+  } else {
+    // Unix socket path
+    redisConnection = new Redis({
+      ...baseConfig,
+      path: parsedConfig.path,
+    });
+  }
 } else if (process.env.REDIS_HOST || !isProduction) {
   // Fallback to individual variables (development only)
   redisConnection = new Redis({
+    ...baseConfig,
     host: process.env.REDIS_HOST || 'localhost',
     port: parseInt(process.env.REDIS_PORT || '6379'),
-    maxRetriesPerRequest: null, // Required for BullMQ
   });
 } else {
   // Production without Redis - create dummy client that won't connect

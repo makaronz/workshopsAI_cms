@@ -151,19 +151,44 @@ export class EnhancedLLMAnalysisWorker {
     const isProduction = process.env.NODE_ENV === 'production';
     const redisUrl = process.env.REDIS_URL;
 
-    if (redisUrl) {
-      // Use REDIS_URL if available (Railway standard)
-      this.connection = new Redis(redisUrl, {
-        maxRetriesPerRequest: null,
-      });
+    // Helper to parse Redis config
+    const parseRedisConfig = (url: string | undefined): string | { path: string } | null => {
+      if (!url) return null;
+      if (url.startsWith('/')) {
+        // Unix socket path
+        return { path: url };
+      }
+      if (url.startsWith('redis://') || url.startsWith('rediss://')) {
+        // TCP URL
+        return url;
+      }
+      return null;
+    };
+
+    const parsedConfig = parseRedisConfig(redisUrl);
+    const baseConfig = {
+      maxRetriesPerRequest: null as number | null,
+    };
+
+    if (parsedConfig) {
+      if (typeof parsedConfig === 'string') {
+        // TCP URL
+        this.connection = new Redis(parsedConfig, baseConfig);
+      } else {
+        // Unix socket path
+        this.connection = new Redis({
+          ...baseConfig,
+          path: parsedConfig.path,
+        });
+      }
     } else if (process.env.REDIS_HOST || !isProduction) {
       // Fallback to individual variables (development only)
       this.connection = new Redis({
+        ...baseConfig,
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT || '6379'),
         password: process.env.REDIS_PASSWORD,
         db: parseInt(process.env.REDIS_DB || '0'),
-        maxRetriesPerRequest: null,
       });
     } else {
       // Production without Redis - create dummy client
