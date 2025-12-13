@@ -1,6 +1,6 @@
 /**
  * Jest Configuration for Deployment Tests
- * Specialized configuration for Railway deployment testing
+ * Specialized configuration for PaaS platform deployment testing
  */
 
 module.exports = {

@@ -83,7 +83,7 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
     this.config = config;
 
     // Initialize Redis connection with connection pooling and retry strategy
-    // Railway uses REDIS_URL, fallback to REDIS_HOST/REDIS_PORT for development
+    // Most PaaS platforms use REDIS_URL, fallback to REDIS_HOST/REDIS_PORT for development
     const isProduction = process.env.NODE_ENV === 'production';
     const redisUrl = process.env.REDIS_URL;
     

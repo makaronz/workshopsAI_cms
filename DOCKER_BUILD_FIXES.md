@@ -1,4 +1,4 @@
-# Docker Build Fixes - Railway Deployment
+# Docker Build Fixes - PaaS Platform Deployment
 
 ## Summary of Issues Fixed
 
@@ -61,9 +61,9 @@ RUN npm ci --omit=dev --silent || npm install --omit=dev --silent && npm cache c
    docker run -p 3010:3010 workshopsai-cms
    ```
 
-2. **Railway Deployment**:
+2. **PaaS Platform Deployment** (DigitalOcean, Render, Fly.io, etc.):
    - The fixes should now resolve the build errors
-   - Railway will use the updated Dockerfile.production
+   - Platforms will use the updated Dockerfile.production
    - Firebase dependencies are now properly synchronized
 
 3. **If Build Still Fails**:
@@ -83,4 +83,4 @@ RUN npm ci --omit=dev --silent || npm install --omit=dev --silent && npm cache c
 - **Build Optimization**: .dockerignore reduces Docker build context
 - **Firebase Integration**: Firebase packages are properly included in the build
 
-The Docker build should now complete successfully on Railway or any other platform.
+The Docker build should now complete successfully on any PaaS platform (DigitalOcean, Render, Fly.io, etc.).

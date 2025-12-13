@@ -4,13 +4,13 @@ import postgres from 'postgres';
 import * as schema from '../models/postgresql-schema';
 
 // PostgreSQL database configuration
-// Railway automatically provides DATABASE_URL - use it if available
+// Most PaaS platforms (DigitalOcean, Render, Fly.io, etc.) automatically provide DATABASE_URL - use it if available
 // Otherwise fall back to individual DB_* variables (for development)
 const isProduction = process.env.NODE_ENV === 'production';
 
 let connectionString: string;
 if (process.env.DATABASE_URL) {
-  // Railway and most platforms provide DATABASE_URL
+  // Most PaaS platforms provide DATABASE_URL
   connectionString = process.env.DATABASE_URL;
 } else {
   // Fallback to individual variables (development only)

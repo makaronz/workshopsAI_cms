@@ -89,11 +89,6 @@
     "test:deployment:docker": "npm run test:deployment && npm run docker:build && npm run docker:run",
     "validate:esm-imports": "node scripts/validate-esm-imports.js",
     "validate:build": "npm run build && npm run validate:esm-imports",
-    "validate:railway": "./scripts/deployment/validate-railway-deployment.sh",
-    "validate:railway:env": "./scripts/deployment/validate-railway-deployment.sh --env-only",
-    "validate:railway:build": "./scripts/deployment/validate-railway-deployment.sh --build-only",
-    "validate:railway:health": "./scripts/deployment/validate-railway-deployment.sh --health-only",
-    "validate:railway:full": "node scripts/deployment/run-full-railway-validation.js"
   },
   "keywords": [
     "CMS",

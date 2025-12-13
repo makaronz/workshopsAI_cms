@@ -1,4 +1,4 @@
-# Multi-stage Dockerfile for workshopsAI CMS - OPTIMIZED FOR RAILWAY
+# Multi-stage Dockerfile for workshopsAI CMS - Production optimized
 # Focus: Minimal image size (target < 500MB)
 
 # --- Stage 1: Build Stage ---

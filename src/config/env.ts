@@ -29,7 +29,7 @@ console.log('  DB_NAME:', process.env.DB_NAME || 'NOT SET');
 console.log('  NODE_ENV:', process.env.NODE_ENV || 'NOT SET');
 
 // Validate critical environment variables
-// Railway and most platforms provide DATABASE_URL instead of individual DB_* variables
+// Most PaaS platforms (DigitalOcean, Render, Fly.io, etc.) provide DATABASE_URL instead of individual DB_* variables
 const hasDatabaseUrl = !!process.env.DATABASE_URL;
 const requiredVars: string[] = [];
 
@@ -58,7 +58,7 @@ if (missingVars.length > 0) {
     // Database variables missing and DATABASE_URL not set
     console.error('❌ Missing required environment variables:', missingVars.join(', '));
     console.error('❌ Please set DATABASE_URL or individual DB_* variables');
-    console.error('❌ Railway automatically provides DATABASE_URL - check your Railway project settings');
+    console.error('❌ Most PaaS platforms automatically provide DATABASE_URL - check your platform settings');
   } else {
     // Other missing variables (non-critical in dev)
     console.warn('⚠️  Missing environment variables:', missingVars.join(', '));

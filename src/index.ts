@@ -162,7 +162,7 @@ if (NODE_ENV === 'development') {
   app.use(morgan('combined'));
 }
 
-// Health check endpoint - always returns 200 OK for Railway compatibility
+// Health check endpoint - always returns 200 OK for platform compatibility
 app.get('/health', async (_req, res) => {
   try {
     // Use Promise.allSettled to prevent blocking on individual service failures
@@ -176,7 +176,7 @@ app.get('/health', async (_req, res) => {
     const redisHealthy = results[1].status === 'fulfilled' ? results[1].value : false;
     const llmServicesHealth = results[2].status === 'fulfilled' ? results[2].value : { status: 'error' };
 
-    // Always return 200 OK - Railway requires this for successful deployment
+    // Always return 200 OK - most PaaS platforms require this for successful deployment
     res.status(200).json({
       status: 'ok',
       timestamp: new Date().toISOString(),
@@ -188,7 +188,7 @@ app.get('/health', async (_req, res) => {
     });
   } catch (error) {
     // Even if healthcheck fails completely, return 200 OK
-    // This ensures Railway deployment doesn't fail due to healthcheck errors
+    // This ensures platform deployment doesn't fail due to healthcheck errors
     res.status(200).json({
       status: 'ok',
       timestamp: new Date().toISOString(),

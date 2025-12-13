@@ -1,7 +1,7 @@
 import Redis from 'ioredis';
 
 // Redis configuration
-// Railway automatically provides REDIS_URL - use it if available
+// Most PaaS platforms (DigitalOcean, Render, Fly.io, etc.) automatically provide REDIS_URL - use it if available
 // In production, don't use localhost fallback (Redis is a separate service)
 const isProduction = process.env.NODE_ENV === 'production';
 const REDIS_URL = process.env.REDIS_URL || (isProduction ? undefined : 'redis://localhost:6379');
