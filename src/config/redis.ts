@@ -253,13 +253,20 @@ export class RedisService {
     await this.client.del(key);
   }
 
-  // Health check
-  async healthCheck(): Promise<boolean> {
+  // Health check with timeout to prevent blocking
+  async healthCheck(timeoutMs: number = 2000): Promise<boolean> {
     try {
-      await this.client.ping();
+      // Use Promise.race to add timeout
+      const pingPromise = this.client.ping();
+      const timeoutPromise = new Promise<boolean>((_, reject) => {
+        setTimeout(() => reject(new Error('Redis health check timeout')), timeoutMs);
+      });
+
+      await Promise.race([pingPromise, timeoutPromise]);
       return true;
     } catch (error) {
-      console.error('Redis health check failed:', error);
+      // Silently fail - don't log to avoid log flooding
+      // Healthcheck should gracefully report Redis as disconnected
       return false;
     }
   }
