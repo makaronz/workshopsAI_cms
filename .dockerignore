@@ -60,12 +60,9 @@ CHANGELOG.md
 CONTRIBUTING.md
 
 # Scripts & Config
-scripts
 .eslintcache
 .eslintrc.js
 .prettierrc
-tsconfig.json
-tsconfig.*.json
 nodemon.json
 
 # Temp
