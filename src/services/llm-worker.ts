@@ -673,6 +673,15 @@ export function getLLMAnalysisWorker(): LLMAnalysisWorker {
     };
 
     const parsedConfig = parseRedisConfig(redisUrl);
+    
+    // CRITICAL: In production, Redis is required for LLM workers
+    if (!parsedConfig && isProduction) {
+      throw new Error(
+        '🚨 CRITICAL: REDIS_URL is missing in production environment! ' +
+        'LLM analysis workers require Redis. Please set REDIS_URL environment variable.'
+      );
+    }
+
     let redisConfig: { host: string; port: number; password?: string; db?: number };
     
     if (parsedConfig) {
@@ -686,9 +695,10 @@ export function getLLMAnalysisWorker(): LLMAnalysisWorker {
         db: parseInt(process.env.REDIS_DB || '0'),
       };
     } else {
-      // Production without Redis - use dummy config
+      // Development without Redis - use dummy config (should not happen due to check above)
+      console.warn('⚠️  Redis not configured. LLM worker may not function correctly.');
       redisConfig = {
-        host: 'localhost',
+        host: 'nonexistent-redis-host',
         port: 6379,
       };
     }

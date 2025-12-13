@@ -35,8 +35,10 @@ import { redisService } from './config/redis';
 
 // Import LLM services
 import { getLLMAnalysisWorker } from './services/llm-worker';
-const llmAnalysisWorker = getLLMAnalysisWorker();
 import { embeddingsService } from './services/embeddings';
+
+// LLM worker - will be initialized only if Redis is available
+let llmAnalysisWorker: ReturnType<typeof getLLMAnalysisWorker> | null = null;
 
 // Import WebSocket and Preview services
 import { WebSocketService } from './services/websocketService';
@@ -204,8 +206,12 @@ app.get('/health', async (_req, res) => {
 async function checkLLMServicesHealth() {
   try {
     const health = await embeddingsService.healthCheck();
-    const queueStats = await llmAnalysisWorker.getQueueStats();
-    const streamingStats = streamingWorker ? await streamingWorker.getQueueStats() : { status: 'initializing' };
+    const queueStats = llmAnalysisWorker 
+      ? await llmAnalysisWorker.getQueueStats() 
+      : { status: 'unavailable' };
+    const streamingStats = streamingWorker 
+      ? await streamingWorker.getQueueStats() 
+      : { status: 'unavailable' };
 
     return {
       embeddings: health,
@@ -317,7 +323,9 @@ process.on('SIGTERM', async () => {
         await streamingWorker.shutdown();
       }
 
-      await llmAnalysisWorker.shutdown();
+      if (llmAnalysisWorker) {
+        await llmAnalysisWorker.shutdown();
+      }
       await redisService.disconnect();
       await closeDatabaseConnection();
       console.log('✅ All services terminated gracefully');
@@ -341,7 +349,9 @@ process.on('SIGINT', async () => {
         await streamingWorker.shutdown();
       }
 
-      await llmAnalysisWorker.shutdown();
+      if (llmAnalysisWorker) {
+        await llmAnalysisWorker.shutdown();
+      }
       await redisService.disconnect();
       await closeDatabaseConnection();
       console.log('✅ All services terminated gracefully');
@@ -374,14 +384,28 @@ const startServer = async () => {
     dbOptimization = null;
   }
 
-  try {
-    console.log('🚀 Initializing Streaming LLM Worker...');
-    streamingWorker = new StreamingLLMAnalysisWorker();
-    await streamingWorker.initialize();
-    console.log('✅ Streaming LLM Worker initialized');
-  } catch (error) {
-    console.error('❌ Failed to initialize Streaming LLM Worker:', error.message);
-    streamingWorker = null;
+  // Initialize workers only if Redis is available
+  if (process.env.REDIS_URL) {
+    try {
+      console.log('🚀 Initializing LLM Analysis Worker...');
+      llmAnalysisWorker = getLLMAnalysisWorker();
+      console.log('✅ LLM Analysis Worker initialized');
+    } catch (error) {
+      console.error('❌ Failed to initialize LLM Analysis Worker:', error.message);
+      llmAnalysisWorker = null;
+    }
+
+    try {
+      console.log('🚀 Initializing Streaming LLM Worker...');
+      streamingWorker = new StreamingLLMAnalysisWorker();
+      await streamingWorker.initialize();
+      console.log('✅ Streaming LLM Worker initialized');
+    } catch (error) {
+      console.error('❌ Failed to initialize Streaming LLM Worker:', error.message);
+      streamingWorker = null;
+    }
+  } else {
+    console.log('⚠️  Skipping workers initialization - REDIS_URL not set');
   }
 
   try {

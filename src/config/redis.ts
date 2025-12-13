@@ -43,12 +43,24 @@ class RedisClient {
     if (!RedisClient.instance) {
       const redisConfig = parseRedisConfig(REDIS_URL);
 
-      // If REDIS_URL is not set or invalid, create a dummy client that won't connect
+      // If REDIS_URL is not set or invalid
       if (!redisConfig) {
-        // Return a disconnected client that won't try to connect
-        // Use a non-existent host to prevent connection attempts
+        // CRITICAL FIX:
+        // W produkcji brak URL-a powinien wysadzić aplikację, żebyś o tym wiedział,
+        // zamiast cicho próbować łączyć się z localhostem przez Workera.
+        if (isProduction) {
+          throw new Error(
+            '🚨 CRITICAL: REDIS_URL is missing in production environment! ' +
+            'Redis is required for queue workers and caching. ' +
+            'Please set REDIS_URL environment variable or disable Redis-dependent features.'
+          );
+        }
+
+        // Dla devu zostawiamy atrapę, ale upewnij się, że host nie istnieje,
+        // żeby uniknąć przypadkowego łączenia z lokalnym Redisem, jeśli nie chcesz.
+        console.warn('⚠️  Redis not configured. Creating dummy instance for DEV only.');
         RedisClient.instance = new Redis({
-          host: '127.0.0.1',
+          host: 'nonexistent-redis-host', // Host który nie istnieje - zapobiega przypadkowemu połączeniu
           port: 6379,
           lazyConnect: true,
           enableReadyCheck: false,
@@ -58,7 +70,7 @@ class RedisClient {
           connectTimeout: 1, // Very short timeout
           commandTimeout: 1, // Very short timeout
         });
-        // Suppress all errors for unconfigured Redis
+        // Suppress all errors for unconfigured Redis in dev
         RedisClient.instance.on('error', () => {});
         // Prevent connection attempts
         RedisClient.instance.disconnect();

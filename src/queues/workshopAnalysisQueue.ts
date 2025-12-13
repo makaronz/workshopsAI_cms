@@ -46,11 +46,24 @@ const parseRedisConfig = (url: string | undefined): string | { path: string } | 
 };
 
 const parsedConfig = parseRedisConfig(redisUrl);
+
+// CRITICAL: BullMQ requires active Redis connection
+// In production, we must have REDIS_URL, otherwise throw error
+if (!parsedConfig && isProduction) {
+  throw new Error(
+    '🚨 CRITICAL: REDIS_URL is missing in production environment! ' +
+    'BullMQ queue workers require Redis. Please set REDIS_URL environment variable.'
+  );
+}
+
 const baseConfig = {
   maxRetriesPerRequest: null as number | null, // Required for BullMQ
 };
 
-let redisConnection: Redis;
+let redisConnection: Redis | null = null;
+let workshopAnalysisQueue: Queue<AnalysisJobData> | null = null;
+let workshopAnalysisWorker: Worker<AnalysisJobData> | null = null;
+
 if (parsedConfig) {
   if (typeof parsedConfig === 'string') {
     // TCP URL
@@ -62,54 +75,33 @@ if (parsedConfig) {
       path: parsedConfig.path,
     });
   }
-} else if (process.env.REDIS_HOST || !isProduction) {
-  // Fallback to individual variables (development only)
-  redisConnection = new Redis({
-    ...baseConfig,
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-  });
-} else {
-  // Production without Redis - create dummy client that won't connect
-  redisConnection = new Redis({
-    host: '127.0.0.1',
-    port: 6379,
-    enableOfflineQueue: false, // Don't queue commands when offline
-    maxRetriesPerRequest: 0,
-    retryStrategy: () => null, // Don't retry
-    lazyConnect: true,
-    connectTimeout: 1, // Very short timeout
-    commandTimeout: 1, // Very short timeout
-  });
-  redisConnection.on('error', () => {}); // Suppress errors
-  redisConnection.disconnect(); // Prevent connection attempts
-}
 
-// Create queue
-export const workshopAnalysisQueue = new Queue<AnalysisJobData>(
-  'workshop-analysis',
-  {
-    connection: redisConnection,
-    defaultJobOptions: {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 2000,
-      },
-      removeOnComplete: {
-        count: 100, // Keep last 100 completed jobs
-      },
-      removeOnFail: {
-        count: 500, // Keep last 500 failed jobs for debugging
+  // Create queue only if Redis is available
+  workshopAnalysisQueue = new Queue<AnalysisJobData>(
+    'workshop-analysis',
+    {
+      connection: redisConnection,
+      defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 2000,
+        },
+        removeOnComplete: {
+          count: 100, // Keep last 100 completed jobs
+        },
+        removeOnFail: {
+          count: 500, // Keep last 500 failed jobs for debugging
+        },
       },
     },
-  },
-);
+  );
 
-// Create worker
-export const workshopAnalysisWorker = new Worker<AnalysisJobData>(
-  'workshop-analysis',
-  async (job: Job<AnalysisJobData>) => {
+  // Create worker only if Redis is available
+  if (redisConnection) {
+    workshopAnalysisWorker = new Worker<AnalysisJobData>(
+      'workshop-analysis',
+      async (job: Job<AnalysisJobData>) => {
     const { analysisId, workshopId, modelName, promptTemplateId, customInstructions } =
       job.data;
 
@@ -277,25 +269,33 @@ export const workshopAnalysisWorker = new Worker<AnalysisJobData>(
 
       throw error;
     }
-  },
-  {
-    connection: redisConnection,
-    concurrency: 5, // Process up to 5 jobs concurrently
-  },
-);
+      },
+      {
+        connection: redisConnection,
+        concurrency: 5, // Process up to 5 jobs concurrently
+      },
+    );
 
-// Worker event handlers
-workshopAnalysisWorker.on('completed', (job) => {
-  console.log(`[Worker] Job ${job.id} completed`);
-});
+    // Worker event handlers
+    workshopAnalysisWorker.on('completed', (job) => {
+      console.log(`[Worker] Job ${job.id} completed`);
+    });
 
-workshopAnalysisWorker.on('failed', (job, error) => {
-  console.error(`[Worker] Job ${job?.id} failed:`, error);
-});
+    workshopAnalysisWorker.on('failed', (job, error) => {
+      console.error(`[Worker] Job ${job?.id} failed:`, error);
+    });
 
-workshopAnalysisWorker.on('error', (error) => {
-  console.error('[Worker] Error:', error);
-});
+    workshopAnalysisWorker.on('error', (error) => {
+      console.error('[Worker] Error:', error);
+    });
+  }
+} else if (!isProduction) {
+  // Development: log warning but don't create queue/worker
+  console.warn('⚠️  Redis not configured. Workshop analysis queue will not be available.');
+}
+
+// Export queue and worker (may be null if Redis not available)
+export { workshopAnalysisQueue, workshopAnalysisWorker };
 
 /**
  * Default prompt template
@@ -331,7 +331,12 @@ Be specific, actionable, and tailored to this particular group of participants.`
 /**
  * Add analysis job to queue
  */
-export async function queueAnalysisJob(data: AnalysisJobData): Promise<Job<AnalysisJobData>> {
+export async function queueAnalysisJob(data: AnalysisJobData): Promise<Job<AnalysisJobData> | null> {
+  if (!workshopAnalysisQueue) {
+    console.warn('⚠️  Cannot queue analysis job: Redis not available');
+    return null;
+  }
+
   const job = await workshopAnalysisQueue.add('analyze-workshop', data, {
     jobId: `analysis-${data.analysisId}`,
   });
@@ -345,6 +350,16 @@ export async function queueAnalysisJob(data: AnalysisJobData): Promise<Job<Analy
  * Get queue statistics
  */
 export async function getQueueStats() {
+  if (!workshopAnalysisQueue) {
+    return {
+      waiting: 0,
+      active: 0,
+      completed: 0,
+      failed: 0,
+      status: 'unavailable',
+    };
+  }
+
   const [waiting, active, completed, failed] = await Promise.all([
     workshopAnalysisQueue.getWaitingCount(),
     workshopAnalysisQueue.getActiveCount(),
@@ -364,6 +379,10 @@ export async function getQueueStats() {
  * Get job status
  */
 export async function getJobStatus(jobId: string) {
+  if (!workshopAnalysisQueue) {
+    return null;
+  }
+
   const job = await workshopAnalysisQueue.getJob(jobId);
 
   if (!job) {
