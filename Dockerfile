@@ -1,86 +1,85 @@
-# Multi-stage Dockerfile for workshopsAI CMS
-# Production-ready containerization with security and optimization
+# Multi-stage Dockerfile for workshopsAI CMS - OPTIMIZED FOR RAILWAY
+# Focus: Minimal image size (target < 500MB)
 
-# Stage 1: Base image with dependencies
-FROM node:20-alpine AS base
-LABEL maintainer="workshopsAI <dev@workshopsai.com>"
-LABEL version="1.0.0"
-LABEL description="workshopsAI CMS - Production Docker Image"
+# --- Stage 1: Build Stage ---
+FROM node:20-alpine AS builder
 
-# Install security updates and system dependencies
-RUN apk update && apk upgrade && \
-    apk add --no-cache \
-    dumb-init \
-    curl \
-    postgresql-client \
-    python3 \
-    py3-pip \
-    && rm -rf /var/cache/apk/*
-
-# Create app directory
 WORKDIR /app
+
+# Install build dependencies (needed for node-gyp/native modules)
+RUN apk add --no-cache python3 make g++
 
 # Copy package files
 COPY package*.json ./
 
-# Install Python semgrep for security scanning
-# Using --break-system-packages is safe in Docker containers (isolated environment)
-RUN pip3 install --break-system-packages semgrep==1.45.0
+# Install ALL dependencies (including devDependencies for building)
+# Skip Chromium download during build to save bandwidth/time
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+RUN npm ci
 
-# Install production dependencies
-RUN npm ci --only=production && npm cache clean --force
+# Copy source code
+COPY . .
+
+# Build the application (Frontend + Backend)
+RUN npm run build
+
+# --- Stage 2: Production Dependencies Stage ---
+# This stage installs ONLY production dependencies to keep the final image small
+FROM node:20-alpine AS deps
+
+WORKDIR /app
+
+# Install build tools again (needed if any prod dep requires compilation)
+RUN apk add --no-cache python3 make g++
+
+COPY package*.json ./
+
+# Install ONLY production dependencies
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+RUN npm ci --omit=dev && npm cache clean --force
+
+# --- Stage 3: Final Production Image ---
+FROM node:20-alpine AS runner
+
+LABEL maintainer="workshopsAI <dev@workshopsai.com>"
+
+# Install system dependencies
+# - dumb-init: for proper signal handling
+# - chromium: system version for puppeteer (much smaller than bundled)
+# - nss, freetype, harfbuzz...: dependencies for chromium
+RUN apk add --no-cache \
+    dumb-init \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+
+# Create app directory
+WORKDIR /app
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Stage 2: Development stage
-FROM base AS development
-# Skip chromedriver download in Docker environment
-ENV CHROMEDRIVER_SKIP_DOWNLOAD=true
-ENV DETECT_CHROMEDRIVER_VERSION=false
-RUN npm ci
-COPY . .
-USER nodejs
-EXPOSE 3010
-CMD ["npm", "run", "dev"]
+# Copy production node_modules from deps stage
+COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
 
-# Stage 3: Build stage
-FROM base AS builder
-# Skip chromedriver download in Docker environment
-ENV CHROMEDRIVER_SKIP_DOWNLOAD=true
-ENV DETECT_CHROMEDRIVER_VERSION=false
-RUN npm ci
-COPY . .
-
-# Build the application
-RUN npm run build
-
-# Security scanning with npm audit (skipped for deployment)
-# RUN npm audit --audit-level=high
-
-# Stage 4: Production stage
-FROM base AS production
-
-# Copy optimized node_modules from builder
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
-
-# Copy built application and assets
+# Copy built application from builder stage
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/public ./public
 COPY --from=builder --chown=nodejs:nodejs /app/templates ./templates
 COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
+COPY --from=builder --chown=nodejs:nodejs /app/migrations ./migrations
 
-# Create necessary directories with proper permissions
+# Create necessary directories
 RUN mkdir -p uploads logs backups temp && \
     chown -R nodejs:nodejs /app
 
-# Copy migration scripts and database setup
-COPY --from=builder --chown=nodejs:nodejs /app/migrations ./migrations
-
-# Health check with curl
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-3010}/health || exit 1
+# Configure Puppeteer to use system Chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Environment variables
 ENV NODE_ENV=production
@@ -92,29 +91,12 @@ USER nodejs
 # Expose port
 EXPOSE 3010
 
-# Use dumb-init to handle signals properly
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD wget -qO- http://localhost:${PORT:-3010}/health || exit 1
+
+# Use dumb-init
 ENTRYPOINT ["dumb-init", "--"]
 
 # Start the application
 CMD ["node", "dist/index.js"]
-
-# Stage 5: Security scanning stage (for CI/CD)
-FROM base AS security
-# Skip chromedriver download in Docker environment
-ENV CHROMEDRIVER_SKIP_DOWNLOAD=true
-ENV DETECT_CHROMEDRIVER_VERSION=false
-RUN npm ci
-COPY . .
-RUN npm audit --audit-level=moderate && \
-    npm run security:scan
-
-# Stage 6: Testing stage
-FROM base AS test
-# Skip chromedriver download in Docker environment
-ENV CHROMEDRIVER_SKIP_DOWNLOAD=true
-ENV DETECT_CHROMEDRIVER_VERSION=false
-RUN npm ci
-COPY . .
-RUN npm run typecheck && \
-    npm run lint && \
-    npm run test:coverage
