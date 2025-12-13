@@ -69,7 +69,7 @@ COPY --from=deps --chown=nodejs:nodejs /app/node_modules ./node_modules
 # Copy built application from builder stage
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 COPY --from=builder --chown=nodejs:nodejs /app/public ./public
-COPY --from=builder --chown=nodejs:nodejs /app/templates ./templates
+COPY --from=builder --chown=nodejs:nodejs /app/src/templates ./src/templates
 COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 COPY --from=builder --chown=nodejs:nodejs /app/migrations ./migrations
 
