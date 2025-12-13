@@ -82,7 +82,7 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
     super();
     this.config = config;
 
-    // Initialize Redis connection with connection pooling
+    // Initialize Redis connection with connection pooling and retry strategy
     this.connection = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379'),
@@ -91,6 +91,27 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
       maxRetriesPerRequest: null,
       lazyConnect: true,
       enableOfflineQueue: false,
+      retryStrategy(times) {
+        const delay = Math.min(times * 1000, 10000); // Max 10s delay
+        return delay;
+      },
+      reconnectOnError(err) {
+        const targetError = 'READONLY';
+        if (err.message.includes(targetError)) {
+          return true;
+        }
+        return false;
+      },
+    });
+
+    // Handle Redis connection errors gracefully
+    this.connection.on('error', (error) => {
+      // Suppress connection refused logs to avoid flooding
+      if (error.message.includes('ECONNREFUSED')) {
+        // console.warn('Streaming Worker Redis connection failed (retrying...)');
+      } else {
+        console.error('Streaming Worker Redis error:', error.message);
+      }
     });
 
     // Initialize OpenAI client only if API key is provided

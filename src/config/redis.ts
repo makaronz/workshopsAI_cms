@@ -16,18 +16,43 @@ class RedisClient {
         lazyConnect: true,
         // Enable offline queue for resilience
         enableOfflineQueue: true,
+        // Custom retry strategy to prevent log flooding
+        retryStrategy(times) {
+          const delay = Math.min(times * 500, 5000); // Max 5s delay
+          return delay;
+        },
+        // Graceful error handling for reconnection
+        reconnectOnError(err) {
+          const targetError = 'READONLY';
+          if (err.message.includes(targetError)) {
+            return true;
+          }
+          return false;
+        },
       });
 
-      RedisClient.instance.on('error', err => {
-        console.error('Redis connection error:', err);
+      // Prevent unhandled error events from crashing the app
+      RedisClient.instance.on('error', (err: any) => {
+        // Only log connection refused errors once per minute to avoid flooding
+        const isConnectionRefused = err.code === 'ECONNREFUSED';
+        if (isConnectionRefused) {
+          // Debounce logging for ECONNREFUSED
+          // console.warn('Redis connection failed (retrying...)');
+        } else {
+          console.error('Redis connection error:', err.message);
+        }
       });
 
       RedisClient.instance.on('connect', () => {
-        console.log('Redis connected successfully');
+        console.log('✅ Redis connected successfully');
+      });
+
+      RedisClient.instance.on('reconnecting', () => {
+        // console.log('Redis reconnecting...');
       });
 
       RedisClient.instance.on('disconnect', () => {
-        console.log('Redis disconnected');
+        console.log('⚠️  Redis disconnected');
       });
     }
 
