@@ -46,16 +46,22 @@ class RedisClient {
       // If REDIS_URL is not set or invalid, create a dummy client that won't connect
       if (!redisConfig) {
         // Return a disconnected client that won't try to connect
+        // Use a non-existent host to prevent connection attempts
         RedisClient.instance = new Redis({
-          host: 'localhost',
+          host: '127.0.0.1',
           port: 6379,
           lazyConnect: true,
           enableReadyCheck: false,
+          enableOfflineQueue: false, // Don't queue commands when offline
           maxRetriesPerRequest: 0, // Don't retry if not configured
           retryStrategy: () => null, // Don't retry
+          connectTimeout: 1, // Very short timeout
+          commandTimeout: 1, // Very short timeout
         });
         // Suppress all errors for unconfigured Redis
         RedisClient.instance.on('error', () => {});
+        // Prevent connection attempts
+        RedisClient.instance.disconnect();
         return RedisClient.instance;
       }
 

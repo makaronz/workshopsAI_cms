@@ -144,15 +144,19 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
         db: parseInt(process.env.REDIS_DB || '0'),
       });
     } else {
-      // Production without Redis - create dummy client
+      // Production without Redis - create dummy client that won't connect
       this.connection = new Redis({
         ...baseConfig,
-        host: 'localhost',
+        host: '127.0.0.1',
         port: 6379,
+        enableOfflineQueue: false, // Don't queue commands when offline
         maxRetriesPerRequest: 0,
         retryStrategy: () => null, // Don't retry
+        connectTimeout: 1, // Very short timeout
+        commandTimeout: 1, // Very short timeout
       });
       this.connection.on('error', () => {}); // Suppress errors
+      this.connection.disconnect(); // Prevent connection attempts
     }
 
     // Handle Redis connection errors gracefully

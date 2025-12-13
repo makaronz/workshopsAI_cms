@@ -131,16 +131,16 @@ export class OptimizedRedisService {
         autoPipeliningIgnoredCommands: ['subscribe', 'unsubscribe', 'psubscribe', 'punsubscribe'],
       });
     } else {
-      // Production without Redis - create dummy client
+      // Production without Redis - create dummy client that won't connect
       this.config = {
-        host: 'localhost',
+        host: '127.0.0.1',
         port: 6379,
         password: undefined,
         db: 0,
         maxRetriesPerRequest: 0,
         enableOfflineQueue: false,
-        connectTimeout: 10000,
-        commandTimeout: 5000,
+        connectTimeout: 1, // Very short timeout
+        commandTimeout: 1, // Very short timeout
         lazyConnect: true,
         keepAlive: 30000,
         family: 4,
@@ -149,11 +149,15 @@ export class OptimizedRedisService {
       this.client = new Redis({
         host: this.config.host,
         port: this.config.port,
+        enableOfflineQueue: false, // Don't queue commands when offline
         maxRetriesPerRequest: 0,
         retryStrategy: () => null, // Don't retry
         lazyConnect: true,
+        connectTimeout: 1,
+        commandTimeout: 1,
       });
       this.client.on('error', () => {}); // Suppress errors
+      this.client.disconnect(); // Prevent connection attempts
     }
 
     this.setupEventHandlers();

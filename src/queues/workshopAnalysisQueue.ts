@@ -72,13 +72,17 @@ if (parsedConfig) {
 } else {
   // Production without Redis - create dummy client that won't connect
   redisConnection = new Redis({
-    host: 'localhost',
+    host: '127.0.0.1',
     port: 6379,
+    enableOfflineQueue: false, // Don't queue commands when offline
     maxRetriesPerRequest: 0,
     retryStrategy: () => null, // Don't retry
     lazyConnect: true,
+    connectTimeout: 1, // Very short timeout
+    commandTimeout: 1, // Very short timeout
   });
   redisConnection.on('error', () => {}); // Suppress errors
+  redisConnection.disconnect(); // Prevent connection attempts
 }
 
 // Create queue
