@@ -22,6 +22,20 @@ export const roleEnum = pgEnum('role', [
   'sociologist-editor',
   'admin',
 ]);
+
+// Session Management Enums
+export const sessionStatusEnum = pgEnum('sessionStatus', [
+  'active',
+  'expired',
+  'revoked',
+  'suspicious',
+]);
+export const sessionTypeEnum = pgEnum('sessionType', [
+  'web',
+  'mobile',
+  'api',
+  'desktop',
+]);
 export const statusEnum = pgEnum('status', [
   'draft',
   'published',
@@ -156,6 +170,110 @@ export const users = pgTable(
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+/**
+ * User Sessions table - PostgreSQL-based session management
+ */
+export const userSessions = pgTable(
+  'user_sessions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    sessionId: text('sessionId').notNull().unique(),
+    accessTokenHash: text('accessTokenHash').notNull(),
+    refreshTokenHash: text('refreshTokenHash').notNull(),
+    refreshTokenId: text('refreshTokenId').notNull().unique(),
+    status: sessionStatusEnum('status').default('active').notNull(),
+    sessionType: sessionTypeEnum('sessionType').default('web').notNull(),
+    ipAddress: text('ipAddress'),
+    userAgent: text('userAgent'),
+    deviceFingerprint: text('deviceFingerprint'),
+    location: jsonb('location').$type<{
+      country?: string;
+      city?: string;
+      coordinates?: { lat: number; lng: number };
+    }>(),
+    isActive: boolean('isActive').default(true).notNull(),
+    lastAccessedAt: timestamp('lastAccessedAt').defaultNow().notNull(),
+    expiresAt: timestamp('expiresAt').notNull(),
+    absoluteExpiresAt: timestamp('absoluteExpiresAt').notNull(),
+    loginAt: timestamp('loginAt').defaultNow().notNull(),
+    logoutAt: timestamp('logoutAt'),
+    revokedAt: timestamp('revokedAt'),
+    revokedReason: text('revokedReason'),
+    suspiciousActivities: jsonb('suspiciousActivities').$type<Array<{
+      type: string;
+      timestamp: string;
+      details: any;
+      ipAddress: string;
+      userAgent: string;
+    }>>().default([]),
+    riskScore: decimal('riskScore', { precision: 3, scale: 2 }).default('0.00'),
+    metadata: jsonb('metadata').$type<{
+      browser?: string;
+      os?: string;
+      device?: string;
+      language?: string;
+      timezone?: string;
+      screenResolution?: string;
+    }>(),
+    createdAt: timestamp('createdAt').defaultNow().notNull(),
+    updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  },
+  table => ({
+    userIdIdx: index('idx_user_sessions_user_id').on(table.userId),
+    sessionIdIdx: index('idx_user_sessions_session_id').on(table.sessionId),
+    refreshTokenIdIdx: index('idx_user_sessions_refresh_token_id').on(table.refreshTokenId),
+    statusIdx: index('idx_user_sessions_status').on(table.status),
+    expiresAtIdx: index('idx_user_sessions_expires_at').on(table.expiresAt),
+    lastAccessedAtIdx: index('idx_user_sessions_last_accessed').on(table.lastAccessedAt),
+    riskScoreIdx: index('idx_user_sessions_risk_score').on(table.riskScore),
+    isActiveIdx: index('idx_user_sessions_is_active').on(table.isActive),
+    deviceFingerprintIdx: index('idx_user_sessions_device_fingerprint').on(table.deviceFingerprint),
+  }),
+);
+
+export type UserSession = typeof userSessions.$inferSelect;
+export type InsertUserSession = typeof userSessions.$inferInsert;
+
+/**
+ * Session Audit Logs table - tracks session activities
+ */
+export const sessionAuditLogs = pgTable(
+  'session_audit_logs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    sessionId: uuid('sessionId')
+      .notNull()
+      .references(() => userSessions.id, { onDelete: 'cascade' }),
+    userId: uuid('userId')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    action: text('action').notNull(), // 'login', 'logout', 'refresh', 'access', 'suspicious_activity'
+    details: jsonb('details').$type<{
+      ip?: string;
+      userAgent?: string;
+      previousIp?: string;
+      deviceId?: string;
+      reason?: string;
+      risk?: number;
+    }>(),
+    ipAddress: text('ipAddress'),
+    userAgent: text('userAgent'),
+    timestamp: timestamp('timestamp').defaultNow().notNull(),
+  },
+  table => ({
+    sessionIdIdx: index('idx_session_audit_logs_session_id').on(table.sessionId),
+    userIdIdx: index('idx_session_audit_logs_user_id').on(table.userId),
+    actionIdx: index('idx_session_audit_logs_action').on(table.action),
+    timestampIdx: index('idx_session_audit_logs_timestamp').on(table.timestamp),
+  }),
+);
+
+export type SessionAuditLog = typeof sessionAuditLogs.$inferSelect;
+export type InsertSessionAuditLog = typeof sessionAuditLogs.$inferInsert;
 
 /**
  * Consents table for GDPR compliance
@@ -1204,6 +1322,28 @@ export const usersRelations = relations(users, ({ many, one }) => ({
   emailTemplates: many(emailTemplates),
   emailLogs: many(emailLogs),
   emailConsents: many(emailConsents),
+  userSessions: many(userSessions),
+  sessionAuditLogs: many(sessionAuditLogs),
+}));
+
+// Session Relations
+export const userSessionsRelations = relations(userSessions, ({ one, many }) => ({
+  user: one(users, {
+    fields: [userSessions.userId],
+    references: [users.id],
+  }),
+  auditLogs: many(sessionAuditLogs),
+}));
+
+export const sessionAuditLogsRelations = relations(sessionAuditLogs, ({ one }) => ({
+  session: one(userSessions, {
+    fields: [sessionAuditLogs.sessionId],
+    references: [userSessions.id],
+  }),
+  user: one(users, {
+    fields: [sessionAuditLogs.userId],
+    references: [users.id],
+  }),
 }));
 
 export const facilitatorsRelations = relations(

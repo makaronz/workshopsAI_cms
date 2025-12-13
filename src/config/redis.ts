@@ -157,12 +157,42 @@ class RedisClient {
   }
 }
 
+import { hybridCacheService } from '../services/hybrid-cache-service';
+
 // Redis service for token management
 export class RedisService {
   private client: Redis;
+  private useHybridFallback: boolean = false;
 
   constructor() {
-    this.client = RedisClient.getInstance();
+    try {
+      this.client = RedisClient.getInstance();
+      // Test connection
+      this.client.ping().catch(() => {
+        console.warn('⚠️  Redis connection failed, enabling hybrid cache fallback');
+        this.useHybridFallback = true;
+      });
+    } catch (error) {
+      console.warn('⚠️  Redis initialization failed, enabling hybrid cache fallback');
+      this.useHybridFallback = true;
+    }
+  }
+
+  private async handleRedisOperation<T>(
+    operation: () => Promise<T>,
+    fallback: () => Promise<T>
+  ): Promise<T> {
+    if (this.useHybridFallback) {
+      return await fallback();
+    }
+
+    try {
+      return await operation();
+    } catch (error) {
+      console.warn('⚠️  Redis operation failed, falling back to hybrid cache:', error.message);
+      this.useHybridFallback = true;
+      return await fallback();
+    }
   }
 
   // Store refresh token with user metadata
@@ -172,21 +202,29 @@ export class RedisService {
     deviceInfo?: string,
     ipAddress?: string,
   ): Promise<void> {
-    const key = `refresh_token:${userId}:${refreshToken}`;
-    const value = {
-      userId,
-      deviceInfo: deviceInfo || 'unknown',
-      ipAddress: ipAddress || 'unknown',
-      createdAt: new Date().toISOString(),
-      lastUsed: new Date().toISOString(),
-    };
+    return await this.handleRedisOperation(
+      async () => {
+        const key = `refresh_token:${userId}:${refreshToken}`;
+        const value = {
+          userId,
+          deviceInfo: deviceInfo || 'unknown',
+          ipAddress: ipAddress || 'unknown',
+          createdAt: new Date().toISOString(),
+          lastUsed: new Date().toISOString(),
+        };
 
-    await this.client.setex(key, parseInt(REDIS_TTL), JSON.stringify(value));
+        await this.client.setex(key, parseInt(REDIS_TTL), JSON.stringify(value));
 
-    // Also store user's active tokens list
-    const userTokensKey = `user_tokens:${userId}`;
-    await this.client.sadd(userTokensKey, refreshToken);
-    await this.client.expire(userTokensKey, parseInt(REDIS_TTL));
+        // Also store user's active tokens list
+        const userTokensKey = `user_tokens:${userId}`;
+        await this.client.sadd(userTokensKey, refreshToken);
+        await this.client.expire(userTokensKey, parseInt(REDIS_TTL));
+      },
+      async () => {
+        // Use hybrid cache fallback
+        await hybridCacheService.storeRefreshToken(userId, refreshToken, deviceInfo, ipAddress);
+      }
+    );
   }
 
   // Get refresh token metadata
@@ -194,9 +232,16 @@ export class RedisService {
     userId: string,
     refreshToken: string,
   ): Promise<any | null> {
-    const key = `refresh_token:${userId}:${refreshToken}`;
-    const value = await this.client.get(key);
-    return value ? JSON.parse(value) : null;
+    return await this.handleRedisOperation(
+      async () => {
+        const key = `refresh_token:${userId}:${refreshToken}`;
+        const value = await this.client.get(key);
+        return value ? JSON.parse(value) : null;
+      },
+      async () => {
+        return await hybridCacheService.getRefreshToken(userId, refreshToken);
+      }
+    );
   }
 
   // Update last used timestamp for refresh token
@@ -204,18 +249,25 @@ export class RedisService {
     userId: string,
     refreshToken: string,
   ): Promise<void> {
-    const key = `refresh_token:${userId}:${refreshToken}`;
-    const existing = await this.client.get(key);
+    return await this.handleRedisOperation(
+      async () => {
+        const key = `refresh_token:${userId}:${refreshToken}`;
+        const existing = await this.client.get(key);
 
-    if (existing) {
-      const tokenData = JSON.parse(existing);
-      tokenData.lastUsed = new Date().toISOString();
-      await this.client.setex(
-        key,
-        parseInt(REDIS_TTL),
-        JSON.stringify(tokenData),
-      );
-    }
+        if (existing) {
+          const tokenData = JSON.parse(existing);
+          tokenData.lastUsed = new Date().toISOString();
+          await this.client.setex(
+            key,
+            parseInt(REDIS_TTL),
+            JSON.stringify(tokenData),
+          );
+        }
+      },
+      async () => {
+        await hybridCacheService.updateRefreshTokenUsage(userId, refreshToken);
+      }
+    );
   }
 
   // Revoke specific refresh token
@@ -223,29 +275,43 @@ export class RedisService {
     userId: string,
     refreshToken: string,
   ): Promise<void> {
-    const key = `refresh_token:${userId}:${refreshToken}`;
-    await this.client.del(key);
+    return await this.handleRedisOperation(
+      async () => {
+        const key = `refresh_token:${userId}:${refreshToken}`;
+        await this.client.del(key);
 
-    // Remove from user's active tokens
-    const userTokensKey = `user_tokens:${userId}`;
-    await this.client.srem(userTokensKey, refreshToken);
+        // Remove from user's active tokens
+        const userTokensKey = `user_tokens:${userId}`;
+        await this.client.srem(userTokensKey, refreshToken);
+      },
+      async () => {
+        await hybridCacheService.revokeRefreshToken(userId, refreshToken);
+      }
+    );
   }
 
   // Revoke all refresh tokens for a user
   async revokeAllUserTokens(userId: string): Promise<void> {
-    const userTokensKey = `user_tokens:${userId}`;
-    const tokens = await this.client.smembers(userTokensKey);
+    return await this.handleRedisOperation(
+      async () => {
+        const userTokensKey = `user_tokens:${userId}`;
+        const tokens = await this.client.smembers(userTokensKey);
 
-    // Delete all token entries
-    const pipeline = this.client.pipeline();
-    tokens.forEach(token => {
-      pipeline.del(`refresh_token:${userId}:${token}`);
-    });
+        // Delete all token entries
+        const pipeline = this.client.pipeline();
+        tokens.forEach(token => {
+          pipeline.del(`refresh_token:${userId}:${token}`);
+        });
 
-    // Clear user tokens set
-    pipeline.del(userTokensKey);
+        // Clear user tokens set
+        pipeline.del(userTokensKey);
 
-    await pipeline.exec();
+        await pipeline.exec();
+      },
+      async () => {
+        await hybridCacheService.revokeAllUserTokens(userId);
+      }
+    );
   }
 
   // Check if refresh token exists and is valid
@@ -269,22 +335,43 @@ export class RedisService {
     sessionData: any,
     ttl?: number,
   ): Promise<void> {
-    const key = `session:${sessionId}`;
-    const expiration = ttl || parseInt(REDIS_TTL);
-    await this.client.setex(key, expiration, JSON.stringify(sessionData));
+    return await this.handleRedisOperation(
+      async () => {
+        const key = `session:${sessionId}`;
+        const expiration = ttl || parseInt(REDIS_TTL);
+        await this.client.setex(key, expiration, JSON.stringify(sessionData));
+      },
+      async () => {
+        await hybridCacheService.storeSession(sessionId, sessionData, ttl);
+      }
+    );
   }
 
   // Get session data
   async getSession(sessionId: string): Promise<any | null> {
-    const key = `session:${sessionId}`;
-    const value = await this.client.get(key);
-    return value ? JSON.parse(value) : null;
+    return await this.handleRedisOperation(
+      async () => {
+        const key = `session:${sessionId}`;
+        const value = await this.client.get(key);
+        return value ? JSON.parse(value) : null;
+      },
+      async () => {
+        return await hybridCacheService.getSession(sessionId);
+      }
+    );
   }
 
   // Delete session
   async deleteSession(sessionId: string): Promise<void> {
-    const key = `session:${sessionId}`;
-    await this.client.del(key);
+    return await this.handleRedisOperation(
+      async () => {
+        const key = `session:${sessionId}`;
+        await this.client.del(key);
+      },
+      async () => {
+        await hybridCacheService.deleteSession(sessionId);
+      }
+    );
   }
 
   // Store authentication attempt for rate limiting
@@ -292,10 +379,17 @@ export class RedisService {
     identifier: string,
     ipAddress: string,
   ): Promise<void> {
-    const key = `auth_attempts:${identifier}:${ipAddress}`;
-    const ttl = 900; // 15 minutes
-    await this.client.incr(key);
-    await this.client.expire(key, ttl);
+    return await this.handleRedisOperation(
+      async () => {
+        const key = `auth_attempts:${identifier}:${ipAddress}`;
+        const ttl = 900; // 15 minutes
+        await this.client.incr(key);
+        await this.client.expire(key, ttl);
+      },
+      async () => {
+        await hybridCacheService.recordAuthAttempt(identifier, ipAddress);
+      }
+    );
   }
 
   // Get authentication attempts count
@@ -303,9 +397,16 @@ export class RedisService {
     identifier: string,
     ipAddress: string,
   ): Promise<number> {
-    const key = `auth_attempts:${identifier}:${ipAddress}`;
-    const attempts = await this.client.get(key);
-    return attempts ? parseInt(attempts) : 0;
+    return await this.handleRedisOperation(
+      async () => {
+        const key = `auth_attempts:${identifier}:${ipAddress}`;
+        const attempts = await this.client.get(key);
+        return attempts ? parseInt(attempts) : 0;
+      },
+      async () => {
+        return await hybridCacheService.getAuthAttempts(identifier, ipAddress);
+      }
+    );
   }
 
   // Clear authentication attempts
@@ -313,8 +414,15 @@ export class RedisService {
     identifier: string,
     ipAddress: string,
   ): Promise<void> {
-    const key = `auth_attempts:${identifier}:${ipAddress}`;
-    await this.client.del(key);
+    return await this.handleRedisOperation(
+      async () => {
+        const key = `auth_attempts:${identifier}:${ipAddress}`;
+        await this.client.del(key);
+      },
+      async () => {
+        await hybridCacheService.clearAuthAttempts(identifier, ipAddress);
+      }
+    );
   }
 
   // Store password reset token
@@ -346,6 +454,11 @@ export class RedisService {
 
   // Health check with timeout to prevent blocking
   async healthCheck(timeoutMs: number = 2000): Promise<boolean> {
+    if (this.useHybridFallback) {
+      // If using fallback, check hybrid cache health instead
+      return await hybridCacheService.healthCheck();
+    }
+
     try {
       // Use Promise.race to add timeout
       const pingPromise = this.client.ping();
@@ -356,9 +469,9 @@ export class RedisService {
       await Promise.race([pingPromise, timeoutPromise]);
       return true;
     } catch (error) {
-      // Silently fail - don't log to avoid log flooding
-      // Healthcheck should gracefully report Redis as disconnected
-      return false;
+      // On Redis failure, fall back to hybrid cache
+      this.useHybridFallback = true;
+      return await hybridCacheService.healthCheck();
     }
   }
 

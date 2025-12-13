@@ -1,0 +1,11 @@
+Use Case,Redis Solution,Alternative,Initial Cost,Maintenance Cost,Performance Impact,Migration Effort
+Cache Layer,Redis Cloud $30/month,In-Memory Cache,$0,$0,+80% faster (hits),Low
+Cache Layer,Redis Cloud $30/month,PostgreSQL MVs,$0,$5/month DB overhead,-150% slower (misses),Medium
+Rate Limiting,Redis (included),In-Memory Limiter,$0,$0,+75% faster,Low
+Sessions,Redis (included),JWT Stateless,$0,$0,+300% faster,Low
+Job Queues,BullMQ+Redis,PostgreSQL Queue,$0,$10/month DB load,-400% slower,High
+Job Queues,BullMQ+Redis,AWS SQS,$0,$20/month (1M msgs),Equal latency,Medium
+WebSocket,Redis Adapter,Single Instance,$0,$0,No scaling,Low
+TOTAL Monthly,,Redis,$30,$30,,
+TOTAL Monthly,,Best Alternative,$0,$15,,
+TOTAL Monthly,,Full Alternative,$0,$35,,
