@@ -27,11 +27,34 @@ export interface AnalysisJobData {
 }
 
 // Redis connection
-const redisConnection = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  maxRetriesPerRequest: null, // Required for BullMQ
-});
+// Railway uses REDIS_URL, fallback to REDIS_HOST/REDIS_PORT for development
+const isProduction = process.env.NODE_ENV === 'production';
+const redisUrl = process.env.REDIS_URL;
+
+let redisConnection: Redis;
+if (redisUrl) {
+  // Use REDIS_URL if available (Railway standard)
+  redisConnection = new Redis(redisUrl, {
+    maxRetriesPerRequest: null, // Required for BullMQ
+  });
+} else if (process.env.REDIS_HOST || !isProduction) {
+  // Fallback to individual variables (development only)
+  redisConnection = new Redis({
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT || '6379'),
+    maxRetriesPerRequest: null, // Required for BullMQ
+  });
+} else {
+  // Production without Redis - create dummy client that won't connect
+  redisConnection = new Redis({
+    host: 'localhost',
+    port: 6379,
+    maxRetriesPerRequest: 0,
+    retryStrategy: () => null, // Don't retry
+    lazyConnect: true,
+  });
+  redisConnection.on('error', () => {}); // Suppress errors
+}
 
 // Create queue
 export const workshopAnalysisQueue = new Queue<AnalysisJobData>(

@@ -147,13 +147,35 @@ export class EnhancedLLMAnalysisWorker {
     this.costSettings = costSettings;
 
     // Initialize Redis connection
-    this.connection = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-      password: process.env.REDIS_PASSWORD,
-      db: parseInt(process.env.REDIS_DB || '0'),
-      maxRetriesPerRequest: null,
-    });
+    // Railway uses REDIS_URL, fallback to REDIS_HOST/REDIS_PORT for development
+    const isProduction = process.env.NODE_ENV === 'production';
+    const redisUrl = process.env.REDIS_URL;
+
+    if (redisUrl) {
+      // Use REDIS_URL if available (Railway standard)
+      this.connection = new Redis(redisUrl, {
+        maxRetriesPerRequest: null,
+      });
+    } else if (process.env.REDIS_HOST || !isProduction) {
+      // Fallback to individual variables (development only)
+      this.connection = new Redis({
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD,
+        db: parseInt(process.env.REDIS_DB || '0'),
+        maxRetriesPerRequest: null,
+      });
+    } else {
+      // Production without Redis - create dummy client
+      this.connection = new Redis({
+        host: 'localhost',
+        port: 6379,
+        maxRetriesPerRequest: 0,
+        retryStrategy: () => null,
+        lazyConnect: true,
+      });
+      this.connection.on('error', () => {}); // Suppress errors
+    }
 
     // Initialize OpenAI client
     this.openai = new OpenAI({

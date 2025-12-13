@@ -4,36 +4,46 @@ import postgres from 'postgres';
 import * as schema from '../models/postgresql-schema';
 
 // PostgreSQL database configuration
-const pgConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5433'),
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'workshopsai_cms',
-  ssl:
-    process.env.NODE_ENV === 'production'
-      ? { rejectUnauthorized: false }
-      : false,
+// Railway automatically provides DATABASE_URL - use it if available
+// Otherwise fall back to individual DB_* variables (for development)
+const isProduction = process.env.NODE_ENV === 'production';
+
+let connectionString: string;
+if (process.env.DATABASE_URL) {
+  // Railway and most platforms provide DATABASE_URL
+  connectionString = process.env.DATABASE_URL;
+} else {
+  // Fallback to individual variables (development only)
+  const pgConfig = {
+    host: process.env.DB_HOST || (isProduction ? undefined : 'localhost'),
+    port: parseInt(process.env.DB_PORT || (isProduction ? '5432' : '5433')),
+    user: process.env.DB_USER || (isProduction ? undefined : 'postgres'),
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || (isProduction ? undefined : 'workshopsai_cms'),
+  };
+
+  if (isProduction && (!pgConfig.host || !pgConfig.user || !pgConfig.database)) {
+    throw new Error('Database configuration missing in production. Set DATABASE_URL or DB_* variables.');
+  }
+
+  connectionString = `postgresql://${pgConfig.user}:${pgConfig.password}@${pgConfig.host}:${pgConfig.port}/${pgConfig.database}${isProduction ? '?sslmode=require' : ''}`;
+}
+
+// Debug: Log the connection string and environment variables
+if (!isProduction) {
+  console.log('🔗 Environment variables loaded:');
+  console.log('  DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+  console.log('  DB_HOST:', process.env.DB_HOST || 'NOT SET');
+  console.log('  DB_PORT:', process.env.DB_PORT || 'NOT SET');
+  console.log('  DB_USER:', process.env.DB_USER || 'NOT SET');
+  console.log('  DB_NAME:', process.env.DB_NAME || 'NOT SET');
+  console.log('🔗 PostgreSQL connection string:', connectionString.replace(/:[^:]*@/, ':***@')); // Hide password
+}
+
+const client = postgres(connectionString, {
   max: 10, // connection pool size
   idle_timeout: 20,
   connect_timeout: 10,
-};
-
-// Create PostgreSQL connection pool
-const connectionString = `postgresql://${pgConfig.user}:${pgConfig.password}@${pgConfig.host}:${pgConfig.port}/${pgConfig.database}${pgConfig.ssl ? '?sslmode=require' : ''}`;
-
-// Debug: Log the connection string and environment variables
-console.log('🔗 Environment variables loaded:');
-console.log('  DB_HOST:', process.env.DB_HOST);
-console.log('  DB_PORT:', process.env.DB_PORT);
-console.log('  DB_USER:', process.env.DB_USER);
-console.log('  DB_NAME:', process.env.DB_NAME);
-console.log('🔗 PostgreSQL connection string:', connectionString.replace(/:[^:]*@/, ':***@')); // Hide password
-
-const client = postgres(connectionString, {
-  max: pgConfig.max,
-  idle_timeout: pgConfig.idle_timeout,
-  connect_timeout: pgConfig.connect_timeout,
 });
 
 // Create drizzle instance with PostgreSQL
@@ -169,13 +179,20 @@ export class RLSHelper {
   }
 }
 
-// Health check function for PostgreSQL
-export async function checkDatabaseHealth(): Promise<boolean> {
+// Health check function for PostgreSQL with timeout
+export async function checkDatabaseHealth(timeoutMs: number = 2000): Promise<boolean> {
   try {
-    const result = await client`SELECT 1 as health_check`;
-    return result.length > 0;
+    // Use Promise.race to add timeout
+    const queryPromise = client`SELECT 1 as health_check`;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Database health check timeout')), timeoutMs);
+    });
+
+    const result = await Promise.race([queryPromise, timeoutPromise]);
+    return Array.isArray(result) && result.length > 0;
   } catch (error) {
-    console.error('PostgreSQL health check failed:', error);
+    // Silently fail - don't log to avoid log flooding
+    // Healthcheck should gracefully report database as disconnected
     return false;
   }
 }

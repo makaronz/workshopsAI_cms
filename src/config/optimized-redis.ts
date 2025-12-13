@@ -49,42 +49,87 @@ export class OptimizedRedisService {
   private maxResponseTimeSamples = 1000;
 
   constructor() {
-    this.config = {
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-      password: process.env.REDIS_PASSWORD,
-      db: parseInt(process.env.REDIS_DB || '0'),
-      maxRetriesPerRequest: 3,
-      enableOfflineQueue: false, // Disable for better performance
-      connectTimeout: 10000,
-      commandTimeout: 5000,
-      lazyConnect: true,
-      keepAlive: 30000,
-      family: 4,
-    };
+    // Railway uses REDIS_URL, fallback to REDIS_HOST/REDIS_PORT for development
+    const isProduction = process.env.NODE_ENV === 'production';
+    const redisUrl = process.env.REDIS_URL;
 
-    this.client = new Redis({
-      host: this.config.host,
-      port: this.config.port,
-      password: this.config.password,
-      db: this.config.db,
-      maxRetriesPerRequest: this.config.maxRetriesPerRequest,
-      enableOfflineQueue: this.config.enableOfflineQueue,
-      connectTimeout: this.config.connectTimeout,
-      commandTimeout: this.config.commandTimeout,
-      lazyConnect: this.config.lazyConnect,
-      keepAlive: this.config.keepAlive,
-      family: this.config.family,
-      // Enable clustering for better performance if multiple Redis instances
-      enableReadyCheck: true,
-      // maxLoadingTimeout removed as it is not in RedisOptions
-      // Connection pool optimization
-      connectionName: 'workshopsai-cms',
-      keyPrefix: 'workshopsai:',
-      // Pipeline optimization
-      enableAutoPipelining: true,
-      autoPipeliningIgnoredCommands: ['subscribe', 'unsubscribe', 'psubscribe', 'punsubscribe'],
-    });
+    if (redisUrl) {
+      // Use REDIS_URL if available (Railway standard)
+      this.client = new Redis(redisUrl, {
+        maxRetriesPerRequest: 3,
+        enableOfflineQueue: false, // Disable for better performance
+        connectTimeout: 10000,
+        commandTimeout: 5000,
+        lazyConnect: true,
+        keepAlive: 30000,
+        // Enable clustering for better performance if multiple Redis instances
+        enableReadyCheck: true,
+        // Connection pool optimization
+        connectionName: 'workshopsai-cms',
+        keyPrefix: 'workshopsai:',
+        // Pipeline optimization
+        enableAutoPipelining: true,
+        autoPipeliningIgnoredCommands: ['subscribe', 'unsubscribe', 'psubscribe', 'punsubscribe'],
+      });
+    } else if (process.env.REDIS_HOST || !isProduction) {
+      // Fallback to individual variables (development only)
+      this.config = {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD,
+        db: parseInt(process.env.REDIS_DB || '0'),
+        maxRetriesPerRequest: 3,
+        enableOfflineQueue: false,
+        connectTimeout: 10000,
+        commandTimeout: 5000,
+        lazyConnect: true,
+        keepAlive: 30000,
+        family: 4,
+      };
+
+      this.client = new Redis({
+        host: this.config.host,
+        port: this.config.port,
+        password: this.config.password,
+        db: this.config.db,
+        maxRetriesPerRequest: this.config.maxRetriesPerRequest,
+        enableOfflineQueue: this.config.enableOfflineQueue,
+        connectTimeout: this.config.connectTimeout,
+        commandTimeout: this.config.commandTimeout,
+        lazyConnect: this.config.lazyConnect,
+        keepAlive: this.config.keepAlive,
+        family: this.config.family,
+        enableReadyCheck: true,
+        connectionName: 'workshopsai-cms',
+        keyPrefix: 'workshopsai:',
+        enableAutoPipelining: true,
+        autoPipeliningIgnoredCommands: ['subscribe', 'unsubscribe', 'psubscribe', 'punsubscribe'],
+      });
+    } else {
+      // Production without Redis - create dummy client
+      this.config = {
+        host: 'localhost',
+        port: 6379,
+        password: undefined,
+        db: 0,
+        maxRetriesPerRequest: 0,
+        enableOfflineQueue: false,
+        connectTimeout: 10000,
+        commandTimeout: 5000,
+        lazyConnect: true,
+        keepAlive: 30000,
+        family: 4,
+      };
+
+      this.client = new Redis({
+        host: this.config.host,
+        port: this.config.port,
+        maxRetriesPerRequest: 0,
+        retryStrategy: () => null, // Don't retry
+        lazyConnect: true,
+      });
+      this.client.on('error', () => {}); // Suppress errors
+    }
 
     this.setupEventHandlers();
     this.setupPerformanceMonitoring();

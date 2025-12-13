@@ -1,8 +1,15 @@
 import Redis from 'ioredis';
 
 // Redis configuration
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+// Railway automatically provides REDIS_URL - use it if available
+// In production, don't use localhost fallback (Redis is a separate service)
+const isProduction = process.env.NODE_ENV === 'production';
+const REDIS_URL = process.env.REDIS_URL || (isProduction ? undefined : 'redis://localhost:6379');
 const REDIS_TTL = process.env.REDIS_TTL || '604800'; // 7 days in seconds
+
+if (isProduction && !REDIS_URL) {
+  console.warn('⚠️  REDIS_URL not set in production. Redis features will be disabled.');
+}
 
 // Redis client singleton
 class RedisClient {
@@ -10,6 +17,22 @@ class RedisClient {
 
   static getInstance(): Redis {
     if (!RedisClient.instance) {
+      // If REDIS_URL is not set in production, create a dummy client that won't connect
+      if (!REDIS_URL) {
+        // Return a disconnected client that won't try to connect
+        RedisClient.instance = new Redis({
+          host: 'localhost',
+          port: 6379,
+          lazyConnect: true,
+          enableReadyCheck: false,
+          maxRetriesPerRequest: 0, // Don't retry if not configured
+          retryStrategy: () => null, // Don't retry
+        });
+        // Suppress all errors for unconfigured Redis
+        RedisClient.instance.on('error', () => {});
+        return RedisClient.instance;
+      }
+
       RedisClient.instance = new Redis(REDIS_URL, {
         enableReadyCheck: false,
         maxRetriesPerRequest: null,
@@ -32,14 +55,22 @@ class RedisClient {
       });
 
       // Prevent unhandled error events from crashing the app
+      let lastErrorLogTime = 0;
+      const ERROR_LOG_INTERVAL = 60000; // 1 minute
+
       RedisClient.instance.on('error', (err: any) => {
-        // Only log connection refused errors once per minute to avoid flooding
-        const isConnectionRefused = err.code === 'ECONNREFUSED';
-        if (isConnectionRefused) {
-          // Debounce logging for ECONNREFUSED
-          // console.warn('Redis connection failed (retrying...)');
-        } else {
-          console.error('Redis connection error:', err.message);
+        const now = Date.now();
+        const isConnectionRefused = err.code === 'ECONNREFUSED' || err.code === 'ENOENT';
+        
+        // Only log errors once per minute to avoid flooding
+        if (now - lastErrorLogTime > ERROR_LOG_INTERVAL) {
+          if (isConnectionRefused) {
+            console.warn('⚠️  Redis connection failed (retrying...). Set REDIS_URL if using Redis.');
+            lastErrorLogTime = now;
+          } else {
+            console.error('Redis connection error:', err.message);
+            lastErrorLogTime = now;
+          }
         }
       });
 

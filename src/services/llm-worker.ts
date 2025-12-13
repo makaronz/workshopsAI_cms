@@ -642,13 +642,38 @@ let workerInstance: LLMAnalysisWorker | null = null;
 
 export function getLLMAnalysisWorker(): LLMAnalysisWorker {
   if (!workerInstance) {
-    workerInstance = new LLMAnalysisWorker({
-      redis: {
+    // Railway uses REDIS_URL, fallback to REDIS_HOST/REDIS_PORT for development
+    const isProduction = process.env.NODE_ENV === 'production';
+    const redisUrl = process.env.REDIS_URL;
+
+    let redisConfig: { host: string; port: number; password?: string; db?: number };
+    if (redisUrl) {
+      // Parse REDIS_URL (format: redis://[:password@]host[:port][/db])
+      const url = new URL(redisUrl);
+      redisConfig = {
+        host: url.hostname,
+        port: parseInt(url.port || '6379'),
+        password: url.password || undefined,
+        db: url.pathname ? parseInt(url.pathname.slice(1)) : 0,
+      };
+    } else if (process.env.REDIS_HOST || !isProduction) {
+      // Fallback to individual variables (development only)
+      redisConfig = {
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT || '6379'),
         password: process.env.REDIS_PASSWORD,
         db: parseInt(process.env.REDIS_DB || '0'),
-      },
+      };
+    } else {
+      // Production without Redis - use dummy config
+      redisConfig = {
+        host: 'localhost',
+        port: 6379,
+      };
+    }
+
+    workerInstance = new LLMAnalysisWorker({
+      redis: redisConfig,
       openai: process.env.OPENAI_API_KEY
         ? {
             apiKey: process.env.OPENAI_API_KEY,

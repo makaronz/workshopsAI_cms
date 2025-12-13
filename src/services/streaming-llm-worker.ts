@@ -83,15 +83,38 @@ export class StreamingLLMAnalysisWorker extends EventEmitter {
     this.config = config;
 
     // Initialize Redis connection with connection pooling and retry strategy
-    this.connection = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-      password: process.env.REDIS_PASSWORD || undefined,
-      db: parseInt(process.env.REDIS_DB || '0'),
-      maxRetriesPerRequest: null,
+    // Railway uses REDIS_URL, fallback to REDIS_HOST/REDIS_PORT for development
+    const isProduction = process.env.NODE_ENV === 'production';
+    const redisUrl = process.env.REDIS_URL;
+    
+    let redisConfig: any;
+    if (redisUrl) {
+      // Use REDIS_URL if available (Railway standard)
+      redisConfig = redisUrl;
+    } else if (process.env.REDIS_HOST || !isProduction) {
+      // Fallback to individual variables (development only)
+      redisConfig = {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD || undefined,
+        db: parseInt(process.env.REDIS_DB || '0'),
+      };
+    } else {
+      // Production without Redis - create dummy client
+      redisConfig = {
+        host: 'localhost',
+        port: 6379,
+        maxRetriesPerRequest: 0,
+        retryStrategy: () => null, // Don't retry
+      };
+    }
+
+    this.connection = new Redis(redisConfig, {
+      maxRetriesPerRequest: redisUrl ? null : 0, // Don't retry if not configured
       lazyConnect: true,
       enableOfflineQueue: false,
       retryStrategy(times) {
+        if (!redisUrl && isProduction) return null; // Don't retry if not configured
         const delay = Math.min(times * 1000, 10000); // Max 10s delay
         return delay;
       },

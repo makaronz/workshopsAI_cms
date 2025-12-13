@@ -165,7 +165,7 @@ app.get('/health', async (_req, res) => {
   try {
     // Use Promise.allSettled to prevent blocking on individual service failures
     const results = await Promise.allSettled([
-      checkDatabaseHealth().catch(() => false),
+      checkDatabaseHealth(2000).catch(() => false), // 2 second timeout
       redisService.healthCheck(2000).catch(() => false), // 2 second timeout
       checkLLMServicesHealth().catch(() => ({ status: 'error' })),
     ]);

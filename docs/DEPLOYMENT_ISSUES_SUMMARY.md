@@ -205,19 +205,32 @@ COPY --from=builder --chown=nodejs:nodejs /app/src/templates ./src/templates
 ```
 [ioredis] Unhandled error event: AggregateError [ECONNREFUSED]
 Error: connect ECONNREFUSED 127.0.0.1:6379
+Error: connect ENOENT /railway
 ```
 
+### Root Cause
+- Application was trying to connect to Redis on `localhost:6379` even in production
+- Railway provides Redis as a separate service via `REDIS_URL` environment variable
+- Fallback to localhost was being used even in production environment
+- Multiple services were using `REDIS_HOST`/`REDIS_PORT` instead of `REDIS_URL`
+
 ### Solution
-**File:** `src/config/redis.ts`
-- Added custom retry strategy with exponential backoff
-- Suppressed ECONNREFUSED error logging to prevent log flooding
-- Configured `lazyConnect: true` to delay connection until needed
+**Files Modified:**
+1. `src/config/redis.ts` - Use REDIS_URL, no localhost fallback in production
+2. `src/services/streaming-llm-worker.ts` - Use REDIS_URL instead of REDIS_HOST/REDIS_PORT
+3. `src/queues/workshopAnalysisQueue.ts` - Use REDIS_URL
+4. `src/config/optimized-redis.ts` - Use REDIS_URL
+5. `src/services/enhanced-llm-worker.ts` - Use REDIS_URL
+6. `src/services/llm-worker.ts` - Use REDIS_URL (parse URL)
 
-**File:** `src/services/streaming-llm-worker.ts`
-- Added Redis error handlers
-- Configured retry strategy
+**Key Changes:**
+- In production: Use only `REDIS_URL` environment variable (no localhost fallback)
+- In development: Use `REDIS_URL` if available, fallback to `REDIS_HOST`/`REDIS_PORT`/localhost
+- If `REDIS_URL` not set in production: Create dummy client that won't try to connect
+- Added error logging throttling (max once per minute) to prevent log flooding
+- All Redis connections now use `REDIS_URL` format (Railway standard)
 
-**Result:** Application starts successfully even if Redis is unavailable. Errors are logged but don't crash the app.
+**Result:** Application doesn't try to connect to localhost Redis on Railway. If Redis is not configured, it gracefully degrades without crashing.
 
 ---
 
