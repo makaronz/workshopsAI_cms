@@ -4,7 +4,6 @@ region: fra  # Frankfurt (najbliżej Polski)
 # Web Service - Backend API
 services:
   - name: workshopsai-backend
-    source_dir: /
     github:
       repo: makaronz/workshopsAI_cms
       branch: main

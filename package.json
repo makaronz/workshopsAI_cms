@@ -88,7 +88,7 @@
     "test:deployment:coverage": "jest --config jest.config.deployment.js --coverage",
     "test:deployment:docker": "npm run test:deployment && npm run docker:build && npm run docker:run",
     "validate:esm-imports": "node scripts/validate-esm-imports.js",
-    "validate:build": "npm run build && npm run validate:esm-imports",
+    "validate:build": "npm run build && npm run validate:esm-imports"
   },
   "keywords": [
     "CMS",
