@@ -3,8 +3,9 @@ import postgres from 'postgres';
 import * as pgSchema from '../models/postgresql-schema';
 import * as llmSchema from '../models/llm-schema';
 import * as vectorSchema from '../models/vector-schema';
+import * as cacheSchema from '../models/cache-schema';
 
-const schema = { ...pgSchema, ...llmSchema, ...vectorSchema };
+const schema = { ...pgSchema, ...llmSchema, ...vectorSchema, ...cacheSchema };
 
 // Database configuration for PostgreSQL
 const connectionString = process.env['DATABASE_URL'] ||
