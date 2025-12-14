@@ -6,7 +6,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { redisService } from '../config/redis';
+import { postgresqlRedisReplacement } from './postgresql-redis-replacement';
 import { db } from '../config/postgresql-database';
 import { logger } from '../utils/logger';
 import { WebSocketService } from './websocketService';
@@ -222,9 +222,9 @@ class PreviewService {
    */
   async getPreviewSession(sessionId: string): Promise<PreviewSession | null> {
     try {
-      const sessionData = await redisService
-        .getClient()
-        .get(`preview_session:${sessionId}`);
+      const sessionData = await postgresqlRedisReplacement.get(
+        `preview_session:${sessionId}`
+      );
 
       if (!sessionData) {
         return null;
@@ -457,12 +457,10 @@ class PreviewService {
         userId,
       };
 
-      // Store event in Redis list
+      // Store event in PostgreSQL
       const key = `preview_analytics:${sessionId}`;
-      await redisService.getClient().lpush(key, JSON.stringify(event));
-      await redisService
-        .getClient()
-        .expire(key, this.ANALYTICS_RETENTION_DAYS * 24 * 60 * 60);
+      await postgresqlRedisReplacement.lpush(key, JSON.stringify(event));
+      await postgresqlRedisReplacement.expire(key, this.ANALYTICS_RETENTION_DAYS * 24 * 60 * 60);
 
       // Update engagement metrics
       await this.updateEngagementMetrics(sessionId, event);
@@ -488,7 +486,7 @@ class PreviewService {
   async getPreviewAnalytics(sessionId: string): Promise<PreviewAnalytics> {
     try {
       const key = `preview_analytics:${sessionId}`;
-      const eventData = await redisService.getClient().lrange(key, 0, -1);
+      const eventData = await postgresqlRedisReplacement.lrange(key, 0, -1);
 
       const events: PreviewEvent[] = eventData.map(data => JSON.parse(data));
       const engagement = this.calculateEngagementMetrics(events);
@@ -560,9 +558,9 @@ class PreviewService {
           timestamp: new Date(),
         });
 
-        // Delete from Redis
-        await redisService.getClient().del(`preview_session:${sessionId}`);
-        await redisService.getClient().del(`preview_analytics:${sessionId}`);
+        // Delete from PostgreSQL
+        await postgresqlRedisReplacement.del(`preview_session:${sessionId}`);
+        await postgresqlRedisReplacement.del(`preview_analytics:${sessionId}`);
 
         logger.info(`Deleted preview session: ${sessionId}`);
       }
@@ -578,11 +576,11 @@ class PreviewService {
   async getUserPreviewSessions(userId: string): Promise<PreviewSession[]> {
     try {
       const pattern = 'preview_session:*';
-      const keys = await redisService.getClient().keys(pattern);
+      const keys = await postgresqlRedisReplacement.keys(pattern);
       const sessions: PreviewSession[] = [];
 
       for (const key of keys) {
-        const sessionData = await redisService.getClient().get(key);
+        const sessionData = await postgresqlRedisReplacement.get(key);
         if (sessionData) {
           const session: PreviewSession = JSON.parse(sessionData);
           if (
@@ -607,9 +605,7 @@ class PreviewService {
 
   private async storePreviewSession(session: PreviewSession): Promise<void> {
     const key = `preview_session:${session.id}`;
-    await redisService
-      .getClient()
-      .setex(key, this.PREVIEW_SESSION_TTL, JSON.stringify(session));
+    await postgresqlRedisReplacement.setex(key, this.PREVIEW_SESSION_TTL, JSON.stringify(session));
   }
 
   private getRoomId(session: PreviewSession): string {
@@ -669,23 +665,22 @@ class PreviewService {
     event: PreviewEvent,
   ): Promise<void> {
     const metricsKey = `preview_engagement:${sessionId}`;
-    const current = await redisService.getClient().hgetall(metricsKey);
+    const currentData = await postgresqlRedisReplacement.get(metricsKey);
+    const current = currentData ? JSON.parse(currentData) : {};
 
     const updated = {
-      totalViews: (
-        parseInt(current.totalViews || '0') + (event.type === 'view' ? 1 : 0)
-      ).toString(),
-      uniqueInteractions: (
-        parseInt(current.uniqueInteractions || '0') +
-        (event.type !== 'view' ? 1 : 0)
-      ).toString(),
+      totalViews:
+        (current.totalViews || 0) + (event.type === 'view' ? 1 : 0),
+      uniqueInteractions:
+        (current.uniqueInteractions || 0) + (event.type !== 'view' ? 1 : 0),
       lastEvent: new Date().toISOString(),
     };
 
-    await redisService.getClient().hmset(metricsKey, updated);
-    await redisService
-      .getClient()
-      .expire(metricsKey, this.ANALYTICS_RETENTION_DAYS * 24 * 60 * 60);
+    await postgresqlRedisReplacement.setex(
+      metricsKey,
+      this.ANALYTICS_RETENTION_DAYS * 24 * 60 * 60,
+      JSON.stringify(updated)
+    );
   }
 
   private calculateEngagementMetrics(

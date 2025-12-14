@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService, UserRole } from '../services/authService';
-import { redisService } from '../config/redis';
+import { postgresqlRedisReplacement } from '../services/postgresql-redis-replacement';
 
 // Middleware: Authentication
 export const authenticate = async (
@@ -25,7 +25,7 @@ export const authenticate = async (
       const payload = AuthService.verifyAccessToken(token);
 
       // Check if session exists in Redis
-      const session = await redisService.getSession(payload.sessionId);
+      const session = await postgresqlRedisReplacement.getSession(payload.sessionId);
       if (!session) {
         res.status(401).json({
           error: 'Invalid session',
@@ -272,7 +272,7 @@ export const optionalAuthenticate = async (
       const payload = AuthService.verifyAccessToken(token);
 
       // Check if session exists in Redis
-      const session = await redisService.getSession(payload.sessionId);
+      const session = await postgresqlRedisReplacement.getSession(payload.sessionId);
       if (!session) {
         // Invalid session, continue without authentication
         next();

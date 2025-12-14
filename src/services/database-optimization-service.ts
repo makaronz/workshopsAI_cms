@@ -13,7 +13,7 @@
  */
 
 import { db, client } from '../config/postgresql-database';
-import { redisService } from '../config/redis';
+import { postgresqlRedisReplacement } from './postgresql-redis-replacement';
 import { createHash } from 'crypto';
 
 /**
@@ -441,8 +441,8 @@ export class DatabaseQueryOptimizationService {
       this.slowQueryLog = this.slowQueryLog.slice(-this.config.slowQueries.maxLogEntries);
     }
 
-    // Persist to Redis
-    await redisService.getClient().zadd(
+    // Persist to PostgreSQL
+    await postgresqlRedisReplacement.zadd(
       'slow_queries',
       Date.now(),
       JSON.stringify(entry)
@@ -450,7 +450,7 @@ export class DatabaseQueryOptimizationService {
 
     // Clean old entries
     const cutoff = Date.now() - (this.config.monitoring.retentionDays * 24 * 60 * 60 * 1000);
-    await redisService.getClient().zremrangebyscore('slow_queries', 0, cutoff);
+    await postgresqlRedisReplacement.zremrangebyscore('slow_queries', 0, cutoff);
   }
 
   /**
@@ -484,7 +484,7 @@ export class DatabaseQueryOptimizationService {
    */
   private async cacheQueryAnalysis(fingerprint: string, analysis: QueryAnalysisResult): Promise<void> {
     const key = `query_analysis:${fingerprint}`;
-    await redisService.getClient().setex(
+    await postgresqlRedisReplacement.setex(
       key,
       3600, // 1 hour
       JSON.stringify(analysis)
@@ -497,7 +497,7 @@ export class DatabaseQueryOptimizationService {
   private async loadCachedStatistics(): Promise<void> {
     try {
       // Load query statistics
-      const queryStatsData = await redisService.getClient().get('query_statistics');
+      const queryStatsData = await postgresqlRedisReplacement.get('query_statistics');
       if (queryStatsData) {
         const stats = JSON.parse(queryStatsData);
         stats.forEach((stat: QueryStats) => {
@@ -506,7 +506,7 @@ export class DatabaseQueryOptimizationService {
       }
 
       // Load slow query log
-      const slowQueries = await redisService.getClient().zrange('slow_queries', 0, -1);
+      const slowQueries = await postgresqlRedisReplacement.zrange('slow_queries', 0, -1);
       slowQueries.forEach(entry => {
         this.slowQueryLog.push(JSON.parse(entry));
       });
@@ -825,7 +825,7 @@ export class DatabaseQueryOptimizationService {
 
     // Store metrics for trend analysis
     const key = `metrics:${Date.now()}`;
-    await redisService.getClient().setex(
+    await postgresqlRedisReplacement.setex(
       key,
       this.config.monitoring.retentionDays * 24 * 60 * 60,
       JSON.stringify(metrics)
@@ -873,7 +873,7 @@ export class DatabaseQueryOptimizationService {
     try {
       // Persist query statistics
       const queryStatsArray = Array.from(this.queryStats.values());
-      await redisService.getClient().setex(
+      await postgresqlRedisReplacement.setex(
         'query_statistics',
         this.config.monitoring.retentionDays * 24 * 60 * 60,
         JSON.stringify(queryStatsArray)
@@ -891,8 +891,8 @@ export class DatabaseQueryOptimizationService {
     this.slowQueryLog = [];
     this.indexUsageStats.clear();
 
-    await redisService.getClient().del('query_statistics');
-    await redisService.getClient().del('slow_queries');
+    await postgresqlRedisReplacement.del('query_statistics');
+    await postgresqlRedisReplacement.del('slow_queries');
 
     console.log('Database optimization statistics cleared');
   }

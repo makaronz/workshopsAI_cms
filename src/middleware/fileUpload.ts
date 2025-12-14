@@ -6,7 +6,7 @@ import {
   UploadProgressCallback,
 } from '../services/storageService';
 import { AuthService } from '../services/authService';
-import { redisService } from '../config/redis';
+import { postgresqlRedisReplacement } from '../services/postgresql-redis-replacement';
 import {
   storageConfig,
   isFileAllowed,
@@ -174,7 +174,7 @@ async function scanForViruses(
 function createProgressTracker(uploadId: string): UploadProgressCallback {
   return async progress => {
     try {
-      await redisService.getClient().setex(
+      await postgresqlRedisReplacement.setex(
         `upload:progress:${uploadId}`,
         300, // 5 minutes TTL
         JSON.stringify(progress),
@@ -397,7 +397,7 @@ export function createFileUploadMiddleware(
           // Clear progress after a delay
           setTimeout(async () => {
             try {
-              await redisService.getClient().del(`upload:progress:${uploadId}`);
+              await postgresqlRedisReplacement.del(`upload:progress:${uploadId}`);
             } catch (error) {
               // Ignore cleanup errors
             }
@@ -512,7 +512,7 @@ export async function getUploadProgress(req: Request, res: Response) {
       });
     }
 
-    const progressData = await redisService.getClient().get(
+    const progressData = await postgresqlRedisReplacement.get(
       `upload:progress:${uploadId}`,
     );
 
@@ -554,7 +554,7 @@ export async function cancelUpload(req: Request, res: Response) {
     }
 
     // Remove progress data
-    await redisService.getClient().del(`upload:progress:${uploadId}`);
+    await postgresqlRedisReplacement.del(`upload:progress:${uploadId}`);
 
     // TODO: Implement actual upload cancellation
     // This would require integration with the storage provider's multipart upload cancellation

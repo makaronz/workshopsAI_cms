@@ -1,0 +1,15 @@
+# Railway Configuration for WorkshopsAI CMS
+# PostgreSQL-only deployment (no Redis required)
+
+[build]
+builder = "nixpacks"
+buildCommand = "npm run build"
+startCommand = "npm start"
+
+[[services]]
+name = "web"
+port = ${PORT}
+healthcheckPath = "/health"
+
+[services.env]
+NODE_ENV = "production"

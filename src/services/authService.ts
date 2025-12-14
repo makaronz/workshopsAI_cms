@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { randomBytes } from 'crypto';
 import { Request } from 'express';
 import { db, RLSHelper } from '../config/postgresql-database';
-import { redisService } from '../config/redis';
+import { postgresqlRedisReplacement } from './postgresql-redis-replacement';
 import { users, auditLogs, consents } from '../models/postgresql-schema';
 import { eq, and, desc, isNull } from 'drizzle-orm';
 
@@ -359,7 +359,7 @@ export class AuthService {
 
     if (!user) {
       // Record failed login attempt
-      await redisService.recordAuthAttempt(email, ipAddress || 'unknown');
+      await postgresqlRedisReplacement.recordAuthAttempt(email, ipAddress || 'unknown');
 
       // Create audit log for failed login attempt
       await this.createAuditLog(
@@ -377,7 +377,7 @@ export class AuthService {
     }
 
     // Check rate limiting
-    const attempts = await redisService.getAuthAttempts(
+    const attempts = await postgresqlRedisReplacement.getAuthAttempts(
       email,
       ipAddress || 'unknown',
     );
@@ -388,7 +388,7 @@ export class AuthService {
     }
 
     // Clear failed attempts on successful login
-    await redisService.clearAuthAttempts(email, ipAddress || 'unknown');
+    await postgresqlRedisReplacement.clearAuthAttempts(email, ipAddress || 'unknown');
 
     // Generate session ID
     const sessionId = this.generateSessionId();
@@ -404,8 +404,8 @@ export class AuthService {
     const accessToken = this.generateAccessToken(payload);
     const refreshToken = this.generateRefreshToken();
 
-    // Store refresh token in Redis
-    await redisService.storeRefreshToken(
+    // Store refresh token in PostgreSQL
+    await postgresqlRedisReplacement.storeRefreshToken(
       user.id,
       refreshToken,
       deviceInfo,
@@ -413,7 +413,7 @@ export class AuthService {
     );
 
     // Store session data
-    await redisService.storeSession(sessionId, {
+    await postgresqlRedisReplacement.storeSession(sessionId, {
       userId: user.id,
       email: user.email,
       role: user.role,
@@ -492,7 +492,7 @@ export class AuthService {
     let userRecord = null;
 
     for (const user of allUsers) {
-      tokenData = await redisService.getRefreshToken(user.id, refreshToken);
+      tokenData = await postgresqlRedisReplacement.getRefreshToken(user.id, refreshToken);
       if (tokenData) {
         userRecord = user;
         break;
@@ -504,7 +504,7 @@ export class AuthService {
     }
 
     // Update last used timestamp
-    await redisService.updateRefreshTokenUsage(userRecord.id, refreshToken);
+    await postgresqlRedisReplacement.updateRefreshTokenUsage(userRecord.id, refreshToken);
 
     // Generate new access token
     const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
@@ -544,10 +544,10 @@ export class AuthService {
     userAgent?: string,
   ): Promise<void> {
     // Revoke refresh token
-    await redisService.revokeRefreshToken(userId, refreshToken);
+    await postgresqlRedisReplacement.revokeRefreshToken(userId, refreshToken);
 
     // Delete session
-    await redisService.deleteSession(sessionId);
+    await postgresqlRedisReplacement.deleteSession(sessionId);
 
     // Create audit log
     await this.createAuditLog(
@@ -569,7 +569,7 @@ export class AuthService {
     userAgent?: string,
   ): Promise<void> {
     // Revoke all refresh tokens
-    await redisService.revokeAllUserTokens(userId);
+    await postgresqlRedisReplacement.revokeAllUserTokens(userId);
 
     // Create audit log
     await this.createAuditLog(
@@ -586,11 +586,11 @@ export class AuthService {
 
   // Get user sessions
   static async getUserSessions(userId: string): Promise<any[]> {
-    const tokens = await redisService.getUserTokens(userId);
+    const tokens = await postgresqlRedisReplacement.getUserTokens(userId);
     const sessions = [];
 
     for (const token of tokens) {
-      const tokenData = await redisService.getRefreshToken(userId, token);
+      const tokenData = await postgresqlRedisReplacement.getRefreshToken(userId, token);
       if (tokenData) {
         sessions.push(tokenData);
       }

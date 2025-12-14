@@ -38,6 +38,9 @@ import {
 import { getLLMAnalysisWorker } from './services/llm-worker';
 import { embeddingsService } from './services/embeddings';
 
+// Import Redis replacement
+import { postgresqlRedisReplacement } from './services/postgresql-redis-replacement';
+
 // LLM worker - will be initialized only if Redis is available
 let llmAnalysisWorker: ReturnType<typeof getLLMAnalysisWorker> | null = null;
 
@@ -307,7 +310,7 @@ app.get('/health', async (_req, res) => {
     // Use Promise.allSettled to prevent blocking on individual service failures
     const results = await Promise.allSettled([
       checkDatabaseHealth(2000).catch(() => false), // 2 second timeout
-      redisService.healthCheck(2000).catch(() => false), // 2 second timeout
+      postgresqlRedisReplacement.healthCheck().catch(() => false), // 2 second timeout
       checkLLMServicesHealth().catch(() => ({ status: 'error' })),
     ]);
 
@@ -471,7 +474,7 @@ process.on('SIGTERM', async () => {
       if (llmAnalysisWorker) {
         await llmAnalysisWorker.shutdown();
       }
-      await redisService.disconnect();
+      await postgresqlRedisReplacement.disconnect();
       await closeDatabaseConnection();
       console.log('✅ All services terminated gracefully');
     } catch (error) {
@@ -503,7 +506,7 @@ process.on('SIGINT', async () => {
       if (llmAnalysisWorker) {
         await llmAnalysisWorker.shutdown();
       }
-      await redisService.disconnect();
+      await postgresqlRedisReplacement.disconnect();
       await closeDatabaseConnection();
       console.log('✅ All services terminated gracefully');
     } catch (error) {
