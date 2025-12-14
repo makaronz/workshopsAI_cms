@@ -151,7 +151,7 @@ export class PostgreSQLRedisReplacement {
       const updatedTokens = tokens.filter(t => t !== refreshToken);
 
       if (updatedTokens.length === 0) {
-        await db.delete(keyValueStores)
+        await db.delete(keyValueStore)
           .where(eq(keyValueStore.key, userTokensKey));
       } else {
         await db.update(keyValueStore)
