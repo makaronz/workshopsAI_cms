@@ -2246,3 +2246,25 @@ export const workshopAnalysisResultsRelations = relations(workshopAnalysisResult
     references: [workshopLLMAnalyses.id],
   }),
 }));
+
+/**
+ * Key-Value Store table - replaces Redis for small-scale applications
+ * Simple key-value storage with TTL support
+ */
+export const keyValueStore = pgTable(
+  'key_value_store',
+  {
+    key: text('key').primaryKey(),
+    value: jsonb('value').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  table => ({
+    expiresIdx: index('idx_key_value_expires').on(table.expiresAt),
+    createdIdx: index('idx_key_value_created').on(table.createdAt),
+  }),
+);
+
+export type KeyValueStore = typeof keyValueStore.$inferSelect;
+export type InsertKeyValueStore = typeof keyValueStore.$inferInsert;

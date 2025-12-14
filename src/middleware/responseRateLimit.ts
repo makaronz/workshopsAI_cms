@@ -1,6 +1,6 @@
 import rateLimit from 'express-rate-limit';
 import { Request, Response } from 'express';
-import { redisService } from '../config/redis';
+import { postgresqlRedisReplacement } from '../services/postgresql-redis-replacement';
 
 // Base rate limiting configuration for response endpoints
 const createResponseRateLimit = (options: {
@@ -45,9 +45,10 @@ const createResponseRateLimit = (options: {
       const identifier = req.user?.id ? `user:${req.user.id}` : `ip:${req.ip}`;
       console.warn(`Rate limit exceeded for ${identifier} on ${req.path}`);
 
-      // Store violation in Redis for monitoring
+      // Store violation in PostgreSQL for monitoring
       try {
-        await redisService.getClient().setex(          `rate_limit_violation:${identifier}:${req.path}`,
+        await postgresqlRedisReplacement.setex(
+          `rate_limit_violation:${identifier}:${req.path}`,
           3600, // 1 hour
           JSON.stringify({
             timestamp: new Date().toISOString(),
@@ -142,7 +143,7 @@ export class ResponseDuplicateTracker {
         ? `response_exists:${questionId}:user:${userId}`
         : `response_exists:${questionId}:ip:${ipAddress}`;
 
-      const exists = await redisService.getClient().get(key);
+      const exists = await postgresqlRedisReplacement.get(key);
       return exists === 'true';
     } catch (error) {
       console.error('Error checking response existence:', error);
@@ -162,7 +163,7 @@ export class ResponseDuplicateTracker {
         : `response_exists:${questionId}:ip:${ipAddress}`;
 
       // Set with 24 hour expiration to allow for legitimate re-submissions
-      await redisService.getClient().setex(key, 24 * 60 * 60, 'true');
+      await postgresqlRedisReplacement.setex(key, 24 * 60 * 60, 'true');
     } catch (error) {
       console.error('Error marking response as submitted:', error);
     }
@@ -179,7 +180,7 @@ export class ResponseDuplicateTracker {
         ? `response_exists:${questionId}:user:${userId}`
         : `response_exists:${questionId}:ip:${ipAddress}`;
 
-      await redisService.getClient().del(key);
+      await postgresqlRedisReplacement.del(key);
     } catch (error) {
       console.error('Error removing response mark:', error);
     }
@@ -216,9 +217,11 @@ export class AdaptiveRateLimit {
   async getUserRiskScore(userId: string): Promise<number> {
     try {
       // Check for suspicious patterns
-      const recentResponses = await redisService.getClient().get(        `user_responses:${userId}:recent`,
+      const recentResponses = await postgresqlRedisReplacement.get(
+        `user_responses:${userId}:recent`
       );
-      const violationCount = await redisService.getClient().get(        `user_violations:${userId}:count`,
+      const violationCount = await postgresqlRedisReplacement.get(
+        `user_violations:${userId}:count`
       );
 
       let riskScore = 0;
@@ -234,7 +237,7 @@ export class AdaptiveRateLimit {
       }
 
       // New users get slightly higher risk score
-      const userAge = await redisService.getClient().get(`user_age:${userId}`);
+      const userAge = await postgresqlRedisReplacement.get(`user_age:${userId}`);
       if (!userAge || parseInt(userAge) < 3600) {
         // Less than 1 hour
         riskScore += 10;
@@ -268,27 +271,26 @@ export class AdaptiveRateLimit {
       const now = Date.now();
 
       // Track recent responses (sliding window)
-      await redisService.getClient().lpush(
+      await postgresqlRedisReplacement.lpush(
         `user_responses:${userId}:recent`,
         now.toString(),
       );
-      await redisService.getClient().ltrim(`user_responses:${userId}:recent`, 0, 99); // Keep last 100
-      await redisService.getClient().expire(`user_responses:${userId}:recent`, 3600); // 1 hour expiration
+      await postgresqlRedisReplacement.ltrim(`user_responses:${userId}:recent`, 0, 99); // Keep last 100
+      await postgresqlRedisReplacement.expire(`user_responses:${userId}:recent`, 3600); // 1 hour expiration
 
       // Track questionnaire-specific activity
-      await redisService.getClient().incr(
+      await postgresqlRedisReplacement.incr(
         `user_questionnaire:${userId}:${questionnaireId}`,
       );
-      await redisService.getClient().expire(
+      await postgresqlRedisReplacement.expire(
         `user_questionnaire:${userId}:${questionnaireId}`,
         3600,
       );
 
       // Update user age if this is their first activity
-      const userAge = await redisService.getClient().get(`user_age:${userId}`);
+      const userAge = await postgresqlRedisReplacement.get(`user_age:${userId}`);
       if (!userAge) {
-        await redisService.getClient().set(`user_age:${userId}`, Math.floor(now / 1000));
-        await redisService.getClient().expire(`user_age:${userId}`, 30 * 24 * 3600); // 30 days
+        await postgresqlRedisReplacement.setex(`user_age:${userId}`, 30 * 24 * 3600, Math.floor(now / 1000).toString());
       }
     } catch (error) {
       console.error('Error tracking user response:', error);
@@ -298,17 +300,17 @@ export class AdaptiveRateLimit {
   // Log rate limit violations for this user
   async logViolation(userId: string, reason: string): Promise<void> {
     try {
-      await redisService.getClient().incr(`user_violations:${userId}:count`);
-      await redisService.getClient().expire(`user_violations:${userId}:count`, 24 * 3600); // 24 hours
+      await postgresqlRedisReplacement.incr(`user_violations:${userId}:count`);
+      await postgresqlRedisReplacement.expire(`user_violations:${userId}:count`, 24 * 3600); // 24 hours
 
-      await redisService.getClient().lpush(
+      await postgresqlRedisReplacement.lpush(
         `user_violations:${userId}:log`,
         JSON.stringify({
           timestamp: new Date().toISOString(),
           reason,
         }),
       );
-      await redisService.getClient().ltrim(`user_violations:${userId}:log`, 0, 9); // Keep last 10
+      await postgresqlRedisReplacement.ltrim(`user_violations:${userId}:log`, 0, 9); // Keep last 10
     } catch (error) {
       console.error('Error logging user violation:', error);
     }

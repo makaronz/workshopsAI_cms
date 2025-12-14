@@ -12,7 +12,7 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import jwt from 'jsonwebtoken';
-import { redisService } from '../config/redis';
+import { postgresqlRedisReplacement } from './postgresql-redis-replacement';
 import { logger } from '../utils/logger';
 
 // Types for WebSocket communication
@@ -92,34 +92,9 @@ class WebSocketService {
       maxHttpBufferSize: 1e8, // 100 MB
     });
 
-    this.setupRedisAdapter();
     this.setupMiddleware();
     this.setupEventHandlers();
     this.startCleanupInterval();
-  }
-
-  /**
-   * Setup Redis adapter for multi-instance scalability
-   */
-  private async setupRedisAdapter(): Promise<void> {
-    try {
-      const redisClient = redisService.getClient();
-      const pubClient = redisClient.duplicate();
-      const subClient = redisClient.duplicate();
-
-      await Promise.all([pubClient.connect(), subClient.connect()]);
-
-      // Note: In a real implementation, you would use the Redis adapter
-      // const { createAdapter } = require('@socket.io/redis-adapter');
-      // this.io.adapter(createAdapter(pubClient, subClient));
-
-      logger.info('WebSocket Redis adapter configured');
-    } catch (error) {
-      logger.warn(
-        'Redis adapter setup failed, falling back to single instance:',
-        error,
-      );
-    }
   }
 
   /**
@@ -596,7 +571,7 @@ class WebSocketService {
   ): Promise<void> {
     try {
       const key = `preview_state:${roomId}`;
-      await redisService.getClient().setex(key, 3600, JSON.stringify(state)); // 1 hour
+      await postgresqlRedisReplacement.setex(key, 3600, JSON.stringify(state)); // 1 hour
     } catch (error) {
       logger.warn('Failed to persist room state:', error);
     }
