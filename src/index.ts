@@ -1,7 +1,7 @@
 // Load environment variables FIRST before any other imports
 import './config/env';
 
-// NOTE: This is the complex version with Redis and enterprise features
+// NOTE: This version uses PostgreSQL for all caching and job queues (no Redis required)
 // For simple deployment, use index-simple.ts instead
 
 import express from 'express';
@@ -41,7 +41,7 @@ import { embeddingsService } from './services/embeddings';
 // Import Redis replacement
 import { postgresqlRedisReplacement } from './services/postgresql-redis-replacement';
 
-// LLM worker - will be initialized only if Redis is available
+// LLM worker - uses PostgreSQL job queue (no Redis needed)
 let llmAnalysisWorker: ReturnType<typeof getLLMAnalysisWorker> | null = null;
 
 // Import WebSocket and Preview services
@@ -315,7 +315,7 @@ app.get('/health', async (_req, res) => {
     ]);
 
     const dbHealthy = results[0].status === 'fulfilled' ? results[0].value : false;
-    const redisHealthy = results[1].status === 'fulfilled' ? results[1].value : false;
+    const cacheHealthy = results[1].status === 'fulfilled' ? results[1].value : false;
     const llmServicesHealth = results[2].status === 'fulfilled' ? results[2].value : { status: 'error' };
 
     // Always return 200 OK - most PaaS platforms require this for successful deployment
@@ -325,7 +325,7 @@ app.get('/health', async (_req, res) => {
       uptime: process.uptime(),
       environment: NODE_ENV,
       database: dbHealthy ? 'connected' : 'disconnected',
-      redis: redisHealthy ? 'connected' : 'disconnected',
+      cache: redisHealthy ? 'connected' : 'disconnected',
       llmServices: llmServicesHealth,
     });
   } catch (error) {
@@ -337,7 +337,7 @@ app.get('/health', async (_req, res) => {
       uptime: process.uptime(),
       environment: NODE_ENV,
       database: 'unknown',
-      redis: 'unknown',
+      cache: 'unknown',
       llmServices: { status: 'error' },
       error: NODE_ENV === 'development' ? (error as any).message : undefined,
     });
@@ -538,28 +538,24 @@ const startServer = async () => {
     dbOptimization = null;
   }
 
-  // Initialize workers only if Redis is available
-  if (process.env.REDIS_URL) {
-    try {
-      console.log('🚀 Initializing LLM Analysis Worker...');
-      llmAnalysisWorker = getLLMAnalysisWorker();
-      console.log('✅ LLM Analysis Worker initialized');
-    } catch (error) {
-      console.error('❌ Failed to initialize LLM Analysis Worker:', error.message);
-      llmAnalysisWorker = null;
-    }
+  // Initialize workers (using PostgreSQL job queue, no Redis needed)
+  try {
+    console.log('🚀 Initializing LLM Analysis Worker...');
+    llmAnalysisWorker = getLLMAnalysisWorker();
+    console.log('✅ LLM Analysis Worker initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize LLM Analysis Worker:', error.message);
+    llmAnalysisWorker = null;
+  }
 
-    try {
-      console.log('🚀 Initializing Streaming LLM Worker...');
-      streamingWorker = new StreamingLLMAnalysisWorker();
-      await streamingWorker.initialize();
-      console.log('✅ Streaming LLM Worker initialized');
-    } catch (error) {
-      console.error('❌ Failed to initialize Streaming LLM Worker:', error.message);
-      streamingWorker = null;
-    }
-  } else {
-    console.log('⚠️  Skipping workers initialization - REDIS_URL not set');
+  try {
+    console.log('🚀 Initializing Streaming LLM Worker...');
+    streamingWorker = new StreamingLLMAnalysisWorker();
+    await streamingWorker.initialize();
+    console.log('✅ Streaming LLM Worker initialized');
+  } catch (error) {
+    console.error('❌ Failed to initialize Streaming LLM Worker:', error.message);
+    streamingWorker = null;
   }
 
   try {
@@ -624,7 +620,7 @@ if (require.main === module) {
   });
 } else {
   // If imported, we still want to initialize services but not listen
-  // Note: initializing services might connect to DB/Redis, which is fine for Cloud Functions cold start
+  // Note: initializing services might connect to DB, which is fine for Cloud Functions cold start
   // but we need to handle the async nature.
   // For Cloud Functions, we might need to export a wrapped version that ensures initialization.
   
