@@ -6,9 +6,6 @@
         "-y",
         "@upstash/context7-mcp"
       ]
-      "env": {
-        "DEFAULT_MINIMUM_TOKENS": ""
-      }
     },
     "filesystem": {
       "command": "npx",
