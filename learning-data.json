@@ -1,0 +1,62 @@
+{
+  "agents": [
+    {
+      "name": "Frontend-Dev",
+      "trajectoryCount": 1,
+      "successRate": 0.9849999999999999,
+      "capabilities": [
+        "coder",
+        "ui"
+      ]
+    },
+    {
+      "name": "Backend-Dev",
+      "trajectoryCount": 1,
+      "successRate": 0.9849999999999999,
+      "capabilities": [
+        "coder",
+        "api"
+      ]
+    },
+    {
+      "name": "QA-Tester",
+      "trajectoryCount": 1,
+      "successRate": 0.9849999999999999,
+      "capabilities": [
+        "tester",
+        "automation"
+      ]
+    },
+    {
+      "name": "Security-Review",
+      "trajectoryCount": 1,
+      "successRate": 0.9849999999999999,
+      "capabilities": [
+        "reviewer",
+        "security"
+      ]
+    },
+    {
+      "name": "DevOps",
+      "trajectoryCount": 0,
+      "successRate": 1,
+      "capabilities": [
+        "deployer",
+        "cicd"
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "description": "Implement user authentication system",
+      "duration": 392,
+      "successRate": 1
+    }
+  ],
+  "metrics": {
+    "totalWorkflows": 1,
+    "successRate": 0.5,
+    "avgDuration": 196,
+    "conflictsResolved": 0
+  }
+}

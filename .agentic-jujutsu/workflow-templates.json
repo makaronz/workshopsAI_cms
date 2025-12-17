@@ -1,0 +1,74 @@
+{
+  "featureDevelopment": {
+    "name": "Feature Development",
+    "agents": [
+      "developer",
+      "reviewer",
+      "tester"
+    ],
+    "stages": [
+      {
+        "name": "analysis",
+        "agent": "developer"
+      },
+      {
+        "name": "implementation",
+        "agent": "developer"
+      },
+      {
+        "name": "review",
+        "agent": "reviewer"
+      },
+      {
+        "name": "testing",
+        "agent": "tester"
+      },
+      {
+        "name": "deployment",
+        "agent": "devops"
+      }
+    ]
+  },
+  "bugFix": {
+    "name": "Bug Fix",
+    "agents": [
+      "developer",
+      "tester"
+    ],
+    "stages": [
+      {
+        "name": "investigation",
+        "agent": "developer"
+      },
+      {
+        "name": "fix",
+        "agent": "developer"
+      },
+      {
+        "name": "verification",
+        "agent": "tester"
+      }
+    ]
+  },
+  "codeReview": {
+    "name": "Code Review",
+    "agents": [
+      "reviewer",
+      "security"
+    ],
+    "stages": [
+      {
+        "name": "automated-checks",
+        "agent": "reviewer"
+      },
+      {
+        "name": "security-scan",
+        "agent": "security"
+      },
+      {
+        "name": "manual-review",
+        "agent": "reviewer"
+      }
+    ]
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "preTask": [
+    "npx agentic-jujutsu hooks pre-task --description \"$DESCRIPTION\"",
+    "npx agentic-jujutsu hooks session-restore"
+  ],
+  "postEdit": [
+    "npx agentic-jujutsu hooks post-edit --file \"$FILE\"",
+    "npx agentic-jujutsu hooks notify --message \"Modified $FILE\""
+  ],
+  "postTask": [
+    "npx agentic-jujutsu hooks post-task --task-id \"$TASK_ID\"",
+    "npx agentic-jujutsu hooks memory-sync"
+  ]
+}
