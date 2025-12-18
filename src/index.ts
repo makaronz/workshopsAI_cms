@@ -41,6 +41,10 @@ import { embeddingsService } from './services/embeddings';
 // Import Redis replacement
 import { postgresqlRedisReplacement } from './services/postgresql-redis-replacement';
 
+// Import Rate Limiting
+import { createRateLimitMiddleware, RateLimitingMiddleware } from './rate-limiting/middleware';
+import { RateLimitAdminTools } from './rate-limiting/admin-tools';
+
 // LLM worker - uses PostgreSQL job queue (no Redis needed)
 let llmAnalysisWorker: ReturnType<typeof getLLMAnalysisWorker> | null = null;
 
@@ -66,7 +70,7 @@ let dbOptimization: DatabaseOptimizationIntegration;
 let streamingWorker: StreamingLLMAnalysisWorker;
 
 // Initialize Rate Limiting System
-let rateLimitMiddleware: any;
+let rateLimitMiddleware: any = null;
 let rateLimitAdminTools: RateLimitAdminTools | null = null;
 
 // Environment variables - Fix index signature access
@@ -115,10 +119,10 @@ rateLimitMiddleware = createRateLimitMiddleware({
       config: {
         second: { limit: 5, windowMs: 1000, penaltyMs: 60000 },
         minute: { limit: 20, windowMs: 60000, penaltyMs: 300000 },
-        hour: { limit: 100, windowMs: 3600000 }
+        hour: { limit: 100, windowMs: 3600000 },
       },
       priority: 10,
-      enabled: true
+      enabled: true,
     },
     {
       id: 'file-upload-endpoints',
@@ -126,10 +130,10 @@ rateLimitMiddleware = createRateLimitMiddleware({
       config: {
         second: { limit: 2, windowMs: 1000 },
         minute: { limit: 10, windowMs: 60000 },
-        hour: { limit: 50, windowMs: 3600000 }
+        hour: { limit: 50, windowMs: 3600000 },
       },
       priority: 10,
-      enabled: true
+      enabled: true,
     },
     {
       id: 'workshop-intelligence',
@@ -137,31 +141,31 @@ rateLimitMiddleware = createRateLimitMiddleware({
       config: {
         second: { limit: 10, windowMs: 1000 },
         minute: { limit: 100, windowMs: 60000 },
-        hour: { limit: 1000, windowMs: 3600000 }
+        hour: { limit: 1000, windowMs: 3600000 },
       },
       priority: 8,
-      enabled: true
+      enabled: true,
     },
     {
       id: 'api-endpoints',
       pattern: /^\/api\//,
       config: {
         second: { limit: 50, windowMs: 1000 },
-        minute: { limit: 2000, windowMs: 60000 }
+        minute: { limit: 2000, windowMs: 60000 },
       },
       priority: 5,
-      enabled: true
+      enabled: true,
     },
     {
       id: 'public-endpoints',
       pattern: /^\/api\/v1\/public/,
       config: {
         second: { limit: 100, windowMs: 1000 },
-        minute: { limit: 5000, windowMs: 60000 }
-      },
+        minute: { limit: 5000, windowMs: 60000 },
       priority: 3,
-      enabled: true
+      enabled: true,
     }
+  },
   ],
 
   // Enable adaptive rate limiting based on system load
@@ -173,7 +177,7 @@ rateLimitMiddleware = createRateLimitMiddleware({
   // Custom key generator that considers user authentication
   keyGenerator: (req) => {
     const user = (req as any).user;
-    if (user && user.id) {
+    if (user?.id) {
       // Different limits for authenticated users based on role
       const role = user.role || 'user';
       return `user:${user.id}:${role}`;
@@ -185,7 +189,7 @@ rateLimitMiddleware = createRateLimitMiddleware({
   },
 
   // Custom error handler for rate limit violations
-  errorHandler: (error, req, res, next) => {
+  errorHandler: (error, req, res, _next) => {
     // Log rate limit hits for monitoring
     console.warn('Rate limit exceeded', {
       ip: req.ip,
@@ -203,7 +207,7 @@ rateLimitMiddleware = createRateLimitMiddleware({
         ? 'Access temporarily blocked due to repeated violations. Please try again later.'
         : 'Too many requests. Please try again later.',
       retryAfter: error.retryAfter,
-      details: process.env.NODE_ENV === 'development' ? error.details : undefined
+      details: process.env.NODE_ENV === 'development' ? error.details : undefined,
     });
   }
 });
@@ -227,8 +231,8 @@ if (NODE_ENV !== 'production') {
         }
         next();
       },
-      prefix: '/admin/rate-limit'
-    }
+      prefix: '/admin/rate-limit',
+    },
   );
 
   // Mount admin routes
@@ -268,7 +272,7 @@ app.use((req, res, next) => {
 
     const sanitized: any = {};
     for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
         if (typeof obj[key] === 'string') {
           sanitized[key] = xss(obj[key]);
         } else if (typeof obj[key] === 'object') {
@@ -325,7 +329,7 @@ app.get('/health', async (_req, res) => {
       uptime: process.uptime(),
       environment: NODE_ENV,
       database: dbHealthy ? 'connected' : 'disconnected',
-      cache: redisHealthy ? 'connected' : 'disconnected',
+      cache: cacheHealthy ? 'connected' : 'disconnected',
       llmServices: llmServicesHealth,
     });
   } catch (error) {
@@ -380,7 +384,7 @@ async function checkLLMServicesHealth() {
 // Frontend may call /api/auth/*, rewrite to /api/v1/auth/*
 app.use('/api', (req, res, next) => {
   if (!req.path.startsWith('/v1/')) {
-    req.url = '/v1' + req.url;
+    req.url = `/v1${req.url}`;
   }
   next();
 });
@@ -459,7 +463,7 @@ process.on('SIGTERM', async () => {
 
     try {
       // Shutdown rate limiting system
-      if (rateLimitMiddleware && rateLimitMiddleware.close) {
+      if (rateLimitMiddleware?.close) {
         console.log('🚦 Shutting down Rate Limiting System...');
         await rateLimitMiddleware.close();
       }
@@ -491,7 +495,7 @@ process.on('SIGINT', async () => {
 
     try {
       // Shutdown rate limiting system
-      if (rateLimitMiddleware && rateLimitMiddleware.close) {
+      if (rateLimitMiddleware?.close) {
         console.log('🚦 Shutting down Rate Limiting System...');
         await rateLimitMiddleware.close();
       }
@@ -625,6 +629,7 @@ if (require.main === module) {
   // For Cloud Functions, we might need to export a wrapped version that ensures initialization.
   
   // We'll export an init function
+}
 }
 
 export { app, server, startServer };
