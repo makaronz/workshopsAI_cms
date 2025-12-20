@@ -26,6 +26,10 @@ export interface PerformanceIntegrationConfig {
   }>;
 }
 
+export interface PerformanceSystem {
+  shutdown: () => Promise<void>;
+}
+
 /**
  * Initialize performance monitoring and caching system
  */
@@ -33,7 +37,7 @@ export async function initializePerformanceSystem(
   app: express.Application,
   httpServer: Server,
   config: PerformanceIntegrationConfig = {}
-): Promise<void> {
+): Promise<PerformanceSystem> {
   const {
     enableMonitoring = true,
     enableCaching = true,
@@ -98,10 +102,26 @@ export async function initializePerformanceSystem(
     // Set up API routes
     setupPerformanceRoutes(app);
 
-    // Set up graceful shutdown
-    setupGracefulShutdown();
+    // Don't setup internal graceful shutdown listener, let the container handle it
+    // setupGracefulShutdown();
 
     logger.info('Performance system initialization completed successfully');
+
+    return {
+      shutdown: async () => {
+        logger.info('Shutting down performance monitoring and caching services...');
+        try {
+          // Stop monitoring
+          enhancedPerformanceMonitoringService.stopMonitoring();
+          // Stop cache warming
+          enhancedCachingService.stopWarming();
+          logger.info('Performance services stopped gracefully');
+        } catch (error) {
+          logger.error('Error during performance services shutdown:', error);
+        }
+      }
+    };
+
   } catch (error) {
     logger.error('Failed to initialize performance system:', error);
     throw error;
@@ -154,32 +174,6 @@ function setupPerformanceRoutes(app: express.Application): void {
   } catch (error) {
     logger.error('Failed to set up performance routes:', error);
   }
-}
-
-/**
- * Set up graceful shutdown for performance services
- */
-function setupGracefulShutdown(): void {
-  const shutdown = async () => {
-    logger.info('Shutting down performance monitoring and caching services...');
-
-    try {
-      // Stop monitoring
-      enhancedPerformanceMonitoringService.stopMonitoring();
-
-      // Stop cache warming
-      enhancedCachingService.stopWarming();
-
-      logger.info('Performance services stopped gracefully');
-    } catch (error) {
-      logger.error('Error during performance services shutdown:', error);
-    }
-  };
-
-  // Register shutdown handlers
-  process.on('SIGTERM', shutdown);
-  process.on('SIGINT', shutdown);
-  process.on('SIGUSR2', shutdown); // For nodemon restarts
 }
 
 /**

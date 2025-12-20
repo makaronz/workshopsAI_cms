@@ -130,6 +130,15 @@
   ],
   "author": "workshopsAI Development Team",
   "license": "MIT",
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml}": [
+      "prettier --write"
+    ]
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.69.0",
     "@aws-sdk/client-s3": "^3.454.0",
@@ -254,6 +263,7 @@
     "istanbul-merge": "^2.0.0",
     "jest": "^29.7.0",
     "jsdom": "^24.0.0",
+    "lint-staged": "^16.2.7",
     "msw": "^2.2.1",
     "postcss": "^8.4.0",
     "prettier": "^3.1.1",
