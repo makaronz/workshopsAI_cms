@@ -4,7 +4,7 @@ import './config/env';
 // NOTE: This version uses PostgreSQL for all caching and job queues (no Redis required)
 // For simple deployment, use index-simple.ts instead
 
-import express from 'express';
+import express, { RequestHandler } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -35,6 +35,7 @@ import {
 
 // Import Rate Limiting Configuration
 import { configureRateLimiting } from './config/rate-limiter';
+import { RateLimitAdminTools } from './rate-limiting/admin-tools';
 
 // Import Service Initialization
 import { initializeServices, shutdownServices, ServiceContainer } from './config/init-services';
@@ -50,8 +51,8 @@ const server = createServer(app);
 let services: ServiceContainer | null = null;
 
 // Initialize Rate Limiting System
-let rateLimitMiddleware: any = null;
-let rateLimitAdminTools: any = null;
+let rateLimitMiddleware: RequestHandler | null = null;
+let rateLimitAdminTools: RateLimitAdminTools | null = null;
 
 // Environment variables
 const PORT = process.env['PORT'] || 3010;
@@ -211,13 +212,14 @@ async function checkLLMServicesHealth() {
       performanceSystem: services?.performanceSystem ? { status: 'active' } : { status: 'initializing' },
       dbOptimization: services?.dbOptimization ? { status: 'active' } : { status: 'initializing' },
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return {
-      embeddings: { status: 'error', error: error.message },
-      analysisWorker: { status: 'error', error: error.message },
-      streamingWorker: { status: 'error', error: error.message },
-      performanceSystem: { status: 'error', error: error.message },
-      dbOptimization: { status: 'error', error: error.message },
+      embeddings: { status: 'error', error: errorMessage },
+      analysisWorker: { status: 'error', error: errorMessage },
+      streamingWorker: { status: 'error', error: errorMessage },
+      performanceSystem: { status: 'error', error: errorMessage },
+      dbOptimization: { status: 'error', error: errorMessage },
     };
   }
 }
@@ -293,58 +295,37 @@ app.use(
   },
 );
 
+// Shared graceful shutdown function
+const gracefulShutdown = async (signal: string) => {
+  console.log(`${signal} received, shutting down gracefully`);
+  server.close(async () => {
+    console.log('🔄 Shutting down services...');
+
+    try {
+      // Shutdown rate limiting system
+      if (rateLimitMiddleware?.close) {
+        console.log('🚦 Shutting down Rate Limiting System...');
+        await rateLimitMiddleware.close();
+      }
+
+      if (services) {
+        await shutdownServices(services);
+      }
+
+      await postgresqlRedisReplacement.disconnect();
+      await closeDatabaseConnection();
+      console.log('✅ All services terminated gracefully');
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error('❌ Error during shutdown:', message);
+    }
+    process.exit(0);
+  });
+};
+
 // Graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  server.close(async () => {
-    console.log('🔄 Shutting down services...');
-
-    try {
-      // Shutdown rate limiting system
-      if (rateLimitMiddleware?.close) {
-        console.log('🚦 Shutting down Rate Limiting System...');
-        await rateLimitMiddleware.close();
-      }
-
-      if (services) {
-        await shutdownServices(services);
-      }
-
-      await postgresqlRedisReplacement.disconnect();
-      await closeDatabaseConnection();
-      console.log('✅ All services terminated gracefully');
-    } catch (error: any) {
-      console.error('❌ Error during shutdown:', error.message);
-    }
-    process.exit(0);
-  });
-});
-
-process.on('SIGINT', async () => {
-  console.log('SIGINT received, shutting down gracefully');
-  server.close(async () => {
-    console.log('🔄 Shutting down services...');
-
-    try {
-      // Shutdown rate limiting system
-      if (rateLimitMiddleware?.close) {
-        console.log('🚦 Shutting down Rate Limiting System...');
-        await rateLimitMiddleware.close();
-      }
-
-      if (services) {
-        await shutdownServices(services);
-      }
-
-      await postgresqlRedisReplacement.disconnect();
-      await closeDatabaseConnection();
-      console.log('✅ All services terminated gracefully');
-    } catch (error: any) {
-      console.error('❌ Error during shutdown:', error.message);
-    }
-    process.exit(0);
-  });
-});
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 // Start server
 const startServer = async () => {
@@ -360,12 +341,16 @@ if (require.main === module) {
       console.log(`🚀 Server running on port ${PORT} in ${NODE_ENV} mode`);
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
       console.log(`🔗 API base URL: http://localhost:${PORT}/api`);
-      console.log('⚡ Performance Optimization System initialized');
-      console.log('🗄️ Database Optimization System initialized');
-      console.log('🚀 Streaming LLM Worker initialized');
-      console.log('🔌 WebSocket service initialized');
-      console.log('👁️ Preview service initialized');
-      console.log('📱 Real-time preview functionality available');
+      
+      if (services?.performanceSystem) console.log('⚡ Performance Optimization System initialized');
+      if (services?.dbOptimization) console.log('🗄️ Database Optimization System initialized');
+      if (services?.streamingWorker) console.log('🚀 Streaming LLM Worker initialized');
+      if (services?.webSocketService) console.log('🔌 WebSocket service initialized');
+      if (services?.previewService) {
+        console.log('👁️ Preview service initialized');
+        console.log('📱 Real-time preview functionality available');
+      }
+      
       console.log('📈 Performance monitoring available at /api/v1/performance');
     });
   }).catch(err => {

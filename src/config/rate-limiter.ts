@@ -1,8 +1,8 @@
-import { Express } from 'express';
+import { Express, RequestHandler } from 'express';
 import { createRateLimitMiddleware } from '../rate-limiting/middleware';
 import { RateLimitAdminTools } from '../rate-limiting/admin-tools';
 
-export let rateLimitMiddleware: any = null;
+export let rateLimitMiddleware: RequestHandler | null = null;
 export let rateLimitAdminTools: RateLimitAdminTools | null = null;
 
 interface RateLimiterConfig {
@@ -101,20 +101,24 @@ export const configureRateLimiting = (app: Express, config: RateLimiterConfig) =
         return `user:${user.id}:${role}`;
       }
 
-      // Fall back to IP address for anonymous users
-      const ip = req.ip || req.connection.remoteAddress || 'unknown';
+      // IP canonicalization: prefer X-Forwarded-For
+      const forwarded = req.headers['x-forwarded-for'];
+      const ip = Array.isArray(forwarded) ? forwarded[0] : forwarded || req.socket?.remoteAddress || 'unknown';
       return `ip:${ip}`;
     },
 
     // Custom error handler for rate limit violations
     errorHandler: (error, req, res, _next) => {
-      // Log rate limit hits for monitoring
+      // Log rate limit hits for monitoring (structured)
+      // Masking sensitive IP part for privacy if needed, but keeping it for now as per requirement to just ensure logs are acceptable.
       console.warn('Rate limit exceeded', {
-        ip: req.ip,
         path: req.path,
         method: req.method,
-        userAgent: req.get('User-Agent'),
-        errorCode: error.code
+        errorCode: error.code,
+        // IP and User-Agent are logged for security/debugging. 
+        // Ensure this complies with your privacy policy.
+        ip: req.headers['x-forwarded-for'] || req.socket?.remoteAddress,
+        userAgent: req.get('User-Agent')
       });
 
       // Return custom error response
@@ -135,26 +139,32 @@ export const configureRateLimiting = (app: Express, config: RateLimiterConfig) =
 
   // Initialize admin tools for rate limit management (only in non-production)
   if (config.nodeEnv !== 'production') {
-    rateLimitAdminTools = new RateLimitAdminTools(
-      // Limiter and middleware instances would be passed here
-      null as any,
-      rateLimitMiddleware,
-      {
-        enabled: true,
-        authMiddleware: (req, res, next) => {
-          // Simple admin authentication for development
-          const adminKey = req.get('X-Admin-Key');
-          if (adminKey !== (config.adminKey || 'dev-admin-key')) {
-            return res.status(401).json({ error: 'Unauthorized' });
-          }
-          next();
+    // Ensure admin key is configured even for development to avoid accidental exposure
+    if (!config.adminKey) {
+      console.warn('⚠️ Admin Rate Limit Tools skipped: ADMIN_KEY not configured.');
+    } else {
+      rateLimitAdminTools = new RateLimitAdminTools(
+        // Limiter and middleware instances would be passed here
+        null as any,
+        rateLimitMiddleware,
+        {
+          enabled: true,
+          authMiddleware: (req, res, next) => {
+            const adminKey = req.get('X-Admin-Key');
+            // Strict check: config.adminKey must be set and match
+            if (adminKey !== config.adminKey) {
+              return res.status(401).json({ error: 'Unauthorized' });
+            }
+            next();
+          },
+          prefix: '/admin/rate-limit',
         },
-        prefix: '/admin/rate-limit',
-      },
-    );
+      );
 
-    // Mount admin routes
-    app.use('/admin', rateLimitAdminTools.getRouter());
+      // Mount admin routes
+      app.use('/admin', rateLimitAdminTools.getRouter());
+      console.log('🔧 Rate Limit Admin Tools mounted at /admin/rate-limit');
+    }
   }
 
   console.log('✅ Rate Limiting System initialized');

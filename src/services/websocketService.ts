@@ -12,7 +12,7 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import jwt from 'jsonwebtoken';
-import { postgresqlRedisReplacement } from './postgresql-redis-replacement';
+import { postgresqlRedisReplacement as redisService } from './postgresql-redis-replacement';
 import { logger } from '../utils/logger';
 
 // Types for WebSocket communication
@@ -78,6 +78,7 @@ class WebSocketService {
   private userSockets: Map<string, Set<string>> = new Map();
   private reconnectAttempts: Map<string, number> = new Map();
   private readonly MAX_RECONNECT_ATTEMPTS = 5;
+  private cleanupInterval: NodeJS.Timeout | null = null;
 
   constructor(httpServer: HTTPServer) {
     this.io = new SocketIOServer(httpServer, {
@@ -571,7 +572,7 @@ class WebSocketService {
   ): Promise<void> {
     try {
       const key = `preview_state:${roomId}`;
-      await postgresqlRedisReplacement.setex(key, 3600, JSON.stringify(state)); // 1 hour
+      await redisService.setex(key, 3600, JSON.stringify(state)); // 1 hour
     } catch (error) {
       logger.warn('Failed to persist room state:', error);
     }
@@ -619,7 +620,7 @@ class WebSocketService {
    * Start cleanup interval for inactive rooms
    */
   private startCleanupInterval(): void {
-    setInterval(() => {
+    this.cleanupInterval = setInterval(() => {
       const now = new Date();
       for (const [roomId, room] of this.rooms.entries()) {
         // Clean up rooms inactive for more than 1 hour
@@ -631,6 +632,29 @@ class WebSocketService {
         }
       }
     }, 300000); // Check every 5 minutes
+  }
+
+  /**
+   * Gracefully shutdown the WebSocket service
+   */
+  public async shutdown(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      logger.info('Shutting down WebSocket service...');
+      
+      if (this.cleanupInterval) {
+        clearInterval(this.cleanupInterval);
+        this.cleanupInterval = null;
+      }
+
+      this.io.close((err) => {
+        if (err) {
+          logger.error('Error shutting down WebSocket service:', err);
+          return reject(err);
+        }
+        logger.info('WebSocket service shut down successfully');
+        resolve();
+      });
+    });
   }
 
   /**
