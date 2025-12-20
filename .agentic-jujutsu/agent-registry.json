@@ -2,7 +2,7 @@
   "version": "1.0.0",
   "agents": [
     {
-      "id": "agent_1765947400612",
+      "id": "agent_1766238391060",
       "name": "Code-Generator",
       "type": "coder",
       "capabilities": [
@@ -11,13 +11,13 @@
         "documentation"
       ],
       "version": "1.0.0",
-      "registeredAt": "2025-12-17T04:56:40.612Z",
+      "registeredAt": "2025-12-20T13:46:31.060Z",
       "trajectoryCount": 0,
       "successRate": 1,
       "preferredPatterns": []
     },
     {
-      "id": "agent_1765947400613",
+      "id": "agent_1766238391061",
       "name": "Security-Auditor",
       "type": "reviewer",
       "capabilities": [
@@ -26,13 +26,13 @@
         "compliance"
       ],
       "version": "1.0.0",
-      "registeredAt": "2025-12-17T04:56:40.613Z",
+      "registeredAt": "2025-12-20T13:46:31.061Z",
       "trajectoryCount": 0,
       "successRate": 1,
       "preferredPatterns": []
     },
     {
-      "id": "agent_1765947400613",
+      "id": "agent_1766238391061",
       "name": "Test-Generator",
       "type": "tester",
       "capabilities": [
@@ -41,7 +41,7 @@
         "e2e-testing"
       ],
       "version": "1.0.0",
-      "registeredAt": "2025-12-17T04:56:40.613Z",
+      "registeredAt": "2025-12-20T13:46:31.061Z",
       "trajectoryCount": 0,
       "successRate": 1,
       "preferredPatterns": []
@@ -49,7 +49,7 @@
   ],
   "workflows": [
     {
-      "id": "workflow_1765947400614",
+      "id": "workflow_1766238391062",
       "name": "Secure Feature Development",
       "description": "Develop new features with security and testing",
       "template": "custom",
@@ -59,7 +59,7 @@
         "Test-Generator"
       ],
       "status": "created",
-      "createdAt": "2025-12-17T04:56:40.614Z",
+      "createdAt": "2025-12-20T13:46:31.062Z",
       "trajectories": []
     }
   ],
