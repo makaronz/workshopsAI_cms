@@ -23,7 +23,6 @@ import responseRoutes from './routes/responses';
 import publicRoutes from './routes/public';
 import authRoutes from './routes/auth';
 import fileRoutes from './routes/api/files';
-import { initializePreviewRoutes } from './routes/api/preview';
 import fileSignedRoutes from './routes/api/files-signed';
 import dashboardRoutes from './routes/api/dashboard';
 import workshopIntelligenceRoutes from './routes/api/workshop-intelligence';
@@ -34,46 +33,27 @@ import {
   closeDatabaseConnection,
 } from './config/postgresql-database';
 
-// Import LLM services
-import { getLLMAnalysisWorker } from './services/llm-worker';
-import { embeddingsService } from './services/embeddings';
+// Import Rate Limiting Configuration
+import { configureRateLimiting } from './config/rate-limiter';
+
+// Import Service Initialization
+import { initializeServices, shutdownServices, ServiceContainer } from './config/init-services';
 
 // Import Redis replacement
 import { postgresqlRedisReplacement } from './services/postgresql-redis-replacement';
-
-// Import Rate Limiting
-import { createRateLimitMiddleware, RateLimitingMiddleware } from './rate-limiting/middleware';
-import { RateLimitAdminTools } from './rate-limiting/admin-tools';
-
-// LLM worker - uses PostgreSQL job queue (no Redis needed)
-let llmAnalysisWorker: ReturnType<typeof getLLMAnalysisWorker> | null = null;
-
-// Import WebSocket and Preview services
-import { WebSocketService } from './services/websocketService';
-import { PreviewService } from './services/previewService';
-
-// Import Performance Optimization Services
-import { initializePerformanceSystem } from './config/performance-integration';
-import { DatabaseOptimizationIntegration } from './services/database-optimization-integration';
-import { StreamingLLMAnalysisWorker } from './services/streaming-llm-worker';
+import { embeddingsService } from './services/embeddings';
 
 const app = express();
 const server = createServer(app);
 
-// Initialize services
-let webSocketService: WebSocketService;
-let previewService: PreviewService;
-
-// Initialize Performance Optimization Services
-let performanceSystem: any;
-let dbOptimization: DatabaseOptimizationIntegration;
-let streamingWorker: StreamingLLMAnalysisWorker;
+// Services container
+let services: ServiceContainer | null = null;
 
 // Initialize Rate Limiting System
 let rateLimitMiddleware: any = null;
-let rateLimitAdminTools: RateLimitAdminTools | null = null;
+let rateLimitAdminTools: any = null;
 
-// Environment variables - Fix index signature access
+// Environment variables
 const PORT = process.env['PORT'] || 3010;
 const NODE_ENV = process.env['NODE_ENV'] || 'development';
 const CORS_ORIGIN = process.env['CORS_ORIGIN'] || 'http://localhost:3000';
@@ -95,151 +75,13 @@ app.use(
 );
 
 // High-Performance Rate Limiting System
-console.log('🚦 Initializing High-Performance Rate Limiting System...');
-rateLimitMiddleware = createRateLimitMiddleware({
-  // PostgreSQL URL for distributed rate limiting
+const rateLimitSystem = configureRateLimiting(app, {
   postgresUrl: process.env.DATABASE_URL,
-
-  // Node identifier for clustering
-  nodeId: `api-node-${process.pid}`,
-
-  // Custom rate limit configuration
-  defaultConfig: {
-    second: { limit: 30, windowMs: 1000 },    // 30 requests per second
-    minute: { limit: 1000, windowMs: 60000 },  // 1000 requests per minute
-    hour: { limit: 20000, windowMs: 3600000 }, // 20K requests per hour
-    day: { limit: 200000, windowMs: 86400000 } // 200K requests per day
-  },
-
-  // Custom rate limit rules for different endpoints
-  rules: [
-    {
-      id: 'auth-endpoints',
-      pattern: /^\/api\/v1\/auth/,
-      config: {
-        second: { limit: 5, windowMs: 1000, penaltyMs: 60000 },
-        minute: { limit: 20, windowMs: 60000, penaltyMs: 300000 },
-        hour: { limit: 100, windowMs: 3600000 },
-      },
-      priority: 10,
-      enabled: true,
-    },
-    {
-      id: 'file-upload-endpoints',
-      pattern: /^\/api\/v1\/files.*upload/,
-      config: {
-        second: { limit: 2, windowMs: 1000 },
-        minute: { limit: 10, windowMs: 60000 },
-        hour: { limit: 50, windowMs: 3600000 },
-      },
-      priority: 10,
-      enabled: true,
-    },
-    {
-      id: 'workshop-intelligence',
-      pattern: /^\/api\/v1\/workshop-intelligence/,
-      config: {
-        second: { limit: 10, windowMs: 1000 },
-        minute: { limit: 100, windowMs: 60000 },
-        hour: { limit: 1000, windowMs: 3600000 },
-      },
-      priority: 8,
-      enabled: true,
-    },
-    {
-      id: 'api-endpoints',
-      pattern: /^\/api\//,
-      config: {
-        second: { limit: 50, windowMs: 1000 },
-        minute: { limit: 2000, windowMs: 60000 },
-      },
-      priority: 5,
-      enabled: true,
-    },
-    {
-      id: 'public-endpoints',
-      pattern: /^\/api\/v1\/public/,
-      config: {
-        second: { limit: 100, windowMs: 1000 },
-        minute: { limit: 5000, windowMs: 60000 },
-      priority: 3,
-      enabled: true,
-    }
-  },
-  ],
-
-  // Enable adaptive rate limiting based on system load
-  enableAdaptive: true,
-
-  // Enable analytics tracking
-  enableAnalytics: true,
-
-  // Custom key generator that considers user authentication
-  keyGenerator: (req) => {
-    const user = (req as any).user;
-    if (user?.id) {
-      // Different limits for authenticated users based on role
-      const role = user.role || 'user';
-      return `user:${user.id}:${role}`;
-    }
-
-    // Fall back to IP address for anonymous users
-    const ip = req.ip || req.connection.remoteAddress || 'unknown';
-    return `ip:${ip}`;
-  },
-
-  // Custom error handler for rate limit violations
-  errorHandler: (error, req, res, _next) => {
-    // Log rate limit hits for monitoring
-    console.warn('Rate limit exceeded', {
-      ip: req.ip,
-      path: req.path,
-      method: req.method,
-      userAgent: req.get('User-Agent'),
-      errorCode: error.code
-    });
-
-    // Return custom error response
-    res.status(429).json({
-      error: true,
-      code: error.code,
-      message: error.code === 'RATE_LIMIT_PENALTY_BOX'
-        ? 'Access temporarily blocked due to repeated violations. Please try again later.'
-        : 'Too many requests. Please try again later.',
-      retryAfter: error.retryAfter,
-      details: process.env.NODE_ENV === 'development' ? error.details : undefined,
-    });
-  }
+  nodeEnv: NODE_ENV,
+  adminKey: process.env.ADMIN_KEY
 });
-
-// Apply rate limiting to all routes
-app.use(rateLimitMiddleware);
-
-// Initialize admin tools for rate limit management (only in non-production)
-if (NODE_ENV !== 'production') {
-  rateLimitAdminTools = new RateLimitAdminTools(
-    // Limiter and middleware instances would be passed here
-    null as any,
-    rateLimitMiddleware,
-    {
-      enabled: true,
-      authMiddleware: (req, res, next) => {
-        // Simple admin authentication for development
-        const adminKey = req.get('X-Admin-Key');
-        if (adminKey !== process.env.ADMIN_KEY || 'dev-admin-key') {
-          return res.status(401).json({ error: 'Unauthorized' });
-        }
-        next();
-      },
-      prefix: '/admin/rate-limit',
-    },
-  );
-
-  // Mount admin routes
-  app.use('/admin', rateLimitAdminTools.getRouter());
-}
-
-console.log('✅ Rate Limiting System initialized');
+rateLimitMiddleware = rateLimitSystem.rateLimitMiddleware;
+rateLimitAdminTools = rateLimitSystem.rateLimitAdminTools;
 
 // CORS configuration
 app.use(
@@ -352,11 +194,11 @@ app.get('/health', async (_req, res) => {
 async function checkLLMServicesHealth() {
   try {
     const health = await embeddingsService.healthCheck();
-    const queueStats = llmAnalysisWorker 
-      ? await llmAnalysisWorker.getQueueStats() 
+    const queueStats = services?.llmAnalysisWorker 
+      ? await services.llmAnalysisWorker.getQueueStats() 
       : { status: 'unavailable' };
-    const streamingStats = streamingWorker 
-      ? await streamingWorker.getQueueStats() 
+    const streamingStats = services?.streamingWorker 
+      ? await services.streamingWorker.getQueueStats() 
       : { status: 'unavailable' };
 
     return {
@@ -366,16 +208,16 @@ async function checkLLMServicesHealth() {
         queue: queueStats,
       },
       streamingWorker: streamingStats,
-      performanceSystem: performanceSystem ? { status: 'active' } : { status: 'initializing' },
-      dbOptimization: dbOptimization ? { status: 'active' } : { status: 'initializing' },
+      performanceSystem: services?.performanceSystem ? { status: 'active' } : { status: 'initializing' },
+      dbOptimization: services?.dbOptimization ? { status: 'active' } : { status: 'initializing' },
     };
-  } catch (error) {
+  } catch (error: any) {
     return {
-      embeddings: { status: 'error', error: (error as any).message },
-      analysisWorker: { status: 'error', error: (error as any).message },
-      streamingWorker: { status: 'error', error: (error as any).message },
-      performanceSystem: { status: 'error', error: (error as any).message },
-      dbOptimization: { status: 'error', error: (error as any).message },
+      embeddings: { status: 'error', error: error.message },
+      analysisWorker: { status: 'error', error: error.message },
+      streamingWorker: { status: 'error', error: error.message },
+      performanceSystem: { status: 'error', error: error.message },
+      dbOptimization: { status: 'error', error: error.message },
     };
   }
 }
@@ -405,10 +247,6 @@ app.use('/api/v1/files/signed', fileSignedRoutes);
 app.use('/api/v1/public', publicRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
 app.use('/api/v1/workshop-intelligence', workshopIntelligenceRoutes);
-
-// Performance monitoring routes (will be initialized after services are set up)
-
-// Preview routes will be initialized dynamically after services are set up
 
 // Login page route
 app.get('/login', (_req, res) => {
@@ -468,20 +306,14 @@ process.on('SIGTERM', async () => {
         await rateLimitMiddleware.close();
       }
 
-      if (dbOptimization) {
-        await dbOptimization.shutdown();
-      }
-      if (streamingWorker) {
-        await streamingWorker.shutdown();
+      if (services) {
+        await shutdownServices(services);
       }
 
-      if (llmAnalysisWorker) {
-        await llmAnalysisWorker.shutdown();
-      }
       await postgresqlRedisReplacement.disconnect();
       await closeDatabaseConnection();
       console.log('✅ All services terminated gracefully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error during shutdown:', error.message);
     }
     process.exit(0);
@@ -500,20 +332,14 @@ process.on('SIGINT', async () => {
         await rateLimitMiddleware.close();
       }
 
-      if (dbOptimization) {
-        await dbOptimization.shutdown();
-      }
-      if (streamingWorker) {
-        await streamingWorker.shutdown();
+      if (services) {
+        await shutdownServices(services);
       }
 
-      if (llmAnalysisWorker) {
-        await llmAnalysisWorker.shutdown();
-      }
       await postgresqlRedisReplacement.disconnect();
       await closeDatabaseConnection();
       console.log('✅ All services terminated gracefully');
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error during shutdown:', error.message);
     }
     process.exit(0);
@@ -522,84 +348,8 @@ process.on('SIGINT', async () => {
 
 // Start server
 const startServer = async () => {
-  try {
-    // Initialize Performance Optimization Services
-    console.log('⚡ Initializing Performance Optimization System...');
-    performanceSystem = await initializePerformanceSystem(app, server);
-    console.log('✅ Performance Optimization System initialized');
-  } catch (error) {
-    console.error('❌ Failed to initialize Performance System:', error.message);
-    performanceSystem = null;
-  }
-
-  try {
-    console.log('🗄️ Initializing Database Optimization System...');
-    dbOptimization = new DatabaseOptimizationIntegration();
-    await dbOptimization.initialize();
-    console.log('✅ Database Optimization System initialized');
-  } catch (error) {
-    console.error('❌ Failed to initialize Database Optimization:', error.message);
-    dbOptimization = null;
-  }
-
-  // Initialize workers (using PostgreSQL job queue, no Redis needed)
-  try {
-    console.log('🚀 Initializing LLM Analysis Worker...');
-    llmAnalysisWorker = getLLMAnalysisWorker();
-    console.log('✅ LLM Analysis Worker initialized');
-  } catch (error) {
-    console.error('❌ Failed to initialize LLM Analysis Worker:', error.message);
-    llmAnalysisWorker = null;
-  }
-
-  try {
-    console.log('🚀 Initializing Streaming LLM Worker...');
-    streamingWorker = new StreamingLLMAnalysisWorker();
-    await streamingWorker.initialize();
-    console.log('✅ Streaming LLM Worker initialized');
-  } catch (error) {
-    console.error('❌ Failed to initialize Streaming LLM Worker:', error.message);
-    streamingWorker = null;
-  }
-
-  try {
-    // Initialize WebSocket service
-    console.log('🔌 Initializing WebSocket service...');
-    webSocketService = new WebSocketService(server);
-    console.log('✅ WebSocket service initialized');
-  } catch (error) {
-    console.error('❌ Failed to initialize WebSocket service:', error.message);
-    webSocketService = null;
-  }
-
-  try {
-    // Initialize Preview service
-    console.log('👁️ Initializing Preview service...');
-    if (webSocketService) {
-      previewService = new PreviewService(webSocketService);
-      console.log('✅ Preview service initialized');
-    } else {
-      console.log('⚠️  Preview service skipped (WebSocket not available)');
-      previewService = null;
-    }
-  } catch (error) {
-    console.error('❌ Failed to initialize Preview service:', error.message);
-    previewService = null;
-  }
-
-  try {
-    // Initialize preview routes
-    if (previewService) {
-      console.log('🛣️ Initializing Preview routes...');
-      const previewRouter = initializePreviewRoutes(previewService);
-      app.use('/api/v1/preview', previewRouter);
-      console.log('✅ Preview routes initialized');
-    } else {
-      console.log('⚠️  Preview routes skipped (Preview service not available)');
-    }
-  } catch (error) {
-    console.error('❌ Failed to initialize Preview routes:', error.message);
-  }
+  // Initialize all services
+  services = await initializeServices(app, server);
 
   console.log('📊 Performance monitoring routes initialized');
 };
@@ -622,14 +372,6 @@ if (require.main === module) {
     console.error('Startup error:', err);
     process.exit(1);
   });
-} else {
-  // If imported, we still want to initialize services but not listen
-  // Note: initializing services might connect to DB, which is fine for Cloud Functions cold start
-  // but we need to handle the async nature.
-  // For Cloud Functions, we might need to export a wrapped version that ensures initialization.
-  
-  // We'll export an init function
-}
 }
 
 export { app, server, startServer };
