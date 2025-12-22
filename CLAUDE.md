@@ -73,6 +73,14 @@ WorkshopsAI CMS - A workshop management system built with:
 
 ## MCP Tools
 
+### Todo2 (REQUIRED)
+- **ALWAYS** use Todo2 MCP for task tracking on multi-step operations
+- Create tasks before starting work: `mcp__todo2__create_todo`
+- Update task status as you progress: `mcp__todo2__update_todo`
+- Mark tasks complete immediately after finishing: `mcp__todo2__complete_todo`
+- Use for: feature implementation, bug fixes, refactoring, any work with 2+ steps
+
+### Other Tools
 - Use `mcp__tavily__tavily_search` for web discovery, `mcp__tavily__tavily_extract` for specific URLs
 - For GitHub URLs, use `mcp__github__*` tools or `gh` CLI instead of web scraping
 
