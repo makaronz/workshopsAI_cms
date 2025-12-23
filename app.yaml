@@ -45,12 +45,6 @@ services:
         scope: RUN_TIME
         type: SECRET
       
-      # Redis connection - DigitalOcean automatycznie ustawi REDIS_URL
-      - key: REDIS_URL
-        value: ${redis.REDIS_URL}
-        scope: RUN_TIME
-        type: SECRET
-      
       # OpenAI API Key - ustaw ręcznie w dashboard
       - key: OPENAI_API_KEY
         value: ""
@@ -106,28 +100,6 @@ databases:
     production: true
     db_name: workshopsai_cms
     db_user: workshopsai
-  
-  # Redis Cache
-  - name: redis
-    engine: REDIS
-    version: "7"
-    production: true
-
-# Static Site (opcjonalne - jeśli frontend jest osobny)
-# static_sites:
-#   - name: workshopsai-frontend
-#     github:
-#       repo: makaronz/workshopsAI_cms
-#       branch: main
-#     build_command: cd frontend && npm install && npm run build
-#     output_dir: frontend/dist
-#     routes:
-#       - path: /
-#     environment_slug: node-js
-#     envs:
-#       - key: VITE_API_URL
-#         value: ${apps.workshopsai-backend.PUBLIC_URL}
-#         scope: BUILD_TIME
 
 # Alerts (opcjonalne)
 # alerts:

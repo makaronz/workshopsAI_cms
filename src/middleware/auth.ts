@@ -3,7 +3,13 @@ import jwt from 'jsonwebtoken';
 import { db, users } from '../config/postgresql-database';
 import { eq, and } from 'drizzle-orm';
 
-import { UserRole } from '../services/authService';
+// User roles enum (previously from deleted authService)
+export enum UserRole {
+  ADMIN = 'admin',
+  MODERATOR = 'moderator',
+  PARTICIPANT = 'participant',
+  ANALYST = 'analyst',
+}
 
 
 

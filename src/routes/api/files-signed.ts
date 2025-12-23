@@ -1,6 +1,5 @@
 import { Request, Response, Router } from 'express';
 import { storageService } from '../../services/storageService';
-import { redisService } from '../../config/redis';
 import { storageConfig } from '../../config/storage';
 import path from 'path';
 
@@ -9,6 +8,7 @@ const router = Router();
 /**
  * GET /api/v1/files/signed/:token
  * Handle signed URL access for local storage
+ * Note: Redis caching removed - uses direct storage lookup
  */
 router.get('/:token', async (req: Request, res: Response) => {
   try {
@@ -21,8 +21,8 @@ router.get('/:token', async (req: Request, res: Response) => {
       });
     }
 
-    // Get file path from Redis
-    const filePath = await redisService.getClient().get(`file:${token}`);
+    // Get file path from storage service
+    const filePath = await storageService.getSignedFile(token);
     if (!filePath) {
       return res.status(404).json({
         error: 'Invalid or expired token',
